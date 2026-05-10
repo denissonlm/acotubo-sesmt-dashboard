@@ -1,4 +1,4 @@
-import React, { useMemo } from 'react';
+import React, { useMemo, useState } from 'react';
 import { 
   BarChart, Bar, XAxis, YAxis, Tooltip, Legend, ResponsiveContainer
 } from 'recharts';
@@ -13,6 +13,12 @@ interface DashboardProps {
   accidents: Accident[];
   selectedYears: number[];
   onYearsChange: (years: number[]) => void;
+  filterDivision: string;
+  onDivisionChange: (val: string) => void;
+  filterManager: string;
+  onManagerChange: (val: string) => void;
+  filterArea: string;
+  onAreaChange: (val: string) => void;
   onReset: () => void;
   onPrint: () => void;
   onBatchPrint: () => void;
@@ -20,11 +26,21 @@ interface DashboardProps {
 
 const MONTH_NAMES = ['Jan', 'Fev', 'Mar', 'Abr', 'Mai', 'Jun', 'Jul', 'Ago', 'Set', 'Out', 'Nov', 'Dez'];
 
-export const Dashboard: React.FC<DashboardProps> = ({ accidents, selectedYears, onYearsChange, onReset, onPrint, onBatchPrint }) => {
-  const [filterDivision, setFilterDivision] = React.useState('ALL');
-  const [filterManager, setFilterManager] = React.useState('ALL');
-  const [filterArea, setFilterArea] = React.useState('ALL');
-  const [activeTab, setActiveTab] = React.useState<'monthly' | 'temporal'>('monthly');
+export const Dashboard: React.FC<DashboardProps> = ({ 
+  accidents, 
+  selectedYears, 
+  onYearsChange,
+  filterDivision,
+  onDivisionChange,
+  filterManager,
+  onManagerChange,
+  filterArea,
+  onAreaChange,
+  onReset, 
+  onPrint, 
+  onBatchPrint 
+}) => {
+  const [activeTab, setActiveTab] = useState<'monthly' | 'temporal'>('monthly');
 
   const filteredAccidents = useMemo(() => {
     return accidents.filter(a => {
@@ -55,12 +71,13 @@ export const Dashboard: React.FC<DashboardProps> = ({ accidents, selectedYears, 
   const uniqueAreas = useMemo(() => Array.from(new Set(accidents.map(a => a.area))).sort(), [accidents]);
 
   const chartData = useMemo(() => {
-    return Array.from({ length: 12 }, (_, i) => ({
-      month: MONTH_NAMES[i],
-      [selectedYears[0]]: stats[selectedYears[0]]?.monthly[i].count || 0,
-      [selectedYears[1]]: stats[selectedYears[1]]?.monthly[i].count || 0,
-      [selectedYears[2]]: stats[selectedYears[2]]?.monthly[i].count || 0,
-    }));
+    return Array.from({ length: 12 }, (_, i) => {
+      const monthData: any = { month: MONTH_NAMES[i] };
+      selectedYears.forEach(year => {
+        monthData[year] = stats[year]?.monthly[i].count || 0;
+      });
+      return monthData;
+    });
   }, [stats, selectedYears]);
 
   const getHeatmapColor = (count: number) => {
@@ -72,6 +89,24 @@ export const Dashboard: React.FC<DashboardProps> = ({ accidents, selectedYears, 
     return '#7F1D1D';
   };
 
+  const yearsLabel = useMemo(() => {
+    const count = selectedYears.length;
+    switch (count) {
+      case 1: return { adj: 'anual', noun: 'ano' };
+      case 2: return { adj: 'bienal', noun: 'biênio' };
+      case 3: return { adj: 'trienal', noun: 'triênio' };
+      case 4: return { adj: 'quadrienal', noun: 'quadriênio' };
+      case 5: return { adj: 'quinquenal', noun: 'quinquênio' };
+      case 6: return { adj: 'sexenal', noun: 'sexênio' };
+      default: return { adj: 'estatística', noun: 'período' };
+    }
+  }, [selectedYears]);
+
+  const dashboardTitle = useMemo(() => {
+    const adj = yearsLabel.adj.charAt(0).toUpperCase() + yearsLabel.adj.slice(1);
+    return `${adj} de Acidentes`;
+  }, [yearsLabel]);
+
   return (
     <div className="dashboard">
       <header className="header no-print" style={{ padding: '0.75rem 2rem' }}>
@@ -80,7 +115,7 @@ export const Dashboard: React.FC<DashboardProps> = ({ accidents, selectedYears, 
             <img src={LOGO_BASE64} alt="Logo" style={{ height: '32px', filter: 'brightness(0) invert(1)' }} />
           </div>
           <div>
-            <h1 style={{ fontSize: '1.4rem', margin: 0, fontWeight: 900 }}>Trienal de Acidentes</h1>
+            <h1 style={{ fontSize: '1.4rem', margin: 0, fontWeight: 900 }}>{dashboardTitle}</h1>
             <p style={{ margin: 0, fontSize: '0.8rem', fontWeight: 600, opacity: 0.8 }}>Grupo Açotubo</p>
           </div>
         </div>
@@ -147,21 +182,21 @@ export const Dashboard: React.FC<DashboardProps> = ({ accidents, selectedYears, 
         <div style={{ display: 'flex', gap: '2rem' }}>
           <div className="filter-group">
             <label><div style={{ width: '8px', height: '8px', borderRadius: '50%', background: '#3B82F6', marginRight: '8px' }}></div>Unidade</label>
-            <select value={filterDivision} onChange={e => setFilterDivision(e.target.value)}>
+            <select value={filterDivision} onChange={e => onDivisionChange(e.target.value)}>
               <option value="ALL">Todas as Unidades</option>
               {uniqueDivisions.map(d => <option key={d} value={d}>{d}</option>)}
             </select>
           </div>
           <div className="filter-group">
             <label><div style={{ width: '8px', height: '8px', borderRadius: '50%', background: '#10B981', marginRight: '8px' }}></div>Superior Direto</label>
-            <select value={filterManager} onChange={e => setFilterManager(e.target.value)}>
+            <select value={filterManager} onChange={e => onManagerChange(e.target.value)}>
               <option value="ALL">Todos os Superiores</option>
               {uniqueManagers.map(m => <option key={m} value={m}>{m}</option>)}
             </select>
           </div>
           <div className="filter-group">
             <label><div style={{ width: '8px', height: '8px', borderRadius: '50%', background: '#F59E0B', marginRight: '8px' }}></div>Área</label>
-            <select value={filterArea} onChange={e => setFilterArea(e.target.value)}>
+            <select value={filterArea} onChange={e => onAreaChange(e.target.value)}>
               <option value="ALL">Todas as Áreas</option>
               {uniqueAreas.map(a => <option key={a} value={a}>{a}</option>)}
             </select>
@@ -247,37 +282,34 @@ export const Dashboard: React.FC<DashboardProps> = ({ accidents, selectedYears, 
             <>
               <div className="panel-premium">
                 <h2 style={{textAlign: 'center', marginBottom: '0.5rem', fontWeight: 900, color: 'var(--text)'}}>Comparativo <span style={{color: 'var(--primary)'}}>Mensal</span></h2>
-                <p style={{textAlign: 'center', fontSize: '0.75rem', color: 'var(--text-muted)', marginBottom: '2rem'}}>Distribuição histórica de acidentes no triênio selecionado</p>
-                <div style={{height: 350}}>
-                  <ResponsiveContainer width="100%" height="100%">
-                    <BarChart data={chartData} margin={{ top: 20, right: 30, left: 0, bottom: 0 }}>
-                      <XAxis dataKey="month" axisLine={false} tickLine={false} tick={{fontSize: 12, fill: '#64748B'}} />
-                      <YAxis axisLine={false} tickLine={false} tick={{fontSize: 12, fill: '#64748B'}} domain={[0, 'dataMax + 2']} />
-                      <Tooltip cursor={{fill: '#F1F5F9'}} contentStyle={{borderRadius: '12px', border: '1px solid var(--border)'}} />
-                      <Legend verticalAlign="top" align="center" iconType="circle" />
-                      <Bar 
-                        dataKey={String(selectedYears[0])} 
-                        fill="#B91C1C" 
-                        radius={[4, 4, 0, 0]} 
-                        barSize={20}
-                        label={{ position: 'top', fill: '#64748B', fontSize: 10, fontWeight: 700 }}
-                      />
-                      <Bar 
-                        dataKey={String(selectedYears[1])} 
-                        fill="#94A3B8" 
-                        radius={[4, 4, 0, 0]} 
-                        barSize={20}
-                        label={{ position: 'top', fill: '#64748B', fontSize: 10, fontWeight: 700 }}
-                      />
-                      <Bar 
-                        dataKey={String(selectedYears[2])} 
-                        fill="#0F172A" 
-                        radius={[4, 4, 0, 0]} 
-                        barSize={20}
-                        label={{ position: 'top', fill: '#64748B', fontSize: 10, fontWeight: 700 }}
-                      />
-                    </BarChart>
-                  </ResponsiveContainer>
+                <p style={{textAlign: 'center', fontSize: '0.75rem', color: 'var(--text-muted)', marginBottom: '2rem'}}>Distribuição histórica de acidentes no {yearsLabel.noun} selecionado</p>
+                <div style={{ height: 350, overflowX: 'auto', overflowY: 'hidden', paddingBottom: '1rem' }}>
+                  <div style={{ 
+                    minWidth: selectedYears.length > 2 ? `${selectedYears.length * 400}px` : '100%', 
+                    height: '100%' 
+                  }}>
+                    <ResponsiveContainer width="100%" height="100%">
+                      <BarChart data={chartData} margin={{ top: 25, right: 30, left: 0, bottom: 0 }}>
+                        <XAxis dataKey="month" axisLine={false} tickLine={false} tick={{fontSize: 12, fill: '#64748B'}} />
+                        <YAxis axisLine={false} tickLine={false} tick={{fontSize: 12, fill: '#64748B'}} domain={[0, 'dataMax + 2']} />
+                        <Tooltip cursor={{fill: '#F1F5F9'}} contentStyle={{borderRadius: '12px', border: '1px solid var(--border)'}} />
+                        <Legend verticalAlign="top" align="center" iconType="circle" />
+                        {selectedYears.map((year, idx) => {
+                          const colors = ['#B91C1C', '#94A3B8', '#0F172A', '#3B82F6', '#10B981', '#F59E0B'];
+                          return (
+                            <Bar 
+                              key={year}
+                              dataKey={String(year)} 
+                              fill={colors[idx % colors.length]} 
+                              radius={[4, 4, 0, 0]} 
+                              barSize={selectedYears.length > 3 ? 12 : 20}
+                              label={{ position: 'top', fill: '#64748B', fontSize: 10, fontWeight: 700 }}
+                            />
+                          );
+                        })}
+                      </BarChart>
+                    </ResponsiveContainer>
+                  </div>
                 </div>
               </div>
 
@@ -335,7 +367,7 @@ export const Dashboard: React.FC<DashboardProps> = ({ accidents, selectedYears, 
               <span style={{ color: 'var(--primary)' }}>{activeTab === 'monthly' ? 'Atenção' : 'Padrões'}</span>
             </h2>
             <p style={{ fontSize: '0.8rem', color: 'var(--text-muted)', marginTop: '0.25rem', fontWeight: 500 }}>
-              {activeTab === 'monthly' ? 'Padrões identificados na comparação trienal' : 'Storytelling baseado em horários e dias'}
+              {activeTab === 'monthly' ? `Padrões identificados na comparação ${yearsLabel.adj}` : 'Storytelling baseado em horários e dias'}
             </p>
           </div>
           

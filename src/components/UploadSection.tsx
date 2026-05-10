@@ -53,7 +53,7 @@ export const UploadSection: React.FC<UploadSectionProps> = ({ onDataLoaded }) =>
         <div style={{ textAlign: 'center' }}>
           <h2 style={{ fontSize: '1.5rem', fontWeight: 800, marginBottom: '0.5rem' }}>Upload de Dados</h2>
           <p style={{ color: 'var(--text-muted)', fontSize: '0.875rem' }}>
-            Selecione o arquivo <strong>Dash Acidentes.xlsx</strong> para atualizar o dashboard trienal.
+            Selecione o arquivo <strong>Dash Acidentes.xlsx</strong> para atualizar o dashboard estatístico.
           </p>
         </div>
         

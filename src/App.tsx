@@ -16,6 +16,9 @@ function App() {
   const [isBatchSelecting, setIsBatchSelecting] = useState(false)
   const [batchConfigs, setBatchConfigs] = useState<{ years: number[], unit: string, area: string }[]>([])
   const [selectedYears, setSelectedYears] = useState<number[]>([2024, 2025, 2026])
+  const [filterDivision, setFilterDivision] = useState('ALL')
+  const [filterManager, setFilterManager] = useState('ALL')
+  const [filterArea, setFilterArea] = useState('ALL')
 
   useEffect(() => {
     const fetchData = async () => {
@@ -55,6 +58,9 @@ function App() {
       <PrintView 
         accidents={accidents} 
         selectedYears={selectedYears} 
+        filterDivision={filterDivision}
+        filterManager={filterManager}
+        filterArea={filterArea}
         onBack={() => setIsPrinting(false)} 
       />
     )
@@ -76,6 +82,12 @@ function App() {
         accidents={accidents} 
         selectedYears={selectedYears}
         onYearsChange={setSelectedYears}
+        filterDivision={filterDivision}
+        onDivisionChange={setFilterDivision}
+        filterManager={filterManager}
+        onManagerChange={setFilterManager}
+        filterArea={filterArea}
+        onAreaChange={setFilterArea}
         onReset={() => setShowUpload(true)}
         onPrint={() => setIsPrinting(true)}
         onBatchPrint={() => setIsBatchSelecting(true)}

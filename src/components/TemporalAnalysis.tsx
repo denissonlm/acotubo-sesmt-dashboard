@@ -76,7 +76,7 @@ export const TemporalAnalysis: React.FC<TemporalAnalysisProps> = ({ accidents })
           </div>
           <div style={{ height: 250 }}>
             <ResponsiveContainer width="100%" height="100%">
-              <BarChart data={stats.dayOfWeekStats}>
+              <BarChart data={stats.dayOfWeekStats} margin={{ top: 25, right: 10, left: 10, bottom: 0 }}>
                 <XAxis dataKey="day" axisLine={false} tickLine={false} tick={{fontSize: 12, fontWeight: 700}} />
                 <Tooltip cursor={{fill: '#F1F5F9'}} />
                 <Bar 

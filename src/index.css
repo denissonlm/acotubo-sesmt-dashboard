@@ -10,6 +10,26 @@
   --shadow-lg: 0 10px 15px -3px rgb(0 0 0 / 0.1), 0 4px 6px -4px rgb(0 0 0 / 0.1);
 }
 
+/* Custom Scrollbar for Premium Look */
+::-webkit-scrollbar {
+  width: 8px;
+  height: 8px;
+}
+
+::-webkit-scrollbar-track {
+  background: #F1F5F9;
+  border-radius: 10px;
+}
+
+::-webkit-scrollbar-thumb {
+  background: #CBD5E1;
+  border-radius: 10px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: var(--primary);
+}
+
 * {
   margin: 0;
   padding: 0;
@@ -260,20 +280,21 @@ body {
   padding: 4rem 2rem 2rem;
 }
 
-.a4-landscape {
-  width: 297mm;
-  height: 210mm;
+.a4-portrait {
+  width: 210mm;
+  height: 297mm;
   background: white;
   margin: 0 auto;
   padding: 15mm;
   box-shadow: 0 0 20px rgba(0,0,0,0.1);
   overflow: hidden;
   box-sizing: border-box;
+  position: relative;
 }
 
 @media print {
   @page {
-    size: landscape;
+    size: portrait;
     margin: 0;
   }
 
@@ -290,12 +311,13 @@ body {
     background: white !important;
   }
 
-  .a4-landscape {
+  .a4-portrait {
     margin: 0 !important;
     box-shadow: none !important;
-    width: 100vw !important;
-    height: 100vh !important;
-    padding: 10mm !important;
+    width: 210mm !important;
+    height: 297mm !important;
+    padding: 12mm !important;
+    page-break-after: always;
   }
 
   .no-print {
