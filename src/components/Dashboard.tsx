@@ -8,6 +8,9 @@ import { calculateStats, generateInsights, generateTemporalInsights } from '../u
 import { motion } from 'framer-motion';
 import { LOGO_BASE64 } from '../constants';
 import { TemporalAnalysis } from './TemporalAnalysis';
+import { SafetyManagement } from './SafetyManagement';
+import { Breakdown } from './Breakdown';
+import { generateSafetyInsights } from '../utils/dataLoader';
 
 interface DashboardProps {
   accidents: Accident[];
@@ -40,7 +43,7 @@ export const Dashboard: React.FC<DashboardProps> = ({
   onPrint, 
   onBatchPrint 
 }) => {
-  const [activeTab, setActiveTab] = useState<'monthly' | 'temporal'>('monthly');
+  const [activeTab, setActiveTab] = useState<'monthly' | 'temporal' | 'safety' | 'breakdown'>('monthly');
 
   const filteredAccidents = useMemo(() => {
     return accidents.filter(a => {
@@ -63,6 +66,40 @@ export const Dashboard: React.FC<DashboardProps> = ({
   const temporalInsights = useMemo(() => {
     return generateTemporalInsights(filteredAccidents);
   }, [filteredAccidents]);
+
+  const safetyInsights = useMemo(() => {
+    return generateSafetyInsights(filteredAccidents);
+  }, [filteredAccidents]);
+
+  const breakdownInsights = useMemo(() => [
+    { 
+      title: 'Perfil de Risco', 
+      text: `Média de experiência de ${(filteredAccidents.reduce((s,a) => s + (a.experienceYears + a.experienceMonths/12), 0) / Math.max(filteredAccidents.length, 1)).toFixed(1)} anos nos acidentados.`,
+      type: 'info'
+    },
+    { 
+      title: 'Fator Predominante', 
+      text: `${Math.round((filteredAccidents.filter(a => a.unsafeAct).length / Math.max(filteredAccidents.length, 1)) * 100)}% das causas ligadas a Ato Inseguro.`,
+      type: 'danger'
+    },
+    { 
+      title: 'Conformidade EPI', 
+      text: `${Math.round((filteredAccidents.filter(a => a.usedEPI).length / Math.max(filteredAccidents.length, 1)) * 100)}% utilizavam EPI no momento.`,
+      type: 'success'
+    },
+    { 
+      title: 'Ação Necessária', 
+      text: `${filteredAccidents.filter(a => a.lostDays > 30).length} casos críticos com mais de 30 dias de afastamento.`,
+      type: 'warning'
+    }
+  ], [filteredAccidents]);
+
+  const currentInsights = useMemo(() => {
+    if (activeTab === 'monthly') return monthlyInsights;
+    if (activeTab === 'temporal') return temporalInsights;
+    if (activeTab === 'safety') return safetyInsights;
+    return breakdownInsights;
+  }, [activeTab, monthlyInsights, temporalInsights, safetyInsights, breakdownInsights]);
   
   const allAvailableYears = useMemo(() => Array.from(new Set(accidents.map(a => a.year))).sort((a, b) => b - a), [accidents]);
   
@@ -207,13 +244,13 @@ export const Dashboard: React.FC<DashboardProps> = ({
           <button
             onClick={() => setActiveTab('monthly')}
             style={{
-              padding: '0.6rem 1.5rem',
+              padding: '0.6rem 1.2rem',
               borderRadius: '8px',
               border: 'none',
               background: activeTab === 'monthly' ? 'white' : 'transparent',
               color: activeTab === 'monthly' ? 'var(--primary)' : 'var(--text-muted)',
               fontWeight: 800,
-              fontSize: '0.85rem',
+              fontSize: '0.8rem',
               cursor: 'pointer',
               boxShadow: activeTab === 'monthly' ? '0 2px 8px rgba(0,0,0,0.05)' : 'none',
               transition: 'all 0.2s'
@@ -224,19 +261,53 @@ export const Dashboard: React.FC<DashboardProps> = ({
           <button
             onClick={() => setActiveTab('temporal')}
             style={{
-              padding: '0.6rem 1.5rem',
+              padding: '0.6rem 1.2rem',
               borderRadius: '8px',
               border: 'none',
               background: activeTab === 'temporal' ? 'white' : 'transparent',
               color: activeTab === 'temporal' ? 'var(--primary)' : 'var(--text-muted)',
               fontWeight: 800,
-              fontSize: '0.85rem',
+              fontSize: '0.8rem',
               cursor: 'pointer',
               boxShadow: activeTab === 'temporal' ? '0 2px 8px rgba(0,0,0,0.05)' : 'none',
               transition: 'all 0.2s'
             }}
           >
-            Análise por Horário / Dia
+            Análise Temporal
+          </button>
+          <button
+            onClick={() => setActiveTab('safety')}
+            style={{
+              padding: '0.6rem 1.2rem',
+              borderRadius: '8px',
+              border: 'none',
+              background: activeTab === 'safety' ? 'white' : 'transparent',
+              color: activeTab === 'safety' ? 'var(--primary)' : 'var(--text-muted)',
+              fontWeight: 800,
+              fontSize: '0.8rem',
+              cursor: 'pointer',
+              boxShadow: activeTab === 'safety' ? '0 2px 8px rgba(0,0,0,0.05)' : 'none',
+              transition: 'all 0.2s'
+            }}
+          >
+            Gestão de Segurança
+          </button>
+          <button
+            onClick={() => setActiveTab('breakdown')}
+            style={{
+              padding: '0.6rem 1.2rem',
+              borderRadius: '8px',
+              border: 'none',
+              background: activeTab === 'breakdown' ? 'white' : 'transparent',
+              color: activeTab === 'breakdown' ? 'var(--primary)' : 'var(--text-muted)',
+              fontWeight: 800,
+              fontSize: '0.8rem',
+              cursor: 'pointer',
+              boxShadow: activeTab === 'breakdown' ? '0 2px 8px rgba(0,0,0,0.05)' : 'none',
+              transition: 'all 0.2s'
+            }}
+          >
+            Breakdown
           </button>
         </div>
       </div>
@@ -280,6 +351,7 @@ export const Dashboard: React.FC<DashboardProps> = ({
         <main className="content-area">
           {activeTab === 'monthly' ? (
             <>
+              {/* Monthly View Content */}
               <div className="panel-premium">
                 <h2 style={{textAlign: 'center', marginBottom: '0.5rem', fontWeight: 900, color: 'var(--text)'}}>Comparativo <span style={{color: 'var(--primary)'}}>Mensal</span></h2>
                 <p style={{textAlign: 'center', fontSize: '0.75rem', color: 'var(--text-muted)', marginBottom: '2rem'}}>Distribuição histórica de acidentes no {yearsLabel.noun} selecionado</p>
@@ -352,8 +424,12 @@ export const Dashboard: React.FC<DashboardProps> = ({
                 </div>
               </div>
             </>
-          ) : (
+          ) : activeTab === 'temporal' ? (
             <TemporalAnalysis accidents={filteredAccidents} />
+          ) : activeTab === 'safety' ? (
+            <SafetyManagement accidents={filteredAccidents} />
+          ) : (
+            <Breakdown accidents={filteredAccidents} />
           )}
         </main>
 
@@ -363,15 +439,23 @@ export const Dashboard: React.FC<DashboardProps> = ({
         <aside className="insights-panel">
           <div style={{ marginBottom: '1.5rem' }}>
             <h2 style={{ fontSize: '1.4rem', fontWeight: 900, color: 'var(--text)', margin: 0, letterSpacing: '-0.02em' }}>
-              {activeTab === 'monthly' ? 'Períodos de ' : 'Análise de '}
-              <span style={{ color: 'var(--primary)' }}>{activeTab === 'monthly' ? 'Atenção' : 'Padrões'}</span>
+              {activeTab === 'monthly' ? 'Períodos de ' : activeTab === 'temporal' ? 'Análise de ' : activeTab === 'safety' ? 'Gestão de ' : 'Detalhes de '}
+              <span style={{ color: 'var(--primary)' }}>
+                {activeTab === 'monthly' ? 'Atenção' : activeTab === 'temporal' ? 'Padrões' : activeTab === 'safety' ? 'Indicadores' : 'Causas'}
+              </span>
             </h2>
             <p style={{ fontSize: '0.8rem', color: 'var(--text-muted)', marginTop: '0.25rem', fontWeight: 500 }}>
-              {activeTab === 'monthly' ? `Padrões identificados na comparação ${yearsLabel.adj}` : 'Storytelling baseado em horários e dias'}
+              {activeTab === 'monthly' 
+                ? `Padrões identificados na comparação ${yearsLabel.adj}` 
+                : activeTab === 'temporal' 
+                  ? 'Storytelling baseado em horários e dias' 
+                  : activeTab === 'safety'
+                    ? 'Fatores críticos de performance de segurança'
+                    : 'Fatores causais e perfil de experiência'}
             </p>
           </div>
           
-          {(activeTab === 'monthly' ? monthlyInsights : temporalInsights).slice(0, 3).map((insight, idx) => {
+          {currentInsights.slice(0, 4).map((insight, idx) => {
             const colors = {
               danger: { bg: '#FEE2E2', text: '#EF4444', icon: <AlertCircle color="#EF4444" size={24} /> },
               warning: { bg: '#FEF3C7', text: '#F59E0B', icon: <Calendar color="#F59E0B" size={24} /> },
@@ -404,7 +488,7 @@ export const Dashboard: React.FC<DashboardProps> = ({
       </div>
 
       {/* Fourth Insight (Full Width Bottom) */}
-      {(activeTab === 'monthly' ? monthlyInsights : temporalInsights).length >= 4 && (
+      {currentInsights.length >= 4 && (
         <motion.div 
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
@@ -423,10 +507,10 @@ export const Dashboard: React.FC<DashboardProps> = ({
           </div>
           <div>
             <h3 style={{ margin: 0, fontSize: '1.2rem', fontWeight: 900, color: 'var(--primary)' }}>
-              {(activeTab === 'monthly' ? monthlyInsights : temporalInsights)[3].title}
+              {currentInsights[3].title}
             </h3>
             <p style={{ margin: '0.25rem 0 0', fontSize: '1rem', color: '#475569', fontWeight: 500 }}>
-              {(activeTab === 'monthly' ? monthlyInsights : temporalInsights)[3].text}
+              {currentInsights[3].text}
             </p>
           </div>
         </motion.div>

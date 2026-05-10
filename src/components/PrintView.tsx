@@ -1,7 +1,7 @@
 import React, { useMemo } from 'react';
-import { Printer, ArrowLeft, FileText, ShieldCheck, Clock } from 'lucide-react';
+import { Printer, ArrowLeft, FileText, ShieldCheck, Clock, Target } from 'lucide-react';
 import type { Accident } from '../types';
-import { calculateStats, generateInsights, calculateTemporalStats, generateTemporalInsights } from '../utils/dataLoader';
+import { calculateStats, generateInsights, calculateTemporalStats, generateTemporalInsights, calculateSafetyRecords } from '../utils/dataLoader';
 import { LOGO_BASE64 } from '../constants';
 
 interface PrintViewProps {
@@ -138,6 +138,7 @@ export const PrintView: React.FC<PrintViewProps> = ({
                             height: `${height}px`, 
                             background: yi === 0 ? '#B91C1C' : yi === 1 ? '#64748B' : '#0F172A',
                             borderRadius: '2px 2px 0 0',
+                            position: 'relative'
                           }}>
                             {val > 0 && <span style={{ position: 'absolute', top: '-14px', width: '100%', textAlign: 'center', fontSize: '8px', fontWeight: 900, color: '#0F172A' }}>{val}</span>}
                           </div>
@@ -246,9 +247,9 @@ export const PrintView: React.FC<PrintViewProps> = ({
                   const barHeight = (d.count / (maxVal * 1.4)) * 120;
                   return (
                     <div key={d.day} style={{ flex: 1, display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '6px' }}>
-                      <div style={{ width: '100%', height: `${barHeight}px`, background: '#3B82F6', borderRadius: '3px 3px 0 0', position: 'relative' }}>
-                        {d.count > 0 && <span style={{ position: 'absolute', top: '-16px', width: '100%', textAlign: 'center', fontSize: '9px', fontWeight: 900, color: '#3B82F6' }}>{d.count}</span>}
-                      </div>
+                        <div style={{ width: '100%', height: `${barHeight}px`, background: '#3B82F6', borderRadius: '4px 4px 0 0', position: 'relative' }}>
+                          <span style={{ position: 'absolute', top: '-18px', left: 0, right: 0, textAlign: 'center', fontSize: '10px', fontWeight: 900, color: '#3B82F6' }}>{d.count}</span>
+                        </div>
                       <span style={{ fontSize: '9px', fontWeight: 800, color: '#64748B' }}>{d.day.substring(0, 3)}</span>
                     </div>
                   );
@@ -274,8 +275,11 @@ export const PrintView: React.FC<PrintViewProps> = ({
             <div style={{ display: 'flex', alignItems: 'flex-end', height: '100px', gap: '2px' }}>
               {temporalStats.hourlyStats.map((h, i) => {
                 const maxVal = Math.max(...temporalStats.hourlyStats.map(x => x.count), 1);
+                const isPeak = h.count === maxVal && maxVal > 0;
                 return (
-                  <div key={i} style={{ flex: 1, height: `${(h.count / maxVal) * 100}%`, background: '#10B981', opacity: 0.8 }}></div>
+                  <div key={i} style={{ flex: 1, height: `${(h.count / maxVal) * 100}%`, background: isPeak ? '#B91C1C' : '#3B82F6', opacity: 0.8, position: 'relative' }}>
+                    {isPeak && <span style={{ position: 'absolute', top: '-14px', left: 0, right: 0, textAlign: 'center', fontSize: '6px', fontWeight: 900, color: '#B91C1C' }}>{h.count}</span>}
+                  </div>
                 );
               })}
             </div>
@@ -298,7 +302,199 @@ export const PrintView: React.FC<PrintViewProps> = ({
 
           <footer style={{ marginTop: 'auto', display: 'flex', justifyContent: 'space-between', alignItems: 'center', borderTop: '1px solid #E2E8F0', paddingTop: '1rem' }}>
             <div style={{ fontSize: '0.65rem', color: '#94A3B8', fontWeight: 700 }}>DOCUMENTO TÉCNICO OFICIAL</div>
-            <div style={{ fontSize: '0.65rem', fontWeight: 900 }}>PÁGINA 02 / 02</div>
+            <div style={{ fontSize: '0.65rem', fontWeight: 900 }}>PÁGINA 02 / 03</div>
+          </footer>
+        </div>
+      </div>
+
+      {/* Page 3: Safety Records */}
+      <div className="a4-portrait">
+        <header style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '1.5rem', borderBottom: '2px solid #10B981', paddingBottom: '0.75rem' }}>
+          <div style={{ display: 'flex', gap: '1rem', alignItems: 'center' }}>
+            <div style={{ background: '#10B981', padding: '0.75rem', borderRadius: '10px', color: 'white' }}>
+              <Target size={28} />
+            </div>
+            <div>
+              <h1 style={{ color: '#0F172A', fontSize: '1.5rem', fontWeight: 900, textTransform: 'uppercase', letterSpacing: '-0.02em', margin: 0 }}>Gestão de Records</h1>
+              <div style={{ fontSize: '0.75rem', color: '#64748B', fontWeight: 700 }}>Metas e Indicadores de Dias Sem Acidentes</div>
+            </div>
+          </div>
+          <img src={LOGO_BASE64} alt="Açotubo" style={{ height: '36px' }} />
+        </header>
+
+        <div style={{ display: 'flex', flexDirection: 'column', gap: '1.5rem' }}>
+          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1.5rem' }}>
+            <div style={{ background: '#0F172A', padding: '1.5rem', borderRadius: '16px', color: 'white' }}>
+               <div style={{ fontSize: '0.7rem', fontWeight: 800, opacity: 0.6, marginBottom: '0.5rem' }}>STATUS ATUAL</div>
+               <div style={{ fontSize: '3rem', fontWeight: 900 }}>{calculateSafetyRecords(filteredAccidents).currentStreak}</div>
+               <div style={{ fontSize: '0.8rem', fontWeight: 700, color: '#10B981' }}>Dias sem Acidentes</div>
+            </div>
+            <div style={{ background: '#F8FAFC', padding: '1.5rem', border: '1px solid #E2E8F0', borderRadius: '16px' }}>
+               <div style={{ fontSize: '0.7rem', fontWeight: 800, color: '#64748B', marginBottom: '0.5rem' }}>RECORDE HISTÓRICO</div>
+               <div style={{ fontSize: '3rem', fontWeight: 900, color: '#0F172A' }}>{calculateSafetyRecords(filteredAccidents).historicalRecord}</div>
+               <div style={{ fontSize: '0.8rem', fontWeight: 700, color: '#B91C1C' }}>Marca de Referência</div>
+            </div>
+          </div>
+
+          <div style={{ background: 'white', border: '1px solid #E2E8F0', padding: '1.5rem', borderRadius: '16px' }}>
+            <h3 style={{ fontSize: '0.85rem', fontWeight: 800, marginBottom: '1.25rem', color: '#0F172A', textAlign: 'center' }}>HISTÓRICO DE ESPAÇAMENTO (D.S.A)</h3>
+            {(() => {
+              const records = calculateSafetyRecords(filteredAccidents);
+              const displayIntervals = records.intervals.slice(-25);
+              const maxVal = Math.max(...records.intervals.map(x => x.days), 1);
+              
+              if (displayIntervals.length === 0) {
+                return (
+                  <div style={{ height: '200px', display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#94A3B8', fontSize: '0.75rem', fontWeight: 700, background: '#F8FAFC', borderRadius: '12px' }}>
+                    Sem histórico de registros para o período.
+                  </div>
+                );
+              }
+
+              return (
+                <div style={{ height: '200px', display: 'flex', alignItems: 'flex-end', gap: '3px', background: '#F8FAFC', padding: '12px', borderRadius: '12px' }}>
+                  {displayIntervals.map((item, i) => (
+                    <div 
+                      key={i} 
+                      style={{ 
+                        flex: 1, 
+                        background: 'linear-gradient(180deg, #10B981 0%, #059669 100%)', 
+                        height: `${Math.max(4, (item.days / maxVal) * 100)}%`, 
+                        borderRadius: '3px 3px 0 0',
+                        position: 'relative'
+                      }}
+                    >
+                      <span style={{ position: 'absolute', top: '-14px', left: 0, right: 0, textAlign: 'center', fontSize: '7px', fontWeight: 900, color: '#059669' }}>
+                        {item.days}
+                      </span>
+                    </div>
+                  ))}
+                </div>
+              );
+            })()}
+            <div style={{ textAlign: 'center', fontSize: '0.65rem', color: '#64748B', marginTop: '0.5rem', fontWeight: 700 }}>Fluxo cronológico dos intervalos entre ocorrências</div>
+          </div>
+
+          <div style={{ display: 'flex', flexDirection: 'column', gap: '0.75rem' }}>
+            <h3 style={{ fontSize: '0.9rem', fontWeight: 800, color: '#0F172A' }}>METAS E DIRETRIZES</h3>
+            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1rem' }}>
+               <div style={{ padding: '0.85rem', borderLeft: '4px solid #10B981', background: '#F0FDF4', borderRadius: '0 8px 8px 0' }}>
+                  <h4 style={{ fontSize: '0.75rem', fontWeight: 900, margin: 0 }}>Cultura Zero Acidentes</h4>
+                  <p style={{ fontSize: '0.65rem', margin: '4px 0 0' }}>A manutenção do recorde exige vigilância constante e reporte de quase-acidentes.</p>
+               </div>
+               <div style={{ padding: '0.85rem', borderLeft: '4px solid #B91C1C', background: '#FEF2F2', borderRadius: '0 8px 8px 0' }}>
+                  <h4 style={{ fontSize: '0.75rem', fontWeight: 900, margin: 0 }}>Análise de Desvio</h4>
+                  <p style={{ fontSize: '0.65rem', margin: '4px 0 0' }}>Qualquer reinicialização do contador deve ser seguida de um plano de ação robusto.</p>
+               </div>
+            </div>
+          </div>
+
+          <footer style={{ marginTop: 'auto', display: 'flex', justifyContent: 'space-between', alignItems: 'center', borderTop: '1px solid #E2E8F0', paddingTop: '1rem' }}>
+            <div style={{ fontSize: '0.65rem', color: '#94A3B8', fontWeight: 700 }}>DOCUMENTO TÉCNICO OFICIAL - GRUPO AÇOTUBO</div>
+            <div style={{ fontSize: '0.65rem', fontWeight: 900 }}>PÁGINA 03 / 04</div>
+          </footer>
+        </div>
+      </div>
+
+      {/* Page 4: Breakdown Details */}
+      <div className="a4-portrait">
+        <header style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '1.5rem', borderBottom: '2px solid #8B5CF6', paddingBottom: '0.75rem' }}>
+          <div style={{ display: 'flex', gap: '1rem', alignItems: 'center' }}>
+            <div style={{ background: '#8B5CF6', padding: '0.75rem', borderRadius: '10px', color: 'white' }}>
+              <FileText size={28} />
+            </div>
+            <div>
+              <h1 style={{ color: '#0F172A', fontSize: '1.5rem', fontWeight: 900, textTransform: 'uppercase', letterSpacing: '-0.02em', margin: 0 }}>Análise de Breakdown</h1>
+              <div style={{ fontSize: '0.75rem', color: '#64748B', fontWeight: 700 }}>Fatores Causais e Recorrência Individual</div>
+            </div>
+          </div>
+          <img src={LOGO_BASE64} alt="Açotubo" style={{ height: '36px' }} />
+        </header>
+
+        <div style={{ display: 'flex', flexDirection: 'column', gap: '1.5rem' }}>
+          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(5, 1fr)', gap: '0.75rem' }}>
+            {[
+              { label: 'Ato Inseguro', val: (filteredAccidents.filter(a => a.unsafeAct).length / Math.max(filteredAccidents.length, 1)) * 100 },
+              { label: 'Defic. M/E', val: (filteredAccidents.filter(a => a.machineDeficiency).length / Math.max(filteredAccidents.length, 1)) * 100 },
+              { label: 'Desvio Fun.', val: (filteredAccidents.filter(a => a.functionDeviation).length / Math.max(filteredAccidents.length, 1)) * 100 },
+              { label: 'Capacitado', val: (filteredAccidents.filter(a => a.hadTraining).length / Math.max(filteredAccidents.length, 1)) * 100 },
+              { label: 'EPI OK', val: (filteredAccidents.filter(a => a.usedEPI).length / Math.max(filteredAccidents.length, 1)) * 100 }
+            ].map(item => (
+              <div key={item.label} style={{ background: '#F8FAFC', padding: '0.75rem', borderRadius: '8px', textAlign: 'center', border: '1px solid #E2E8F0' }}>
+                <div style={{ fontSize: '1.1rem', fontWeight: 900, color: '#0F172A' }}>{Math.round(item.val)}%</div>
+                <div style={{ fontSize: '0.55rem', fontWeight: 800, color: '#64748B', textTransform: 'uppercase' }}>{item.label}</div>
+              </div>
+            ))}
+          </div>
+
+          {/* Paginated Accident Table */}
+          {(() => {
+            const counts = filteredAccidents.reduce((acc, a) => {
+              acc[a.employee] = (acc[a.employee] || 0) + 1;
+              return acc;
+            }, {} as Record<string, number>);
+
+            const sortedAccidents = [...filteredAccidents].sort((a, b) => {
+              if (counts[b.employee] !== counts[a.employee]) {
+                return counts[b.employee] - counts[a.employee];
+              }
+              if (a.employee !== b.employee) {
+                return a.employee.localeCompare(b.employee);
+              }
+              return b.date.getTime() - a.date.getTime();
+            });
+
+            const rowsPerPage = 14;
+            const pages = [];
+            for (let i = 0; i < sortedAccidents.length; i += rowsPerPage) {
+              pages.push(sortedAccidents.slice(i, i + rowsPerPage));
+            }
+
+            return pages.map((pageAccidents, pageIdx) => (
+              <div key={pageIdx} style={{ display: 'flex', flexDirection: 'column', gap: '1rem', marginTop: pageIdx > 0 ? '2rem' : 0 }}>
+                {pageIdx > 0 && <div style={{ borderTop: '1px dashed #E2E8F0', paddingBottom: '1rem' }} />}
+                <h3 style={{ fontSize: '0.85rem', fontWeight: 800, color: '#0F172A', textTransform: 'uppercase' }}>
+                  Detalhamento de Ocorrências {pages.length > 1 && `(Parte ${pageIdx + 1})`}
+                </h3>
+                <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '0.65rem' }}>
+                  <thead>
+                    <tr style={{ textAlign: 'left', borderBottom: '2px solid #F1F5F9' }}>
+                      <th style={{ padding: '6px' }}>DATA</th>
+                      <th style={{ padding: '6px' }}>COLABORADOR / CARGO</th>
+                      <th style={{ padding: '6px' }}>RE</th>
+                      <th style={{ padding: '6px', textAlign: 'center' }}>FREQ.</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {pageAccidents.map((a, idx) => (
+                      <tr key={idx} style={{ borderBottom: '1px solid #F1F5F9' }}>
+                        <td style={{ padding: '6px', fontWeight: 700 }}>{a.date.toLocaleDateString('pt-BR')}</td>
+                        <td style={{ padding: '6px' }}>
+                          <div style={{ fontWeight: 800, color: counts[a.employee] > 1 ? '#B91C1C' : 'inherit' }}>{a.employee}</div>
+                          <div style={{ fontSize: '0.55rem', color: '#64748B' }}>{a.role}</div>
+                        </td>
+                        <td style={{ padding: '6px' }}>{a.re}</td>
+                        <td style={{ padding: '6px', textAlign: 'center' }}>
+                          <span style={{ fontWeight: 900, color: counts[a.employee] > 1 ? '#B91C1C' : '#64748B' }}>{counts[a.employee]}</span>
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+            ));
+          })()}
+
+          <div style={{ background: '#F8FAFC', padding: '1.25rem', borderRadius: '16px', border: '1px solid #E2E8F0', marginTop: 'auto' }}>
+             <h3 style={{ fontSize: '0.85rem', fontWeight: 800, marginBottom: '0.75rem', color: '#0F172A' }}>PERFIL DE EXPERIÊNCIA</h3>
+             <div style={{ fontSize: '0.7rem', color: '#475569', lineHeight: 1.5 }}>
+               Média de tempo de casa: **{(filteredAccidents.reduce((sum, a) => sum + (a.experienceYears + a.experienceMonths/12), 0) / Math.max(filteredAccidents.length, 1)).toFixed(1)} anos**.
+             </div>
+          </div>
+
+          <footer style={{ marginTop: 'auto', display: 'flex', justifyContent: 'space-between', alignItems: 'center', borderTop: '1px solid #E2E8F0', paddingTop: '1rem' }}>
+            <div style={{ fontSize: '0.65rem', color: '#94A3B8', fontWeight: 700 }}>DOCUMENTO TÉCNICO OFICIAL - GRUPO AÇOTUBO</div>
+            <div style={{ fontSize: '0.65rem', fontWeight: 900 }}>PÁGINA 04 / 04</div>
           </footer>
         </div>
       </div>

@@ -1,7 +1,7 @@
 import React from 'react';
-import { Printer, ArrowLeft, Clock, ShieldCheck, FileText } from 'lucide-react';
+import { Printer, ArrowLeft, Clock, ShieldCheck, FileText, Target } from 'lucide-react';
 import type { Accident } from '../types';
-import { calculateStats, generateInsights, calculateTemporalStats, generateTemporalInsights } from '../utils/dataLoader';
+import { calculateStats, generateInsights, calculateTemporalStats, generateTemporalInsights, calculateSafetyRecords } from '../utils/dataLoader';
 import { LOGO_BASE64 } from '../constants';
 
 interface BatchPrintViewProps {
@@ -178,9 +178,9 @@ const ReportPage: React.FC<{ accidents: Accident[], years: number[], unit: strin
                    const barHeight = (d.count / (maxVal * 1.4)) * 110;
                    return (
                      <div key={d.day} style={{ flex: 1, display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '6px' }}>
-                       <div style={{ width: '100%', height: `${barHeight}px`, background: '#3B82F6', borderRadius: '3px 3px 0 0', position: 'relative' }}>
-                         {d.count > 0 && <span style={{ position: 'absolute', top: '-16px', left: 0, right: 0, textAlign: 'center', fontSize: '9px', fontWeight: 900, color: '#3B82F6' }}>{d.count}</span>}
-                       </div>
+                        <div style={{ width: '100%', height: `${barHeight}px`, background: '#3B82F6', borderRadius: '3px 3px 0 0', position: 'relative' }}>
+                          <span style={{ position: 'absolute', top: '-16px', left: 0, right: 0, textAlign: 'center', fontSize: '9px', fontWeight: 900, color: '#3B82F6' }}>{d.count}</span>
+                        </div>
                        <span style={{ fontSize: '9px', fontWeight: 800, color: '#64748B' }}>{d.day.substring(0, 3)}</span>
                      </div>
                    );
@@ -203,11 +203,14 @@ const ReportPage: React.FC<{ accidents: Accident[], years: number[], unit: strin
 
           <div style={{ background: 'white', border: '1px solid #E2E8F0', padding: '1.25rem', borderRadius: '16px' }}>
             <h4 style={{ fontSize: '0.85rem', fontWeight: 800, marginBottom: '1.25rem', textAlign: 'center', color: '#64748B' }}>FLUXO 24H</h4>
-            <div style={{ display: 'flex', alignItems: 'flex-end', height: '80px', gap: '2px' }}>
+            <div style={{ display: 'flex', alignItems: 'flex-end', height: '80px', gap: '2px', position: 'relative', paddingTop: '20px' }}>
               {temporalStats.hourlyStats.map((h, i) => {
                 const maxVal = Math.max(...temporalStats.hourlyStats.map(x => x.count), 1);
+                const isPeak = h.count === maxVal && h.count > 0;
                 return (
-                  <div key={i} style={{ flex: 1, height: `${(h.count / maxVal) * 100}%`, background: '#10B981', opacity: 0.8 }}></div>
+                  <div key={i} style={{ flex: 1, height: `${(h.count / maxVal) * 100}%`, background: isPeak ? '#B91C1C' : '#10B981', opacity: 0.8, position: 'relative' }}>
+                    {isPeak && <span style={{ position: 'absolute', top: '-14px', left: 0, right: 0, textAlign: 'center', fontSize: '6px', fontWeight: 900, color: '#B91C1C' }}>{h.count}</span>}
+                  </div>
                 );
               })}
             </div>
@@ -234,6 +237,202 @@ const ReportPage: React.FC<{ accidents: Accident[], years: number[], unit: strin
           <span>DOCUMENTO OFICIAL GRUPO AÇOTUBO</span>
         </footer>
       </div>
+
+      {/* Page 3: Safety Records */}
+      <div className="a4-portrait" style={{ pageBreakAfter: 'always', display: 'flex', flexDirection: 'column' }}>
+        <header style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '1.5rem', borderBottom: '2px solid #10B981', paddingBottom: '0.75rem' }}>
+          <div style={{ display: 'flex', gap: '1rem', alignItems: 'center' }}>
+            <div style={{ background: '#10B981', padding: '0.75rem', borderRadius: '10px', color: 'white' }}>
+              <Target size={28} />
+            </div>
+            <div>
+              <h1 style={{ color: '#0F172A', fontSize: '1.5rem', fontWeight: 900, textTransform: 'uppercase', letterSpacing: '-0.02em', margin: 0 }}>Gestão de Records</h1>
+              <div style={{ fontSize: '0.75rem', color: '#64748B', fontWeight: 700 }}>Metas e Indicadores de Dias Sem Acidentes</div>
+            </div>
+          </div>
+          <img src={LOGO_BASE64} alt="Açotubo" style={{ height: '36px' }} />
+        </header>
+
+        <div style={{ display: 'flex', flexDirection: 'column', gap: '1.5rem' }}>
+          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1.5rem' }}>
+            <div style={{ background: '#0F172A', padding: '1.5rem', borderRadius: '16px', color: 'white' }}>
+               <div style={{ fontSize: '0.7rem', fontWeight: 800, opacity: 0.6, marginBottom: '0.5rem' }}>STATUS ATUAL</div>
+               <div style={{ fontSize: '3rem', fontWeight: 900 }}>{calculateSafetyRecords(accidents).currentStreak}</div>
+               <div style={{ fontSize: '0.8rem', fontWeight: 700, color: '#10B981' }}>Dias sem Acidentes</div>
+            </div>
+            <div style={{ background: '#F8FAFC', padding: '1.5rem', border: '1px solid #E2E8F0', borderRadius: '16px' }}>
+               <div style={{ fontSize: '0.7rem', fontWeight: 800, color: '#64748B', marginBottom: '0.5rem' }}>RECORDE HISTÓRICO</div>
+               <div style={{ fontSize: '3rem', fontWeight: 900, color: '#0F172A' }}>{calculateSafetyRecords(accidents).historicalRecord}</div>
+               <div style={{ fontSize: '0.8rem', fontWeight: 700, color: '#B91C1C' }}>Marca de Referência</div>
+            </div>
+          </div>
+
+          <div style={{ background: 'white', border: '1px solid #E2E8F0', padding: '1.5rem', borderRadius: '16px' }}>
+            <h3 style={{ fontSize: '0.85rem', fontWeight: 800, marginBottom: '1.25rem', color: '#0F172A', textAlign: 'center' }}>ESPAÇAMENTO MÉDIO ENTRE OCORRÊNCIAS</h3>
+            {(() => {
+              const records = calculateSafetyRecords(accidents);
+              const displayIntervals = records.intervals.slice(-20);
+              const maxVal = Math.max(...records.intervals.map(x => x.days), 1);
+              
+              if (displayIntervals.length === 0) {
+                return (
+                  <div style={{ height: '180px', display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#94A3B8', fontSize: '0.7rem', fontWeight: 700, background: '#F8FAFC', borderRadius: '12px' }}>
+                    Dados insuficientes para gerar histórico de records.
+                  </div>
+                );
+              }
+
+              return (
+                <div style={{ height: '180px', display: 'flex', alignItems: 'flex-end', gap: '4px', background: '#F8FAFC', padding: '10px', borderRadius: '12px' }}>
+                  {displayIntervals.map((item, i) => (
+                      <div 
+                        key={i} 
+                        style={{ 
+                          flex: 1, 
+                          background: 'linear-gradient(180deg, #10B981 0%, #059669 100%)', 
+                          height: `${Math.max(5, (item.days / maxVal) * 100)}%`, 
+                          borderRadius: '4px 4px 0 0',
+                          position: 'relative'
+                        }}
+                      >
+                        <span style={{ position: 'absolute', top: '-14px', left: 0, right: 0, textAlign: 'center', fontSize: '7px', fontWeight: 900, color: '#059669' }}>
+                          {item.days}
+                        </span>
+                      </div>
+                  ))}
+                </div>
+              );
+            })()}
+            <div style={{ textAlign: 'center', fontSize: '0.6rem', color: '#64748B', marginTop: '0.75rem', fontWeight: 700 }}>Intervalos de dias sem acidentes entre cada ocorrência</div>
+          </div>
+
+          <div style={{ padding: '1rem', background: '#F0F9FF', borderRadius: '12px', border: '1px solid #BAE6FD' }}>
+             <h4 style={{ fontSize: '0.75rem', fontWeight: 900, color: '#0369A1', marginBottom: '0.25rem' }}>Compromisso com a Vida</h4>
+             <p style={{ fontSize: '0.65rem', color: '#0369A1', lineHeight: 1.4 }}>Este indicador reflete o sucesso das barreiras de prevenção implementadas na unidade. O objetivo é a superação contínua do recorde histórico.</p>
+          </div>
+        </div>
+
+        <footer style={{ marginTop: 'auto', display: 'flex', justifyContent: 'space-between', fontSize: '0.65rem', color: '#94A3B8', fontWeight: 600 }}>
+          <span>Página {pageNum + 2}</span>
+          <span>© GRUPO AÇOTUBO - DOCUMENTO OFICIAL</span>
+        </footer>
+      </div>
+
+      {/* Combined Breakdown Summary + Detailed List */}
+      {(() => {
+        const counts = accidents.reduce((acc, a) => {
+          acc[a.employee] = (acc[a.employee] || 0) + 1;
+          return acc;
+        }, {} as Record<string, number>);
+
+        const sortedAccidents = [...accidents].sort((a, b) => {
+          if (counts[b.employee] !== counts[a.employee]) {
+            return counts[b.employee] - counts[a.employee];
+          }
+          if (a.employee !== b.employee) {
+            return a.employee.localeCompare(b.employee);
+          }
+          return b.date.getTime() - a.date.getTime();
+        });
+
+        // Rows for the first page (with summary cards)
+        const rowsFirstPage = 8;
+        const rowsSubsequentPages = 15;
+        
+        const pages = [];
+        if (sortedAccidents.length > 0) {
+          pages.push(sortedAccidents.slice(0, rowsFirstPage));
+          for (let i = rowsFirstPage; i < sortedAccidents.length; i += rowsSubsequentPages) {
+            pages.push(sortedAccidents.slice(i, i + rowsSubsequentPages));
+          }
+        } else {
+          // Even if no accidents, show the summary page
+          pages.push([]);
+        }
+
+        return pages.map((pageAccidents, pageIdx) => (
+          <div key={pageIdx} className="a4-portrait" style={{ pageBreakAfter: 'always', display: 'flex', flexDirection: 'column' }}>
+            <header style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '1.5rem', borderBottom: '2px solid #8B5CF6', paddingBottom: '0.75rem' }}>
+              <div style={{ display: 'flex', gap: '1rem', alignItems: 'center' }}>
+                <div style={{ background: '#8B5CF6', padding: '0.75rem', borderRadius: '10px', color: 'white' }}>
+                  <FileText size={28} />
+                </div>
+                <div>
+                  <h1 style={{ color: '#0F172A', fontSize: '1.5rem', fontWeight: 900, textTransform: 'uppercase', letterSpacing: '-0.02em', margin: 0 }}>Breakdown de Causas</h1>
+                  <div style={{ fontSize: '0.75rem', color: '#64748B', fontWeight: 700 }}>{pageIdx === 0 ? 'Análise Detalhada de Fatores e Comportamento' : `Detalhamento de Ocorrências - Parte ${pageIdx + 1}`}</div>
+                </div>
+              </div>
+              <img src={LOGO_BASE64} alt="Açotubo" style={{ height: '36px' }} />
+            </header>
+
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '1.5rem', flex: 1 }}>
+              {pageIdx === 0 && (
+                <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '1rem' }}>
+                  {[
+                    { label: 'Ato Inseguro', val: (accidents.filter(a => a.unsafeAct).length / Math.max(accidents.length, 1)) * 100 },
+                    { label: 'Deficiência M/E', val: (accidents.filter(a => a.machineDeficiency).length / Math.max(accidents.length, 1)) * 100 },
+                    { label: 'Desvio Função', val: (accidents.filter(a => a.functionDeviation).length / Math.max(accidents.length, 1)) * 100 }
+                  ].map(item => (
+                    <div key={item.label} style={{ background: '#F8FAFC', padding: '1rem', borderRadius: '12px', textAlign: 'center', border: '1px solid #E2E8F0' }}>
+                      <div style={{ fontSize: '1.25rem', fontWeight: 900, color: '#0F172A' }}>{Math.round(item.val)}%</div>
+                      <div style={{ fontSize: '0.6rem', fontWeight: 800, color: '#64748B', textTransform: 'uppercase' }}>{item.label}</div>
+                    </div>
+                  ))}
+                </div>
+              )}
+
+              {pageAccidents.length > 0 && (
+                <div style={{ flex: 1 }}>
+                  <h3 style={{ fontSize: '0.85rem', fontWeight: 800, color: '#0F172A', textTransform: 'uppercase', marginBottom: '0.75rem' }}>
+                    {pageIdx === 0 ? 'OCORRÊNCIAS REGISTRADAS' : 'CONTINUAÇÃO DAS OCORRÊNCIAS'}
+                  </h3>
+                  <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '0.65rem' }}>
+                    <thead>
+                      <tr style={{ textAlign: 'left', borderBottom: '2px solid #F1F5F9', background: '#F8FAFC' }}>
+                        <th style={{ padding: '8px' }}>DATA</th>
+                        <th style={{ padding: '8px' }}>COLABORADOR / CARGO</th>
+                        <th style={{ padding: '8px' }}>RE</th>
+                        <th style={{ padding: '8px', textAlign: 'center' }}>FREQ.</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {pageAccidents.map((a, idx) => (
+                        <tr key={idx} style={{ borderBottom: '1px solid #F1F5F9' }}>
+                          <td style={{ padding: '8px', fontWeight: 700 }}>{a.date.toLocaleDateString('pt-BR')}</td>
+                          <td style={{ padding: '8px' }}>
+                            <div style={{ fontWeight: 800, color: counts[a.employee] > 1 ? '#B91C1C' : '#1E293B' }}>{a.employee}</div>
+                            <div style={{ fontSize: '0.6rem', color: '#64748B', fontWeight: 600 }}>{a.role}</div>
+                          </td>
+                          <td style={{ padding: '8px' }}>{a.re}</td>
+                          <td style={{ padding: '8px', textAlign: 'center' }}>
+                            <div style={{ background: counts[a.employee] > 1 ? '#FEE2E2' : '#F1F5F9', color: counts[a.employee] > 1 ? '#B91C1C' : '#64748B', padding: '3px 8px', borderRadius: '10px', display: 'inline-block', fontWeight: 900 }}>
+                              {counts[a.employee]}
+                            </div>
+                          </td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
+              )}
+
+              {pageIdx === pages.length - 1 && (
+                <div style={{ marginTop: 'auto', padding: '1.25rem', background: '#F5F3FF', borderRadius: '16px', border: '1px solid #DDD6FE' }}>
+                  <h4 style={{ fontSize: '0.85rem', fontWeight: 900, color: '#5B21B6', marginBottom: '0.5rem' }}>Análise Consolidada</h4>
+                  <p style={{ fontSize: '0.7rem', color: '#5B21B6', lineHeight: 1.5 }}>
+                    Média de experiência dos envolvidos: **{(accidents.reduce((sum, a) => sum + (a.experienceYears + a.experienceMonths/12), 0) / Math.max(accidents.length, 1)).toFixed(1)} anos**. Relatório gerado para fins de auditoria interna SESMT.
+                  </p>
+                </div>
+              )}
+            </div>
+
+            <footer style={{ marginTop: '1rem', display: 'flex', justifyContent: 'space-between', fontSize: '0.65rem', color: '#94A3B8', fontWeight: 600 }}>
+              <span>Página {pageNum + 3 + pageIdx}</span>
+              <span>© GRUPO AÇOTUBO - DOCUMENTO OFICIAL</span>
+            </footer>
+          </div>
+        ));
+      })()}
     </div>
   );
 };
@@ -334,7 +533,7 @@ export const BatchPrintView: React.FC<BatchPrintViewProps> = ({ accidents, confi
                           <td style={{ padding: '0.6rem', textAlign: 'center', fontWeight: 700 }}>{item.total}</td>
                           <td style={{ padding: '0.6rem', textAlign: 'center', fontWeight: 900, color: 'var(--primary)' }}>{item.lostDays}</td>
                           <td style={{ padding: '0.6rem', textAlign: 'center', fontWeight: 700, color: '#3B82F6', textTransform: 'uppercase' }}>{item.peakPeriod}</td>
-                          <td style={{ padding: '0.6rem', textAlign: 'right', fontWeight: 900, color: '#94A3B8' }}>P. {(originalIdx * 3) + chunks.length + 1}</td>
+                          <td style={{ padding: '0.6rem', textAlign: 'right', fontWeight: 900, color: '#94A3B8' }}>P. {(originalIdx * 4) + chunks.length + 1}</td>
                         </tr>
                       );
                     })}
@@ -386,7 +585,7 @@ export const BatchPrintView: React.FC<BatchPrintViewProps> = ({ accidents, confi
               years={config.years} 
               unit={config.unit} 
               area={config.area} 
-              pageNum={(idx * 3) + summaryPages + 1} 
+              pageNum={(idx * 4) + summaryPages + 1} 
             />
           );
         })}

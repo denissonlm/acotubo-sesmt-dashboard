@@ -65,7 +65,23 @@ export const parseAccidentData = (data: ArrayBuffer): Accident[] => {
         area: row['Área'],
         type: row['Tipo'],
         lostDays: Number(row['Dias Perdidos'] || 0),
-        partAffected: row['Parte Atingida']
+        partAffected: row['Parte Atingida'],
+        experienceYears: Number(row['Experiência Anos'] || 0),
+        experienceMonths: Number(row['Experiência Meses'] || 0),
+        unsafeAct: String(row['Ato inseguro?'] || '').toUpperCase() === 'SIM',
+        machineDeficiency: String(row['Deficiência de M/E'] || '').toUpperCase() === 'SIM',
+        functionDeviation: String(row['Desvio de Função'] || '').toUpperCase() === 'SIM',
+        hadTraining: String(row['Havia capacitação?'] || '').toUpperCase() === 'SIM',
+        usedEPI: String(row['Utilizava EPI?'] || '').toUpperCase() === 'SIM',
+        investigationLink: row['Link'],
+        role: (() => {
+          const keys = Object.keys(row);
+          const roleKey = keys.find(k => {
+            const normalized = k.trim().toUpperCase();
+            return normalized.includes('CARGO') || normalized.includes('FUNÇÃO') || normalized.includes('FUNCAO');
+          });
+          return roleKey ? String(row[roleKey]) : 'N/A';
+        })()
       };
     }).filter(acc => !isNaN(acc.year));
   } catch (error) {
@@ -271,4 +287,90 @@ export const generateTemporalInsights = (accidents: Accident[]): Insight[] => {
   }
 
   return insights.slice(0, 4);
+};
+
+export const calculateSafetyRecords = (accidents: Accident[]) => {
+  if (accidents.length === 0) {
+    return {
+      currentStreak: 0,
+      historicalRecord: 0,
+      lastAccidentDate: null,
+      intervals: []
+    };
+  }
+
+  const sorted = [...accidents].sort((a, b) => a.date.getTime() - b.date.getTime());
+  const today = new Date();
+  today.setHours(0, 0, 0, 0);
+
+  const lastAccident = sorted[sorted.length - 1];
+  const lastAccidentDate = new Date(lastAccident.date);
+  lastAccidentDate.setHours(0, 0, 0, 0);
+
+  const diffTime = today.getTime() - lastAccidentDate.getTime();
+  const diffDays = Math.floor(diffTime / (1000 * 60 * 60 * 24));
+  
+  // Rule: Today - LastDate - 1. If today, result 0.
+  let currentStreak = Math.max(0, diffDays - 1);
+  if (diffDays === 0) currentStreak = 0;
+
+  let historicalRecord = currentStreak;
+  const intervals: { date: Date, days: number }[] = [];
+
+  for (let i = 1; i < sorted.length; i++) {
+    const d1 = new Date(sorted[i-1].date);
+    d1.setHours(0, 0, 0, 0);
+    const d2 = new Date(sorted[i].date);
+    d2.setHours(0, 0, 0, 0);
+    
+    const interval = Math.floor((d2.getTime() - d1.getTime()) / (1000 * 60 * 60 * 24)) - 1;
+    const cleanInterval = Math.max(0, interval);
+    
+    intervals.push({ date: d2, days: cleanInterval });
+    if (cleanInterval > historicalRecord) {
+      historicalRecord = cleanInterval;
+    }
+  }
+
+  return {
+    currentStreak,
+    historicalRecord,
+    lastAccidentDate: lastAccident.date,
+    intervals
+  };
+};
+
+export const generateSafetyInsights = (accidents: Accident[]): Insight[] => {
+  const records = calculateSafetyRecords(accidents);
+  const insights: Insight[] = [];
+
+  if (records.currentStreak > records.historicalRecord * 0.8 && records.currentStreak < records.historicalRecord) {
+    insights.push({
+      title: 'Próximo ao Recorde',
+      text: `Estamos a apenas ${records.historicalRecord - records.currentStreak} dias de superar nosso recorde histórico de segurança. Mantenha o foco!`,
+      type: 'success'
+    });
+  }
+
+  if (records.currentStreak === 0) {
+    insights.push({
+      title: 'Alerta de Reinicialização',
+      text: 'Ocorreu um acidente recentemente. Realize a análise de causa raiz e compartilhe as lições aprendidas imediatamente.',
+      type: 'danger'
+    });
+  }
+
+  const avgInterval = records.intervals.length > 0 
+    ? Math.round(records.intervals.reduce((sum, i) => sum + i.days, 0) / records.intervals.length)
+    : 0;
+
+  if (avgInterval > 0) {
+    insights.push({
+      title: 'Espaçamento Médio',
+      text: `O tempo médio entre ocorrências é de ${avgInterval} dias. Nosso objetivo é aumentar este intervalo continuamente.`,
+      type: 'info'
+    });
+  }
+
+  return insights;
 };

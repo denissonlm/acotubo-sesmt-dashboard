@@ -15,6 +15,15 @@ export interface Accident {
   type: string;
   lostDays: number;
   partAffected: string;
+  experienceYears: number;
+  experienceMonths: number;
+  unsafeAct: boolean;
+  machineDeficiency: boolean;
+  functionDeviation: boolean;
+  hadTraining: boolean;
+  usedEPI: boolean;
+  investigationLink?: string;
+  role: string;
 }
 
 export interface MonthlyStats {
