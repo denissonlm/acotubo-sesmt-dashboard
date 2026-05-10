@@ -13,8 +13,14 @@ interface PrintViewProps {
 const MONTH_NAMES = ['Jan', 'Fev', 'Mar', 'Abr', 'Mai', 'Jun', 'Jul', 'Ago', 'Set', 'Out', 'Nov', 'Dez'];
 
 export const PrintView: React.FC<PrintViewProps> = ({ accidents, selectedYears, onBack }) => {
-  const stats = useMemo(() => calculateStats(accidents, selectedYears), [accidents, selectedYears]);
-  const insights = useMemo(() => generateInsights(accidents, selectedYears), [accidents, selectedYears]);
+  const filteredAccidents = useMemo(() => {
+    return accidents.filter(a => selectedYears.includes(a.year));
+  }, [accidents, selectedYears]);
+
+  const stats = useMemo(() => calculateStats(filteredAccidents, selectedYears), [filteredAccidents, selectedYears]);
+  const insights = useMemo(() => generateInsights(filteredAccidents, selectedYears), [filteredAccidents, selectedYears]);
+  const temporalStats = useMemo(() => calculateTemporalStats(filteredAccidents), [filteredAccidents]);
+  const temporalInsights = useMemo(() => generateTemporalInsights(filteredAccidents), [filteredAccidents]);
 
   const getHeatmapColor = (count: number) => {
     if (count === 0) return '#F8FAFC';
@@ -54,7 +60,7 @@ export const PrintView: React.FC<PrintViewProps> = ({ accidents, selectedYears, 
         </button>
       </div>
 
-      <div className="a4-landscape">
+      <div className="a4-landscape" style={{ pageBreakAfter: 'always' }}>
         <header style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '2rem', borderBottom: '2px solid #B91C1C', paddingBottom: '1rem' }}>
           <div style={{ display: 'flex', gap: '1.5rem', alignItems: 'center' }}>
             <div style={{ background: '#B91C1C', padding: '1rem', borderRadius: '12px', color: 'white' }}>
@@ -215,7 +221,7 @@ export const PrintView: React.FC<PrintViewProps> = ({ accidents, selectedYears, 
       </div>
 
       {/* Page 2: Temporal Analysis */}
-      <div className="a4-landscape" style={{ marginTop: '4rem' }}>
+      <div className="a4-landscape">
         <header style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '2rem', borderBottom: '2px solid #3B82F6', paddingBottom: '1rem' }}>
           <div style={{ display: 'flex', gap: '1.5rem', alignItems: 'center' }}>
             <div style={{ background: '#3B82F6', padding: '1rem', borderRadius: '12px', color: 'white' }}>
@@ -242,7 +248,7 @@ export const PrintView: React.FC<PrintViewProps> = ({ accidents, selectedYears, 
               <h3 style={{ fontSize: '1rem', fontWeight: 800, marginBottom: '1.5rem', color: '#0F172A', textAlign: 'center' }}>DISTRIBUIÇÃO POR <span style={{ color: '#3B82F6' }}>PERÍODO DO DIA</span></h3>
               <div style={{ display: 'flex', justifyContent: 'center', gap: '3rem', alignItems: 'center' }}>
                 <div style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
-                  {calculateTemporalStats(accidents).periodStats.map(p => (
+                  {temporalStats.periodStats.map(p => (
                     <div key={p.period} style={{ display: 'flex', alignItems: 'center', gap: '1rem' }}>
                       <div style={{ width: '12px', height: '12px', borderRadius: '3px', background: p.color }}></div>
                       <div style={{ width: '80px', fontSize: '0.8rem', fontWeight: 700 }}>{p.period}</div>
@@ -252,7 +258,7 @@ export const PrintView: React.FC<PrintViewProps> = ({ accidents, selectedYears, 
                 </div>
                 <div style={{ height: '150px', width: '2px', background: '#F1F5F9' }}></div>
                 <div style={{ textAlign: 'center' }}>
-                  <div style={{ fontSize: '3rem', fontWeight: 900, color: '#0F172A' }}>{accidents.length}</div>
+                  <div style={{ fontSize: '3rem', fontWeight: 900, color: '#0F172A' }}>{filteredAccidents.length}</div>
                   <div style={{ fontSize: '0.7rem', fontWeight: 800, color: '#64748B' }}>TOTAL DE OCORRÊNCIAS</div>
                 </div>
               </div>
@@ -261,8 +267,8 @@ export const PrintView: React.FC<PrintViewProps> = ({ accidents, selectedYears, 
             <div style={{ background: 'white', border: '1px solid #E2E8F0', padding: '1.5rem', borderRadius: '16px' }}>
               <h3 style={{ fontSize: '1rem', fontWeight: 800, marginBottom: '1.5rem', color: '#0F172A', textAlign: 'center' }}>INCIDÊNCIA POR <span style={{ color: '#3B82F6' }}>DIA DA SEMANA</span></h3>
               <div style={{ display: 'flex', alignItems: 'flex-end', height: '120px', gap: '12px', paddingBottom: '20px' }}>
-                {calculateTemporalStats(accidents).dayOfWeekStats.map(d => {
-                  const maxVal = Math.max(...calculateTemporalStats(accidents).dayOfWeekStats.map(x => x.count), 1);
+                {temporalStats.dayOfWeekStats.map(d => {
+                  const maxVal = Math.max(...temporalStats.dayOfWeekStats.map(x => x.count), 1);
                   return (
                     <div key={d.day} style={{ flex: 1, display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '8px' }}>
                       <div style={{ width: '100%', height: `${(d.count / maxVal) * 100}px`, background: '#3B82F6', borderRadius: '4px 4px 0 0', position: 'relative' }}>
@@ -281,8 +287,8 @@ export const PrintView: React.FC<PrintViewProps> = ({ accidents, selectedYears, 
             <div style={{ background: 'white', border: '1px solid #E2E8F0', padding: '1.5rem', borderRadius: '16px' }}>
               <h3 style={{ fontSize: '1rem', fontWeight: 800, marginBottom: '1.25rem', color: '#0F172A', textAlign: 'center' }}>FLUXO <span style={{ color: '#3B82F6' }}>HORÁRIO (24H)</span></h3>
               <div style={{ display: 'flex', alignItems: 'flex-end', height: '80px', gap: '2px' }}>
-                {calculateTemporalStats(accidents).hourlyStats.map((h, i) => {
-                  const maxVal = Math.max(...calculateTemporalStats(accidents).hourlyStats.map(x => x.count), 1);
+                {temporalStats.hourlyStats.map((h, i) => {
+                  const maxVal = Math.max(...temporalStats.hourlyStats.map(x => x.count), 1);
                   return (
                     <div key={i} style={{ flex: 1, height: `${(h.count / maxVal) * 100}%`, background: '#10B981', opacity: 0.8 }}></div>
                   );
@@ -299,7 +305,7 @@ export const PrintView: React.FC<PrintViewProps> = ({ accidents, selectedYears, 
 
             <div style={{ display: 'flex', flexDirection: 'column', gap: '0.75rem' }}>
               <div style={{ fontSize: '0.7rem', fontWeight: 900, color: '#64748B', letterSpacing: '0.1em', textTransform: 'uppercase' }}>Análise de Segurança</div>
-              {generateTemporalInsights(accidents).map((insight, idx) => {
+              {temporalInsights.map((insight, idx) => {
                 const styles = {
                   danger: { bg: '#FFF1F2', border: '#FDA4AF', text: '#9F1239' },
                   warning: { bg: '#FFFBEB', border: '#FDE68A', text: '#92400E' },

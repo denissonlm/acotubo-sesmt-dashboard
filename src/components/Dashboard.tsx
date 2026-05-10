@@ -2,7 +2,7 @@ import React, { useMemo } from 'react';
 import { 
   BarChart, Bar, XAxis, YAxis, Tooltip, Legend, ResponsiveContainer
 } from 'recharts';
-import { AlertCircle, TrendingUp, Calendar, Filter as FilterIcon, Upload, Printer, ShieldCheck, Layers } from 'lucide-react';
+import { AlertCircle, TrendingUp, Calendar, Printer, ShieldCheck, Layers, Upload } from 'lucide-react';
 import type { Accident } from '../types';
 import { calculateStats, generateInsights, generateTemporalInsights } from '../utils/dataLoader';
 import { motion } from 'framer-motion';
@@ -28,12 +28,13 @@ export const Dashboard: React.FC<DashboardProps> = ({ accidents, selectedYears, 
 
   const filteredAccidents = useMemo(() => {
     return accidents.filter(a => {
+      const matchesYear = selectedYears.includes(a.year);
       const matchesDivision = filterDivision === 'ALL' || a.division === filterDivision;
       const matchesManager = filterManager === 'ALL' || a.manager === filterManager;
       const matchesArea = filterArea === 'ALL' || a.area === filterArea;
-      return matchesDivision && matchesManager && matchesArea;
+      return matchesYear && matchesDivision && matchesManager && matchesArea;
     });
-  }, [accidents, filterDivision, filterManager, filterArea]);
+  }, [accidents, selectedYears, filterDivision, filterManager, filterArea]);
 
   const stats = useMemo(() => {
     return calculateStats(filteredAccidents, selectedYears);
@@ -73,115 +74,136 @@ export const Dashboard: React.FC<DashboardProps> = ({ accidents, selectedYears, 
 
   return (
     <div className="dashboard">
-      <header className="header no-print">
-        <div style={{ display: 'flex', alignItems: 'center', gap: '2rem' }}>
-          <img src={LOGO_BASE64} alt="Açotubo" style={{ height: '56px', objectFit: 'contain' }} />
-          <div style={{ height: '40px', width: '2px', background: 'rgba(255,255,255,0.2)' }}></div>
+      <header className="header no-print" style={{ padding: '0.75rem 2rem' }}>
+        <div style={{ display: 'flex', alignItems: 'center', gap: '1.5rem' }}>
+          <div style={{ background: 'linear-gradient(135deg, #B91C1C 0%, #7F1D1D 100%)', padding: '0.75rem', borderRadius: '0.75rem', boxShadow: '0 4px 12px rgba(185, 28, 28, 0.2)' }}>
+            <img src={LOGO_BASE64} alt="Logo" style={{ height: '32px', filter: 'brightness(0) invert(1)' }} />
+          </div>
           <div>
-            <h1 style={{ fontSize: '1.75rem' }}>Relatório Trienal de Estatística</h1>
-            <p style={{ fontSize: '0.9rem', fontWeight: 600, opacity: 0.9 }}>Grupo Açotubo • Gestão SESMT</p>
+            <h1 style={{ fontSize: '1.4rem', margin: 0, fontWeight: 900 }}>Trienal de Acidentes</h1>
+            <p style={{ margin: 0, fontSize: '0.8rem', fontWeight: 600, opacity: 0.8 }}>Grupo Açotubo</p>
           </div>
         </div>
-        <div style={{ display: 'flex', gap: '1rem' }}>
-          <div className="filter-group">
-            <label style={{ color: 'white' }}>Filtrar por Ano(s)</label>
-            <div style={{ display: 'flex', gap: '0.4rem', flexWrap: 'wrap' }}>
-              {allAvailableYears.map(year => (
-                <button
-                  key={year}
-                  onClick={() => {
-                    const newYears = selectedYears.includes(year)
-                      ? selectedYears.filter(y => y !== year)
-                      : [...selectedYears, year];
-                    onYearsChange(newYears.sort((a, b) => a - b));
-                  }}
-                  style={{
-                    padding: '0.4rem 0.8rem',
-                    borderRadius: '8px',
-                    border: '1px solid rgba(255,255,255,0.3)',
-                    background: selectedYears.includes(year) ? 'white' : 'transparent',
-                    color: selectedYears.includes(year) ? 'var(--primary)' : 'white',
-                    fontSize: '0.8rem',
-                    fontWeight: 800,
-                    cursor: 'pointer',
-                    transition: 'all 0.2s'
-                  }}
-                >
-                  {year}
-                </button>
-              ))}
-            </div>
+
+        <div style={{ flex: 1, display: 'flex', justifyContent: 'center' }}>
+          <div style={{ display: 'flex', gap: '0.4rem' }}>
+            {allAvailableYears.map(year => (
+              <button
+                key={year}
+                onClick={() => {
+                  const newYears = selectedYears.includes(year)
+                    ? selectedYears.filter(y => y !== year)
+                    : [...selectedYears, year];
+                  onYearsChange(newYears.sort((a, b) => a - b));
+                }}
+                style={{
+                  padding: '0.4rem 0.9rem',
+                  borderRadius: '10px',
+                  border: '1px solid ' + (selectedYears.includes(year) ? 'var(--primary)' : '#334155'),
+                  background: selectedYears.includes(year) ? 'var(--primary)' : 'rgba(255,255,255,0.05)',
+                  color: 'white',
+                  fontSize: '0.8rem',
+                  fontWeight: 800,
+                  cursor: 'pointer',
+                  transition: 'all 0.2s',
+                  boxShadow: selectedYears.includes(year) ? '0 4px 12px rgba(185, 28, 28, 0.3)' : 'none'
+                }}
+              >
+                {year}
+              </button>
+            ))}
           </div>
-          <div style={{ display: 'flex', gap: '1rem' }}>
-          <button onClick={onReset} className="filter-group" style={{ background: 'rgba(255,255,255,0.1)', border: '1px solid rgba(255,255,255,0.2)', color: 'white', cursor: 'pointer', padding: '0.5rem 1rem', borderRadius: '12px', display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
-            <Upload size={14} /> Reenviar Excel
-          </button>
-          <button onClick={onBatchPrint} className="filter-group" style={{ background: '#3B82F6', border: '1px solid rgba(255,255,255,0.2)', color: 'white', cursor: 'pointer', padding: '0.5rem 1rem', borderRadius: '12px', display: 'flex', alignItems: 'center', gap: '0.5rem', fontWeight: 800 }}>
-            <Layers size={14} /> Relatórios em Massa
-          </button>
-          <button onClick={onPrint} className="btn-pdf">
-            <Printer size={18} />
-            <span>Gerar Relatório PDF</span>
-          </button>
         </div>
+
+        <div className="action-buttons" style={{ display: 'flex', gap: '0.75rem' }}>
+          <button 
+            onClick={onReset} 
+            className="btn-pdf" 
+            title="Reenviar Excel"
+            style={{ background: '#334155', width: '42px', height: '42px', padding: 0, display: 'flex', alignItems: 'center', justifyContent: 'center', borderRadius: '12px' }}
+          >
+            <Upload size={20} />
+          </button>
+          <button 
+            onClick={onBatchPrint}
+            className="btn-pdf" 
+            title="Relatórios em Massa"
+            style={{ background: '#3B82F6', width: '42px', height: '42px', padding: 0, display: 'flex', alignItems: 'center', justifyContent: 'center', borderRadius: '12px' }}
+          >
+            <Layers size={22} />
+          </button>
+          <button 
+            onClick={onPrint} 
+            className="btn-pdf" 
+            title="Gerar Relatório PDF"
+            style={{ background: 'var(--primary)', width: '42px', height: '42px', padding: 0, display: 'flex', alignItems: 'center', justifyContent: 'center', borderRadius: '12px' }}
+          >
+            <Printer size={22} />
+          </button>
         </div>
       </header>
 
-      <div className="filters-bar no-print">
-        <div className="filter-group">
-          <label><FilterIcon size={12} style={{marginRight: 4}} /> Unidade</label>
-          <select value={filterDivision} onChange={e => setFilterDivision(e.target.value)}>
-            <option value="ALL">Todas as Unidades</option>
-            {uniqueDivisions.map(d => <option key={d} value={d}>{d}</option>)}
-          </select>
+      <div className="filters-bar no-print" style={{ alignItems: 'center', justifyContent: 'space-between' }}>
+        <div style={{ display: 'flex', gap: '2rem' }}>
+          <div className="filter-group">
+            <label><div style={{ width: '8px', height: '8px', borderRadius: '50%', background: '#3B82F6', marginRight: '8px' }}></div>Unidade</label>
+            <select value={filterDivision} onChange={e => setFilterDivision(e.target.value)}>
+              <option value="ALL">Todas as Unidades</option>
+              {uniqueDivisions.map(d => <option key={d} value={d}>{d}</option>)}
+            </select>
+          </div>
+          <div className="filter-group">
+            <label><div style={{ width: '8px', height: '8px', borderRadius: '50%', background: '#10B981', marginRight: '8px' }}></div>Superior Direto</label>
+            <select value={filterManager} onChange={e => setFilterManager(e.target.value)}>
+              <option value="ALL">Todos os Superiores</option>
+              {uniqueManagers.map(m => <option key={m} value={m}>{m}</option>)}
+            </select>
+          </div>
+          <div className="filter-group">
+            <label><div style={{ width: '8px', height: '8px', borderRadius: '50%', background: '#F59E0B', marginRight: '8px' }}></div>Área</label>
+            <select value={filterArea} onChange={e => setFilterArea(e.target.value)}>
+              <option value="ALL">Todas as Áreas</option>
+              {uniqueAreas.map(a => <option key={a} value={a}>{a}</option>)}
+            </select>
+          </div>
         </div>
-        <div className="filter-group">
-          <label>Superior Direto</label>
-          <select value={filterManager} onChange={e => setFilterManager(e.target.value)}>
-            <option value="ALL">Todos os Superiores</option>
-            {uniqueManagers.map(m => <option key={m} value={m}>{m}</option>)}
-          </select>
-        </div>
-        <div className="filter-group">
-          <label>Área</label>
-          <select value={filterArea} onChange={e => setFilterArea(e.target.value)}>
-            <option value="ALL">Todas as Áreas</option>
-            {uniqueAreas.map(a => <option key={a} value={a}>{a}</option>)}
-          </select>
-        </div>
-      </div>
 
-      <div className="tabs-container no-print" style={{ display: 'flex', gap: '1rem', marginBottom: '2rem', borderBottom: '1px solid var(--border)', padding: '0 1rem' }}>
-        <button 
-          onClick={() => setActiveTab('monthly')}
-          style={{ 
-            padding: '1rem 2rem', 
-            background: 'none', 
-            border: 'none', 
-            borderBottom: activeTab === 'monthly' ? '3px solid var(--primary)' : '3px solid transparent',
-            color: activeTab === 'monthly' ? 'var(--primary)' : 'var(--text-muted)',
-            fontWeight: 800,
-            cursor: 'pointer',
-            transition: 'all 0.2s'
-          }}
-        >
-          Visão Mensal
-        </button>
-        <button 
-          onClick={() => setActiveTab('temporal')}
-          style={{ 
-            padding: '1rem 2rem', 
-            background: 'none', 
-            border: 'none', 
-            borderBottom: activeTab === 'temporal' ? '3px solid var(--primary)' : '3px solid transparent',
-            color: activeTab === 'temporal' ? 'var(--primary)' : 'var(--text-muted)',
-            fontWeight: 800,
-            cursor: 'pointer',
-            transition: 'all 0.2s'
-          }}
-        >
-          Análise por Horário / Dia
-        </button>
+        <div style={{ display: 'flex', gap: '0.5rem', background: '#F1F5F9', padding: '0.4rem', borderRadius: '12px' }}>
+          <button
+            onClick={() => setActiveTab('monthly')}
+            style={{
+              padding: '0.6rem 1.5rem',
+              borderRadius: '8px',
+              border: 'none',
+              background: activeTab === 'monthly' ? 'white' : 'transparent',
+              color: activeTab === 'monthly' ? 'var(--primary)' : 'var(--text-muted)',
+              fontWeight: 800,
+              fontSize: '0.85rem',
+              cursor: 'pointer',
+              boxShadow: activeTab === 'monthly' ? '0 2px 8px rgba(0,0,0,0.05)' : 'none',
+              transition: 'all 0.2s'
+            }}
+          >
+            Visão Mensal
+          </button>
+          <button
+            onClick={() => setActiveTab('temporal')}
+            style={{
+              padding: '0.6rem 1.5rem',
+              borderRadius: '8px',
+              border: 'none',
+              background: activeTab === 'temporal' ? 'white' : 'transparent',
+              color: activeTab === 'temporal' ? 'var(--primary)' : 'var(--text-muted)',
+              fontWeight: 800,
+              fontSize: '0.85rem',
+              cursor: 'pointer',
+              boxShadow: activeTab === 'temporal' ? '0 2px 8px rgba(0,0,0,0.05)' : 'none',
+              transition: 'all 0.2s'
+            }}
+          >
+            Análise por Horário / Dia
+          </button>
+        </div>
       </div>
 
       <div className="grid-main">

@@ -33,7 +33,7 @@ const ReportPage: React.FC<{ accidents: Accident[], years: number[], unit: strin
   return (
     <div className="batch-report-group">
       {/* Separator / Section Header Page */}
-      <div className="a4-landscape" style={{ display: 'flex', flexDirection: 'column', justifyContent: 'center', alignItems: 'center', background: 'linear-gradient(135deg, #0F172A 0%, #1E293B 100%)', color: 'white' }}>
+      <div className="a4-landscape" style={{ display: 'flex', flexDirection: 'column', justifyContent: 'center', alignItems: 'center', background: 'linear-gradient(135deg, #0F172A 0%, #1E293B 100%)', color: 'white', pageBreakAfter: 'always' }}>
         <img src={LOGO_BASE64} alt="Açotubo" style={{ height: '80px', marginBottom: '3rem', filter: 'brightness(0) invert(1)' }} />
         <div style={{ height: '4px', width: '120px', background: '#B91C1C', marginBottom: '2rem' }}></div>
         <h1 style={{ fontSize: '3.5rem', fontWeight: 900, textAlign: 'center', margin: 0, textTransform: 'uppercase', letterSpacing: '-0.02em' }}>
@@ -44,10 +44,9 @@ const ReportPage: React.FC<{ accidents: Accident[], years: number[], unit: strin
           {years.join(' • ')}
         </div>
       </div>
-      <div style={{ pageBreakAfter: 'always' }}></div>
 
       {/* Page 1: Monthly View */}
-      <div className="a4-landscape">
+      <div className="a4-landscape" style={{ pageBreakAfter: 'always', display: 'flex', flexDirection: 'column' }}>
         <header style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '1.5rem', borderBottom: '2px solid #B91C1C', paddingBottom: '1rem' }}>
           <div style={{ display: 'flex', gap: '1.5rem', alignItems: 'center' }}>
             <div style={{ background: '#B91C1C', padding: '1rem', borderRadius: '12px', color: 'white' }}>
@@ -134,10 +133,8 @@ const ReportPage: React.FC<{ accidents: Accident[], years: number[], unit: strin
         </footer>
       </div>
 
-      <div style={{ pageBreakAfter: 'always' }}></div>
-
       {/* Page 2: Temporal View */}
-      <div className="a4-landscape">
+      <div className="a4-landscape" style={{ pageBreakAfter: 'always', display: 'flex', flexDirection: 'column' }}>
         <header style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '1.5rem', borderBottom: '2px solid #3B82F6', paddingBottom: '1rem' }}>
           <div style={{ display: 'flex', gap: '1.5rem', alignItems: 'center' }}>
             <div style={{ background: '#3B82F6', padding: '1rem', borderRadius: '12px', color: 'white' }}>
@@ -153,7 +150,7 @@ const ReportPage: React.FC<{ accidents: Accident[], years: number[], unit: strin
           </div>
         </header>
 
-        <div style={{ display: 'grid', gridTemplateColumns: '1.2fr 1fr', gap: '2rem' }}>
+        <div style={{ display: 'grid', gridTemplateColumns: '1.2fr 1fr', gap: '2rem', flex: 1 }}>
           <div style={{ display: 'flex', flexDirection: 'column', gap: '1.5rem' }}>
             <div style={{ background: 'white', border: '1px solid #E2E8F0', padding: '1.25rem', borderRadius: '16px' }}>
               <h4 style={{ fontSize: '0.8rem', fontWeight: 800, marginBottom: '1.25rem', textAlign: 'center' }}>DISTRIBUIÇÃO POR DIA DA SEMANA</h4>
@@ -174,13 +171,20 @@ const ReportPage: React.FC<{ accidents: Accident[], years: number[], unit: strin
 
             <div style={{ background: 'white', border: '1px solid #E2E8F0', padding: '1.25rem', borderRadius: '16px' }}>
               <h4 style={{ fontSize: '0.8rem', fontWeight: 800, marginBottom: '1.25rem', textAlign: 'center' }}>DISTRIBUIÇÃO POR PERÍODO</h4>
-              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: '1rem' }}>
-                {temporalStats.periodStats.map(p => (
-                  <div key={p.period} style={{ textAlign: 'center', padding: '1rem', background: '#F8FAFC', borderRadius: '12px' }}>
-                    <div style={{ fontSize: '1.5rem', fontWeight: 900, color: '#0F172A' }}>{p.count}</div>
-                    <div style={{ fontSize: '0.65rem', fontWeight: 800, color: p.color, textTransform: 'uppercase' }}>{p.period}</div>
-                  </div>
-                ))}
+              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: '1rem', alignItems: 'center' }}>
+                <div style={{ display: 'grid', gridTemplateColumns: 'repeat(2, 1fr)', gap: '0.5rem', gridColumn: 'span 3' }}>
+                  {temporalStats.periodStats.map(p => (
+                    <div key={p.period} style={{ display: 'flex', alignItems: 'center', gap: '0.75rem', padding: '0.75rem', background: '#F8FAFC', borderRadius: '10px' }}>
+                      <div style={{ width: '8px', height: '8px', borderRadius: '50%', background: p.color }}></div>
+                      <div style={{ flex: 1, fontSize: '0.7rem', fontWeight: 800 }}>{p.period}</div>
+                      <div style={{ fontSize: '1.1rem', fontWeight: 900 }}>{p.count}</div>
+                    </div>
+                  ))}
+                </div>
+                <div style={{ textAlign: 'center', padding: '1rem', borderLeft: '2px solid #F1F5F9' }}>
+                   <div style={{ fontSize: '2.2rem', fontWeight: 900, color: '#0F172A' }}>{accidents.length}</div>
+                   <div style={{ fontSize: '0.6rem', fontWeight: 800, color: '#64748B' }}>TOTAL</div>
+                </div>
               </div>
             </div>
           </div>
@@ -201,8 +205,6 @@ const ReportPage: React.FC<{ accidents: Accident[], years: number[], unit: strin
           <span>DOCUMENTO OFICIAL GRUPO AÇOTUBO</span>
         </footer>
       </div>
-
-      <div style={{ pageBreakAfter: 'always' }}></div>
     </div>
   );
 };
