@@ -301,4 +301,11 @@ body {
   .no-print {
     display: none !important;
   }
+
+  .index-page-premium {
+    background: linear-gradient(135deg, #F8FAFC 0%, #EFF6FF 100%) !important;
+    display: flex !important;
+    flex-direction: column !important;
+    -webkit-print-color-adjust: exact !important;
+  }
 }

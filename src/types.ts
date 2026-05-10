@@ -3,6 +3,10 @@ export interface Accident {
   date: Date;
   year: number;
   month: number;
+  dayOfWeek: number; // 0-6
+  time: string;
+  hour: number;
+  period: 'Manhã' | 'Tarde' | 'Noite' | 'Madrugada';
   re: string;
   employee: string;
   division: string;

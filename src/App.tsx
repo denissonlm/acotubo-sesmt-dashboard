@@ -4,6 +4,8 @@ import type { Accident } from './types'
 import { Dashboard } from './components/Dashboard'
 import { UploadSection } from './components/UploadSection'
 import { PrintView } from './components/PrintView'
+import { BatchSelector } from './components/BatchSelector'
+import { BatchPrintView } from './components/BatchPrintView'
 import { Loader2 } from 'lucide-react'
 
 function App() {
@@ -11,6 +13,8 @@ function App() {
   const [loading, setLoading] = useState(true)
   const [showUpload, setShowUpload] = useState(false)
   const [isPrinting, setIsPrinting] = useState(false)
+  const [isBatchSelecting, setIsBatchSelecting] = useState(false)
+  const [batchConfigs, setBatchConfigs] = useState<{ years: number[], unit: string, area: string }[]>([])
   const [selectedYears, setSelectedYears] = useState<number[]>([2024, 2025, 2026])
 
   useEffect(() => {
@@ -56,14 +60,49 @@ function App() {
     )
   }
 
+  if (batchConfigs.length > 0) {
+    return (
+      <BatchPrintView 
+        accidents={accidents} 
+        configs={batchConfigs} 
+        onBack={() => setBatchConfigs([])} 
+      />
+    )
+  }
+
   return (
-    <Dashboard 
-      accidents={accidents} 
-      selectedYears={selectedYears}
-      onYearsChange={setSelectedYears}
-      onReset={() => setShowUpload(true)}
-      onPrint={() => setIsPrinting(true)}
-    />
+    <>
+      <Dashboard 
+        accidents={accidents} 
+        selectedYears={selectedYears}
+        onYearsChange={setSelectedYears}
+        onReset={() => setShowUpload(true)}
+        onPrint={() => setIsPrinting(true)}
+        onBatchPrint={() => setIsBatchSelecting(true)}
+      />
+      {isBatchSelecting && (
+        <BatchSelector 
+          accidents={accidents}
+          onCancel={() => setIsBatchSelecting(false)}
+          onGenerate={(years, units, areas) => {
+            const configs: { years: number[], unit: string, area: string }[] = [];
+            
+            // If no units/areas selected, generate for 'ALL'
+            const targetUnits = units.length > 0 ? units : ['ALL'];
+            const targetAreas = areas.length > 0 ? areas : ['ALL'];
+
+            targetUnits.forEach(u => {
+              targetAreas.forEach(a => {
+                configs.push({ years, unit: u, area: a });
+              });
+            });
+
+            setBatchConfigs(configs);
+            setIsBatchSelecting(false);
+          }}
+        />
+      )}
+    </>
   )
 }
 

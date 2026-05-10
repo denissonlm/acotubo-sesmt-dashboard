@@ -1,7 +1,7 @@
 import React, { useMemo } from 'react';
-import { Printer, ArrowLeft, FileText, ShieldCheck } from 'lucide-react';
+import { Printer, ArrowLeft, FileText, ShieldCheck, Clock, Calendar } from 'lucide-react';
 import type { Accident } from '../types';
-import { calculateStats, generateInsights } from '../utils/dataLoader';
+import { calculateStats, generateInsights, calculateTemporalStats, generateTemporalInsights } from '../utils/dataLoader';
 import { LOGO_BASE64 } from '../constants';
 
 interface PrintViewProps {
@@ -212,6 +212,120 @@ export const PrintView: React.FC<PrintViewProps> = ({ accidents, selectedYears, 
             </div>
           </div>
         </div>
+      </div>
+
+      {/* Page 2: Temporal Analysis */}
+      <div className="a4-landscape" style={{ marginTop: '4rem' }}>
+        <header style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '2rem', borderBottom: '2px solid #3B82F6', paddingBottom: '1rem' }}>
+          <div style={{ display: 'flex', gap: '1.5rem', alignItems: 'center' }}>
+            <div style={{ background: '#3B82F6', padding: '1rem', borderRadius: '12px', color: 'white' }}>
+              <Clock size={32} />
+            </div>
+            <div>
+              <h1 style={{ color: '#0F172A', fontSize: '1.75rem', fontWeight: 900, textTransform: 'uppercase', letterSpacing: '-0.02em', margin: 0 }}>Análise Temporal de Incidentes</h1>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', marginTop: '0.25rem', color: '#64748B', fontWeight: 600 }}>
+                <Calendar size={14} />
+                <span>Gestão de Segurança do Trabalho • Frequência por Horário e Dia</span>
+              </div>
+            </div>
+          </div>
+          <div style={{ textAlign: 'right' }}>
+            <img src={LOGO_BASE64} alt="Açotubo" style={{ height: '48px', objectFit: 'contain' }} />
+            <div style={{ fontSize: '0.65rem', color: '#94A3B8', fontWeight: 700 }}>RELATÓRIO OFICIAL GRUPO AÇOTUBO</div>
+          </div>
+        </header>
+
+        <div style={{ display: 'grid', gridTemplateColumns: '1.2fr 1fr', gap: '2rem' }}>
+          {/* Left Column: Period and Day Charts */}
+          <div style={{ display: 'flex', flexDirection: 'column', gap: '2rem' }}>
+            <div style={{ background: 'white', border: '1px solid #E2E8F0', padding: '1.5rem', borderRadius: '16px' }}>
+              <h3 style={{ fontSize: '1rem', fontWeight: 800, marginBottom: '1.5rem', color: '#0F172A', textAlign: 'center' }}>DISTRIBUIÇÃO POR <span style={{ color: '#3B82F6' }}>PERÍODO DO DIA</span></h3>
+              <div style={{ display: 'flex', justifyContent: 'center', gap: '3rem', alignItems: 'center' }}>
+                <div style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
+                  {calculateTemporalStats(accidents).periodStats.map(p => (
+                    <div key={p.period} style={{ display: 'flex', alignItems: 'center', gap: '1rem' }}>
+                      <div style={{ width: '12px', height: '12px', borderRadius: '3px', background: p.color }}></div>
+                      <div style={{ width: '80px', fontSize: '0.8rem', fontWeight: 700 }}>{p.period}</div>
+                      <div style={{ fontSize: '1rem', fontWeight: 900 }}>{p.count}</div>
+                    </div>
+                  ))}
+                </div>
+                <div style={{ height: '150px', width: '2px', background: '#F1F5F9' }}></div>
+                <div style={{ textAlign: 'center' }}>
+                  <div style={{ fontSize: '3rem', fontWeight: 900, color: '#0F172A' }}>{accidents.length}</div>
+                  <div style={{ fontSize: '0.7rem', fontWeight: 800, color: '#64748B' }}>TOTAL DE OCORRÊNCIAS</div>
+                </div>
+              </div>
+            </div>
+
+            <div style={{ background: 'white', border: '1px solid #E2E8F0', padding: '1.5rem', borderRadius: '16px' }}>
+              <h3 style={{ fontSize: '1rem', fontWeight: 800, marginBottom: '1.5rem', color: '#0F172A', textAlign: 'center' }}>INCIDÊNCIA POR <span style={{ color: '#3B82F6' }}>DIA DA SEMANA</span></h3>
+              <div style={{ display: 'flex', alignItems: 'flex-end', height: '120px', gap: '12px', paddingBottom: '20px' }}>
+                {calculateTemporalStats(accidents).dayOfWeekStats.map(d => {
+                  const maxVal = Math.max(...calculateTemporalStats(accidents).dayOfWeekStats.map(x => x.count), 1);
+                  return (
+                    <div key={d.day} style={{ flex: 1, display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '8px' }}>
+                      <div style={{ width: '100%', height: `${(d.count / maxVal) * 100}px`, background: '#3B82F6', borderRadius: '4px 4px 0 0', position: 'relative' }}>
+                        {d.count > 0 && <span style={{ position: 'absolute', top: '-18px', left: 0, right: 0, textAlign: 'center', fontSize: '10px', fontWeight: 900 }}>{d.count}</span>}
+                      </div>
+                      <span style={{ fontSize: '10px', fontWeight: 800, color: '#64748B' }}>{d.day}</span>
+                    </div>
+                  );
+                })}
+              </div>
+            </div>
+          </div>
+
+          {/* Right Column: Hourly and Insights */}
+          <div style={{ display: 'flex', flexDirection: 'column', gap: '1.5rem' }}>
+            <div style={{ background: 'white', border: '1px solid #E2E8F0', padding: '1.5rem', borderRadius: '16px' }}>
+              <h3 style={{ fontSize: '1rem', fontWeight: 800, marginBottom: '1.25rem', color: '#0F172A', textAlign: 'center' }}>FLUXO <span style={{ color: '#3B82F6' }}>HORÁRIO (24H)</span></h3>
+              <div style={{ display: 'flex', alignItems: 'flex-end', height: '80px', gap: '2px' }}>
+                {calculateTemporalStats(accidents).hourlyStats.map((h, i) => {
+                  const maxVal = Math.max(...calculateTemporalStats(accidents).hourlyStats.map(x => x.count), 1);
+                  return (
+                    <div key={i} style={{ flex: 1, height: `${(h.count / maxVal) * 100}%`, background: '#10B981', opacity: 0.8 }}></div>
+                  );
+                })}
+              </div>
+              <div style={{ display: 'flex', justifyContent: 'space-between', marginTop: '4px', fontSize: '8px', fontWeight: 800, color: '#94A3B8' }}>
+                <span>00:00</span>
+                <span>06:00</span>
+                <span>12:00</span>
+                <span>18:00</span>
+                <span>23:00</span>
+              </div>
+            </div>
+
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '0.75rem' }}>
+              <div style={{ fontSize: '0.7rem', fontWeight: 900, color: '#64748B', letterSpacing: '0.1em', textTransform: 'uppercase' }}>Análise de Segurança</div>
+              {generateTemporalInsights(accidents).map((insight, idx) => {
+                const styles = {
+                  danger: { bg: '#FFF1F2', border: '#FDA4AF', text: '#9F1239' },
+                  warning: { bg: '#FFFBEB', border: '#FDE68A', text: '#92400E' },
+                  info: { bg: '#F0F9FF', border: '#BAE6FD', text: '#075985' },
+                  success: { bg: '#F0FDF4', border: '#BBF7D0', text: '#166534' }
+                };
+                const config = styles[insight.type as keyof typeof styles];
+                return (
+                  <div key={idx} style={{ background: config.bg, border: `1px solid ${config.border}`, borderLeft: `4px solid ${config.text}`, padding: '0.75rem', borderRadius: '10px' }}>
+                    <h4 style={{ fontSize: '0.8rem', fontWeight: 900, color: config.text, marginBottom: '0.15rem' }}>{insight.title}</h4>
+                    <p style={{ fontSize: '0.7rem', color: config.text, lineHeight: '1.3', fontWeight: 500 }}>{insight.text}</p>
+                  </div>
+                );
+              })}
+            </div>
+          </div>
+        </div>
+        
+        <footer style={{ marginTop: 'auto', paddingTop: '2rem', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+          <div style={{ fontSize: '0.65rem', color: '#94A3B8', fontStyle: 'italic' }}>
+            Relatório gerado em conformidade com as normas do SESMT Açotubo.
+          </div>
+          <div style={{ fontSize: '0.65rem', fontWeight: 700, color: '#0F172A' }}>
+            PÁGINA 02 / 02
+          </div>
+        </footer>
       </div>
     </div>
   );
