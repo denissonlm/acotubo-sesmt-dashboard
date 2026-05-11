@@ -158,21 +158,36 @@ export const generateInsights = (accidents: Accident[], targetYears: number[]): 
     });
   }
 
-  // 2. Sazonalidade (Mês com mais acidentes somando os 3 anos)
-  const monthTotals = Array(12).fill(0);
-  accidents.forEach(a => {
-    if (targetYears.includes(a.year)) {
-      monthTotals[a.month - 1]++;
+  // 2. Evolução Histórica (Comparativo 2024-2025 ou anos base)
+  const sortedYearsAsc = [...targetYears].sort((a: number, b: number) => a - b);
+  if (sortedYearsAsc.length >= 2) {
+    const year1 = sortedYearsAsc[0];
+    const year2 = sortedYearsAsc[1];
+    
+    const count1 = accidents.filter(a => a.year === year1).length;
+    const count2 = accidents.filter(a => a.year === year2).length;
+    
+    if (count1 > 0 && count2 < count1) {
+      const dropPercent = Math.round(((count1 - count2) / count1) * 100);
+      insights.push({
+        title: `Evolução Positiva ${year1}-${year2}`,
+        text: `Houve uma redução substancial de ${dropPercent}% no volume de acidentes (de ${count1} para ${count2} ocorrências) entre ${year1} e ${year2}, refletindo a maturação e efetividade das campanhas preventivas adotadas.`,
+        type: 'success'
+      });
+    } else if (count2 > count1 && count1 > 0) {
+      const incPercent = Math.round(((count2 - count1) / count1) * 100);
+      insights.push({
+        title: `Alerta de Crescimento ${year1}-${year2}`,
+        text: `Houve um aumento de ${incPercent}% nas ocorrências (de ${count1} para ${count2}) entre ${year1} e ${year2}, indicando a necessidade de revisão nas estratégias de contenção de riscos.`,
+        type: 'warning'
+      });
+    } else if (count1 > 0) {
+      insights.push({
+        title: `Estabilidade ${year1}-${year2}`,
+        text: `O número de acidentes manteve-se constante entre ${year1} e ${year2}, com ${count1} ocorrências registradas em ambos os anos.`,
+        type: 'info'
+      });
     }
-  });
-  
-  const topMonthIndex = monthTotals.indexOf(Math.max(...monthTotals));
-  if (monthTotals[topMonthIndex] > 0) {
-    insights.push({
-      title: `${monthNames[topMonthIndex]} - Risco Recorrente`,
-      text: `O mês de ${monthNames[topMonthIndex]} concentra o maior acúmulo de ocorrências no triênio, sugerindo um padrão sazonal de risco.`,
-      type: 'warning'
-    });
   }
 
   // 3. Tendência Recente (Último ano vs Anterior)
