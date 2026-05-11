@@ -1,7 +1,7 @@
 import React, { useMemo, useState, useRef, useEffect } from 'react';
 import { 
   Users, AlertCircle, ShieldCheck, HardHat, 
-  GraduationCap, ExternalLink, Activity, Clock, Settings, X
+  GraduationCap, ExternalLink, Activity, Clock, Settings, X, Search
 } from 'lucide-react';
 import type { Accident } from '../types';
 
@@ -37,6 +37,21 @@ export const Breakdown: React.FC<BreakdownProps> = ({ accidents }) => {
   const [visibleColumns, setVisibleColumns] = useState<string[]>(ALL_COLUMNS.map(c => c.id));
   const [isConfigOpen, setIsConfigOpen] = useState(false);
   const [tableWidth, setTableWidth] = useState(0);
+  const [searchQuery, setSearchQuery] = useState('');
+
+  const filteredTableData = useMemo(() => {
+    if (!searchQuery) return accidents;
+    const q = searchQuery.toLowerCase();
+    return accidents.filter(a => 
+      a.employee.toLowerCase().includes(q) ||
+      a.re.toLowerCase().includes(q) ||
+      a.division.toLowerCase().includes(q) ||
+      a.area.toLowerCase().includes(q) ||
+      a.type.toLowerCase().includes(q) ||
+      a.manager.toLowerCase().includes(q) ||
+      (a.partAffected && a.partAffected.toLowerCase().includes(q))
+    );
+  }, [accidents, searchQuery]);
 
   const topScrollRef = useRef<HTMLDivElement>(null);
   const bottomScrollRef = useRef<HTMLDivElement>(null);
@@ -200,14 +215,35 @@ export const Breakdown: React.FC<BreakdownProps> = ({ accidents }) => {
       {/* Detailed Table */}
       {/* Detailed Table */}
       <div className="panel-premium" style={{ position: 'relative' }}>
-        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1.5rem' }}>
+        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1.5rem', flexWrap: 'wrap', gap: '1rem' }}>
           <h3 style={{ fontSize: '1rem', fontWeight: 900, margin: 0 }}>Detalhamento Geral de Ocorrências</h3>
-          <button 
-            onClick={() => setIsConfigOpen(!isConfigOpen)}
-            style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', padding: '0.5rem 1rem', background: '#F1F5F9', border: 'none', borderRadius: '8px', color: '#475569', fontWeight: 800, cursor: 'pointer', fontSize: '0.75rem' }}
-          >
-            <Settings size={16} /> Configurar Colunas
-          </button>
+          <div style={{ display: 'flex', gap: '0.75rem', alignItems: 'center' }}>
+            <div style={{ position: 'relative' }}>
+              <Search size={14} color="#94A3B8" style={{ position: 'absolute', left: '10px', top: '50%', transform: 'translateY(-50%)' }} />
+              <input 
+                type="text" 
+                placeholder="Pesquisar..." 
+                value={searchQuery}
+                onChange={e => setSearchQuery(e.target.value)}
+                style={{ 
+                  padding: '0.5rem 1rem 0.5rem 2.2rem', 
+                  border: '1px solid #E2E8F0', 
+                  borderRadius: '8px', 
+                  fontSize: '0.75rem',
+                  outline: 'none',
+                  width: '200px',
+                  fontWeight: 600,
+                  color: 'var(--text)'
+                }} 
+              />
+            </div>
+            <button 
+              onClick={() => setIsConfigOpen(!isConfigOpen)}
+              style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', padding: '0.5rem 1rem', background: '#F1F5F9', border: 'none', borderRadius: '8px', color: '#475569', fontWeight: 800, cursor: 'pointer', fontSize: '0.75rem' }}
+            >
+              <Settings size={16} /> Configurar Colunas
+            </button>
+          </div>
         </div>
 
         {isConfigOpen && (
@@ -266,7 +302,7 @@ export const Breakdown: React.FC<BreakdownProps> = ({ accidents }) => {
               </tr>
             </thead>
             <tbody>
-              {accidents.slice().sort((a,b) => b.date.getTime() - a.date.getTime()).map((a, idx) => (
+              {filteredTableData.slice().sort((a,b) => b.date.getTime() - a.date.getTime()).map((a, idx) => (
                 <tr key={idx} style={{ borderBottom: '1px solid #F1F5F9', transition: 'background 0.2s' }}>
                   {visibleColumns.includes('id') && <td style={{ padding: '0.75rem' }}>{a.id}</td>}
                   {visibleColumns.includes('date') && <td style={{ padding: '0.75rem', fontWeight: 700 }}>{a.date.toLocaleDateString('pt-BR')}</td>}
