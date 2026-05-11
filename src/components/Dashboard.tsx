@@ -336,15 +336,11 @@ export const Dashboard: React.FC<DashboardProps> = ({
             );
           })}
 
-          <div style={{marginTop: '2rem', padding: '1.5rem', background: '#0F172A', borderRadius: '1rem', color: 'white', display: 'flex', flexDirection: 'column', gap: '0.5rem'}}>
-            <div style={{display: 'flex', alignItems: 'center', gap: '8px'}}>
-               <div style={{width: 24, height: 24, background: 'var(--primary)', borderRadius: '6px', display: 'flex', alignItems: 'center', justifyContent: 'center'}}>
-                 <ShieldCheck size={14} color="white" />
-               </div>
-               <span style={{fontWeight: 800}}>SESMT Grupo Açotubo</span>
-            </div>
-            <p style={{fontSize: '0.75rem', opacity: 0.8, fontStyle: 'italic'}}>"Segurança é compromisso de todos."</p>
-            <p style={{fontSize: '0.6rem', opacity: 0.5, marginTop: '1rem'}}>ANÁLISE OFICIAL · {new Date().getFullYear()}</p>
+          <div style={{marginTop: '1.5rem', padding: '0.75rem 1rem', background: 'transparent', border: '1px dashed #CBD5E1', borderRadius: '0.5rem', color: '#64748B', fontSize: '0.65rem', display: 'flex', alignItems: 'flex-start', gap: '0.5rem'}}>
+            <AlertCircle size={14} style={{ flexShrink: 0, marginTop: '1px' }} />
+            <span style={{ lineHeight: 1.4 }}>
+              <strong>Nota Técnica:</strong> Os Acidentes das Filiais foram computados a partir de outubro de 2025.
+            </span>
           </div>
         </aside>
 
