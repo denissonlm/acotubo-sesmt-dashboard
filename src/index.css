@@ -296,7 +296,7 @@ body {
 @media print {
   @page {
     size: portrait;
-    margin: 0;
+    margin: 10mm;
   }
 
   body {
@@ -316,9 +316,10 @@ body {
     margin: 0 !important;
     box-shadow: none !important;
     width: 100% !important;
-    height: 100vh !important;
-    padding: 12mm !important;
+    height: auto !important;
+    padding: 0 !important;
     page-break-after: always;
+    page-break-inside: avoid;
   }
 
   .no-print {
