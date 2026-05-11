@@ -1,7 +1,7 @@
-import React, { useMemo } from 'react';
+import React, { useMemo, useState } from 'react';
 import { 
   Users, AlertCircle, ShieldCheck, HardHat, 
-  GraduationCap, ExternalLink, Activity, Clock
+  GraduationCap, ExternalLink, Activity, Clock, Settings, X
 } from 'lucide-react';
 import type { Accident } from '../types';
 
@@ -9,7 +9,39 @@ interface BreakdownProps {
   accidents: Accident[];
 }
 
+const ALL_COLUMNS = [
+  { id: 'id', label: 'ID' },
+  { id: 'date', label: 'DATA' },
+  { id: 'time', label: 'HORA' },
+  { id: 'period', label: 'PERÍODO' },
+  { id: 'dayOfWeek', label: 'DIA DA SEMANA' },
+  { id: 're', label: 'RE' },
+  { id: 'employee', label: 'COLABORADOR' },
+  { id: 'role', label: 'CARGO' },
+  { id: 'division', label: 'DIVISÃO' },
+  { id: 'area', label: 'ÁREA' },
+  { id: 'manager', label: 'SUPERIOR' },
+  { id: 'type', label: 'TIPO' },
+  { id: 'partAffected', label: 'PARTE ATINGIDA' },
+  { id: 'experience', label: 'EXPERIÊNCIA' },
+  { id: 'lostDays', label: 'AFASTAMENTO' },
+  { id: 'unsafeAct', label: 'ATO INSEGURO' },
+  { id: 'machineDeficiency', label: 'DEFIC. M/E' },
+  { id: 'functionDeviation', label: 'DESVIO FUNÇÃO' },
+  { id: 'hadTraining', label: 'CAPACITAÇÃO' },
+  { id: 'usedEPI', label: 'EPI' },
+  { id: 'link', label: 'LINK' }
+];
+
 export const Breakdown: React.FC<BreakdownProps> = ({ accidents }) => {
+  const [visibleColumns, setVisibleColumns] = useState<string[]>(ALL_COLUMNS.map(c => c.id));
+  const [isConfigOpen, setIsConfigOpen] = useState(false);
+
+  const toggleColumn = (id: string) => {
+    setVisibleColumns(prev => 
+      prev.includes(id) ? prev.filter(c => c !== id) : [...prev, id]
+    );
+  };
   
   const stats = useMemo(() => {
     if (accidents.length === 0) return null;
@@ -140,62 +172,96 @@ export const Breakdown: React.FC<BreakdownProps> = ({ accidents }) => {
       </div>
 
       {/* Detailed Table */}
-      <div className="panel-premium" style={{ overflowX: 'auto' }}>
-        <h3 style={{ fontSize: '1rem', fontWeight: 900, marginBottom: '1.5rem' }}>Detalhamento Geral de Ocorrências</h3>
-        <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '0.75rem' }}>
-          <thead>
-            <tr style={{ textAlign: 'left', borderBottom: '2px solid #F1F5F9' }}>
-              <th style={{ padding: '0.75rem' }}>DATA</th>
-              <th style={{ padding: '0.75rem' }}>COLABORADOR</th>
-              <th style={{ padding: '0.75rem' }}>DIVISÃO / ÁREA</th>
-              <th style={{ padding: '0.75rem' }}>EXPERIÊNCIA</th>
-              <th style={{ padding: '0.75rem', textAlign: 'center' }}>ATO INS.</th>
-              <th style={{ padding: '0.75rem', textAlign: 'center' }}>EPI</th>
-              <th style={{ padding: '0.75rem', textAlign: 'center' }}>AFAST.</th>
-              <th style={{ padding: '0.75rem', textAlign: 'center' }}>LINK</th>
-            </tr>
-          </thead>
-          <tbody>
-            {accidents.slice().sort((a,b) => b.date.getTime() - a.date.getTime()).map((a, idx) => (
-              <tr key={idx} style={{ borderBottom: '1px solid #F1F5F9', transition: 'background 0.2s' }}>
-                <td style={{ padding: '0.75rem', whiteSpace: 'nowrap', fontWeight: 700 }}>{a.date.toLocaleDateString('pt-BR')}</td>
-                <td style={{ padding: '0.75rem' }}>
-                  <div style={{ fontWeight: 800 }}>{a.employee}</div>
-                  <div style={{ fontSize: '0.65rem', color: '#64748B' }}>RE: {a.re}</div>
-                </td>
-                <td style={{ padding: '0.75rem' }}>
-                  <div>{a.division}</div>
-                  <div style={{ fontSize: '0.65rem', color: '#64748B' }}>{a.area}</div>
-                </td>
-                <td style={{ padding: '0.75rem' }}>{Math.floor(a.experienceYears)}a {Math.floor(a.experienceMonths)}m</td>
-                <td style={{ padding: '0.75rem', textAlign: 'center' }}>
-                  <span style={{ padding: '2px 8px', borderRadius: '10px', background: a.unsafeAct ? '#FEE2E2' : '#F0FDF4', color: a.unsafeAct ? '#EF4444' : '#10B981', fontWeight: 900, fontSize: '0.6rem' }}>
-                    {a.unsafeAct ? 'SIM' : 'NÃO'}
-                  </span>
-                </td>
-                <td style={{ padding: '0.75rem', textAlign: 'center' }}>
-                   <span style={{ color: a.usedEPI ? '#10B981' : '#EF4444' }}>{a.usedEPI ? 'SIM' : 'NÃO'}</span>
-                </td>
-                <td style={{ 
-                  padding: '0.75rem', 
-                  textAlign: 'center', 
-                  background: getLostDaysColor(a.lostDays), 
-                  color: getLostDaysTextColor(a.lostDays),
-                  fontWeight: 900 
-                }}>
-                  {a.lostDays}d
-                </td>
-                <td style={{ padding: '0.75rem', textAlign: 'center' }}>
-                  {a.investigationLink ? (
-                    <a href={a.investigationLink} target="_blank" rel="noopener noreferrer" style={{ color: 'var(--primary)' }}>
-                      <ExternalLink size={14} />
-                    </a>
-                  ) : '-'}
-                </td>
+      {/* Detailed Table */}
+      <div className="panel-premium" style={{ position: 'relative' }}>
+        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1.5rem' }}>
+          <h3 style={{ fontSize: '1rem', fontWeight: 900, margin: 0 }}>Detalhamento Geral de Ocorrências</h3>
+          <button 
+            onClick={() => setIsConfigOpen(!isConfigOpen)}
+            style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', padding: '0.5rem 1rem', background: '#F1F5F9', border: 'none', borderRadius: '8px', color: '#475569', fontWeight: 800, cursor: 'pointer', fontSize: '0.75rem' }}
+          >
+            <Settings size={16} /> Configurar Colunas
+          </button>
+        </div>
+
+        {isConfigOpen && (
+          <div style={{ position: 'absolute', top: '4rem', right: '1.5rem', background: 'white', border: '1px solid #E2E8F0', borderRadius: '12px', padding: '1.5rem', boxShadow: '0 10px 25px rgba(0,0,0,0.1)', zIndex: 10, width: '300px' }}>
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1rem' }}>
+              <h4 style={{ margin: 0, fontSize: '0.85rem', fontWeight: 800 }}>Colunas Visíveis</h4>
+              <button onClick={() => setIsConfigOpen(false)} style={{ background: 'none', border: 'none', cursor: 'pointer', color: '#64748B' }}><X size={16} /></button>
+            </div>
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem', maxHeight: '300px', overflowY: 'auto' }}>
+              {ALL_COLUMNS.map(col => (
+                <label key={col.id} style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', fontSize: '0.75rem', fontWeight: 600, cursor: 'pointer' }}>
+                  <input 
+                    type="checkbox" 
+                    checked={visibleColumns.includes(col.id)} 
+                    onChange={() => toggleColumn(col.id)} 
+                  />
+                  {col.label}
+                </label>
+              ))}
+            </div>
+          </div>
+        )}
+
+        <div style={{ overflowX: 'auto', paddingBottom: '1rem' }}>
+          <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '0.75rem', whiteSpace: 'nowrap' }}>
+            <thead>
+              <tr style={{ textAlign: 'left', borderBottom: '2px solid #F1F5F9' }}>
+                {ALL_COLUMNS.map(col => visibleColumns.includes(col.id) && (
+                  <th key={col.id} style={{ padding: '0.75rem' }}>{col.label}</th>
+                ))}
               </tr>
-            ))}
-          </tbody>
-        </table>
+            </thead>
+            <tbody>
+              {accidents.slice().sort((a,b) => b.date.getTime() - a.date.getTime()).map((a, idx) => (
+                <tr key={idx} style={{ borderBottom: '1px solid #F1F5F9', transition: 'background 0.2s' }}>
+                  {visibleColumns.includes('id') && <td style={{ padding: '0.75rem' }}>{a.id}</td>}
+                  {visibleColumns.includes('date') && <td style={{ padding: '0.75rem', fontWeight: 700 }}>{a.date.toLocaleDateString('pt-BR')}</td>}
+                  {visibleColumns.includes('time') && <td style={{ padding: '0.75rem' }}>{a.time}</td>}
+                  {visibleColumns.includes('period') && <td style={{ padding: '0.75rem' }}>{a.period}</td>}
+                  {visibleColumns.includes('dayOfWeek') && <td style={{ padding: '0.75rem' }}>{['Dom', 'Seg', 'Ter', 'Qua', 'Qui', 'Sex', 'Sáb'][a.dayOfWeek]}</td>}
+                  {visibleColumns.includes('re') && <td style={{ padding: '0.75rem' }}>{a.re}</td>}
+                  {visibleColumns.includes('employee') && <td style={{ padding: '0.75rem', fontWeight: 800 }}>{a.employee}</td>}
+                  {visibleColumns.includes('role') && <td style={{ padding: '0.75rem' }}>{a.role}</td>}
+                  {visibleColumns.includes('division') && <td style={{ padding: '0.75rem' }}>{a.division}</td>}
+                  {visibleColumns.includes('area') && <td style={{ padding: '0.75rem' }}>{a.area}</td>}
+                  {visibleColumns.includes('manager') && <td style={{ padding: '0.75rem' }}>{a.manager}</td>}
+                  {visibleColumns.includes('type') && <td style={{ padding: '0.75rem' }}>{a.type}</td>}
+                  {visibleColumns.includes('partAffected') && <td style={{ padding: '0.75rem' }}>{a.partAffected}</td>}
+                  {visibleColumns.includes('experience') && <td style={{ padding: '0.75rem' }}>{Math.floor(a.experienceYears)}a {Math.floor(a.experienceMonths)}m</td>}
+                  {visibleColumns.includes('lostDays') && (
+                    <td style={{ 
+                      padding: '0.75rem', textAlign: 'center', 
+                      background: getLostDaysColor(a.lostDays), color: getLostDaysTextColor(a.lostDays), fontWeight: 900 
+                    }}>{a.lostDays}d</td>
+                  )}
+                  {visibleColumns.includes('unsafeAct') && (
+                    <td style={{ padding: '0.75rem', textAlign: 'center' }}>
+                      <span style={{ padding: '2px 8px', borderRadius: '10px', background: a.unsafeAct ? '#FEE2E2' : '#F0FDF4', color: a.unsafeAct ? '#EF4444' : '#10B981', fontWeight: 900, fontSize: '0.6rem' }}>
+                        {a.unsafeAct ? 'SIM' : 'NÃO'}
+                      </span>
+                    </td>
+                  )}
+                  {visibleColumns.includes('machineDeficiency') && <td style={{ padding: '0.75rem', textAlign: 'center', color: a.machineDeficiency ? '#EF4444' : '#64748B' }}>{a.machineDeficiency ? 'SIM' : 'NÃO'}</td>}
+                  {visibleColumns.includes('functionDeviation') && <td style={{ padding: '0.75rem', textAlign: 'center', color: a.functionDeviation ? '#EF4444' : '#64748B' }}>{a.functionDeviation ? 'SIM' : 'NÃO'}</td>}
+                  {visibleColumns.includes('hadTraining') && <td style={{ padding: '0.75rem', textAlign: 'center', color: a.hadTraining ? '#10B981' : '#EF4444' }}>{a.hadTraining ? 'SIM' : 'NÃO'}</td>}
+                  {visibleColumns.includes('usedEPI') && <td style={{ padding: '0.75rem', textAlign: 'center', color: a.usedEPI ? '#10B981' : '#EF4444' }}>{a.usedEPI ? 'SIM' : 'NÃO'}</td>}
+                  {visibleColumns.includes('link') && (
+                    <td style={{ padding: '0.75rem', textAlign: 'center' }}>
+                      {a.investigationLink ? (
+                        <a href={a.investigationLink} target="_blank" rel="noopener noreferrer" style={{ color: 'var(--primary)' }}>
+                          <ExternalLink size={14} />
+                        </a>
+                      ) : '-'}
+                    </td>
+                  )}
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
       </div>
 
     </div>
