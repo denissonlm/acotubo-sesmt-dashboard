@@ -59,6 +59,45 @@ export const PrintView: React.FC<PrintViewProps> = ({
     }
   }, [selectedYears]);
 
+  const { breakdownPages, counts } = useMemo(() => {
+    const accCounts = filteredAccidents.reduce((acc, a) => {
+      acc[a.employee] = (acc[a.employee] || 0) + 1;
+      return acc;
+    }, {} as Record<string, number>);
+
+    const sortedAccidents = [...filteredAccidents].sort((a, b) => {
+      if (accCounts[b.employee] !== accCounts[a.employee]) {
+        return accCounts[b.employee] - accCounts[a.employee];
+      }
+      if (a.employee !== b.employee) {
+        return a.employee.localeCompare(b.employee);
+      }
+      return b.date.getTime() - a.date.getTime();
+    });
+
+    const pages = [];
+    if (sortedAccidents.length === 0) {
+      pages.push([]);
+    } else {
+      let currentIndex = 0;
+      // First page can fit fewer rows due to the summary header blocks
+      const rowsPerPageFirst = 12;
+      const rowsPerPageRest = 16;
+      
+      pages.push(sortedAccidents.slice(0, rowsPerPageFirst));
+      currentIndex += rowsPerPageFirst;
+      
+      while (currentIndex < sortedAccidents.length) {
+        pages.push(sortedAccidents.slice(currentIndex, currentIndex + rowsPerPageRest));
+        currentIndex += rowsPerPageRest;
+      }
+    }
+    return { breakdownPages: pages, counts: accCounts };
+  }, [filteredAccidents]);
+
+  const totalPages = 3 + breakdownPages.length;
+  const formatPageNum = (n: number) => n < 10 ? `0${n}` : n;
+
   return (
     <div className="print-container">
       <div className="print-controls no-print" style={{ 
@@ -217,7 +256,7 @@ export const PrintView: React.FC<PrintViewProps> = ({
               <ShieldCheck size={14} color="#B91C1C" />
               <div style={{ fontSize: '0.7rem', fontWeight: 800 }}>VALIDAÇÃO SESMT AÇOTUBO</div>
             </div>
-            <div style={{ fontSize: '0.6rem', opacity: 0.6 }}>PÁGINA 01 / 02</div>
+            <div style={{ fontSize: '0.6rem', opacity: 0.6 }}>PÁGINA 01 / {formatPageNum(totalPages)}</div>
           </div>
         </div>
       </div>
@@ -302,7 +341,7 @@ export const PrintView: React.FC<PrintViewProps> = ({
 
           <footer style={{ marginTop: 'auto', display: 'flex', justifyContent: 'space-between', alignItems: 'center', borderTop: '1px solid #E2E8F0', paddingTop: '1rem' }}>
             <div style={{ fontSize: '0.65rem', color: '#94A3B8', fontWeight: 700 }}>DOCUMENTO TÉCNICO OFICIAL</div>
-            <div style={{ fontSize: '0.65rem', fontWeight: 900 }}>PÁGINA 02 / 03</div>
+            <div style={{ fontSize: '0.65rem', fontWeight: 900 }}>PÁGINA 02 / {formatPageNum(totalPages)}</div>
           </footer>
         </div>
       </div>
@@ -391,113 +430,89 @@ export const PrintView: React.FC<PrintViewProps> = ({
 
           <footer style={{ marginTop: 'auto', display: 'flex', justifyContent: 'space-between', alignItems: 'center', borderTop: '1px solid #E2E8F0', paddingTop: '1rem' }}>
             <div style={{ fontSize: '0.65rem', color: '#94A3B8', fontWeight: 700 }}>DOCUMENTO TÉCNICO OFICIAL - GRUPO AÇOTUBO</div>
-            <div style={{ fontSize: '0.65rem', fontWeight: 900 }}>PÁGINA 03 / 04</div>
+            <div style={{ fontSize: '0.65rem', fontWeight: 900 }}>PÁGINA 03 / {formatPageNum(totalPages)}</div>
           </footer>
         </div>
       </div>
 
-      {/* Page 4: Breakdown Details */}
-      <div className="a4-portrait">
-        <header style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '1.5rem', borderBottom: '2px solid #8B5CF6', paddingBottom: '0.75rem' }}>
-          <div style={{ display: 'flex', gap: '1rem', alignItems: 'center' }}>
-            <div style={{ background: '#8B5CF6', padding: '0.75rem', borderRadius: '10px', color: 'white' }}>
-              <FileText size={28} />
-            </div>
-            <div>
-              <h1 style={{ color: '#0F172A', fontSize: '1.5rem', fontWeight: 900, textTransform: 'uppercase', letterSpacing: '-0.02em', margin: 0 }}>Análise de Breakdown</h1>
-              <div style={{ fontSize: '0.75rem', color: '#64748B', fontWeight: 700 }}>Fatores Causais e Recorrência Individual</div>
-            </div>
-          </div>
-          <img src={LOGO_BASE64} alt="Açotubo" style={{ height: '36px' }} />
-        </header>
-
-        <div style={{ display: 'flex', flexDirection: 'column', gap: '1.5rem' }}>
-          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(5, 1fr)', gap: '0.75rem' }}>
-            {[
-              { label: 'Ato Inseguro', val: (filteredAccidents.filter(a => a.unsafeAct).length / Math.max(filteredAccidents.length, 1)) * 100 },
-              { label: 'Defic. M/E', val: (filteredAccidents.filter(a => a.machineDeficiency).length / Math.max(filteredAccidents.length, 1)) * 100 },
-              { label: 'Desvio Fun.', val: (filteredAccidents.filter(a => a.functionDeviation).length / Math.max(filteredAccidents.length, 1)) * 100 },
-              { label: 'Capacitado', val: (filteredAccidents.filter(a => a.hadTraining).length / Math.max(filteredAccidents.length, 1)) * 100 },
-              { label: 'EPI OK', val: (filteredAccidents.filter(a => a.usedEPI).length / Math.max(filteredAccidents.length, 1)) * 100 }
-            ].map(item => (
-              <div key={item.label} style={{ background: '#F8FAFC', padding: '0.75rem', borderRadius: '8px', textAlign: 'center', border: '1px solid #E2E8F0' }}>
-                <div style={{ fontSize: '1.1rem', fontWeight: 900, color: '#0F172A' }}>{Math.round(item.val)}%</div>
-                <div style={{ fontSize: '0.55rem', fontWeight: 800, color: '#64748B', textTransform: 'uppercase' }}>{item.label}</div>
+      {/* Page 4+: Breakdown Details */}
+      {breakdownPages.map((pageAccidents, pageIdx) => (
+        <div key={`breakdown-page-${pageIdx}`} className="a4-portrait">
+          <header style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '1.5rem', borderBottom: '2px solid #8B5CF6', paddingBottom: '0.75rem' }}>
+            <div style={{ display: 'flex', gap: '1rem', alignItems: 'center' }}>
+              <div style={{ background: '#8B5CF6', padding: '0.75rem', borderRadius: '10px', color: 'white' }}>
+                <FileText size={28} />
               </div>
-            ))}
-          </div>
+              <div>
+                <h1 style={{ color: '#0F172A', fontSize: '1.5rem', fontWeight: 900, textTransform: 'uppercase', letterSpacing: '-0.02em', margin: 0 }}>Análise de Breakdown</h1>
+                <div style={{ fontSize: '0.75rem', color: '#64748B', fontWeight: 700 }}>Fatores Causais e Recorrência Individual {breakdownPages.length > 1 ? `(Parte ${pageIdx + 1})` : ''}</div>
+              </div>
+            </div>
+            <img src={LOGO_BASE64} alt="Açotubo" style={{ height: '36px' }} />
+          </header>
 
-          {/* Paginated Accident Table */}
-          {(() => {
-            const counts = filteredAccidents.reduce((acc, a) => {
-              acc[a.employee] = (acc[a.employee] || 0) + 1;
-              return acc;
-            }, {} as Record<string, number>);
+          <div style={{ display: 'flex', flexDirection: 'column', gap: '1.5rem', height: '100%' }}>
+            {pageIdx === 0 && (
+              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(5, 1fr)', gap: '0.75rem' }}>
+                {[
+                  { label: 'Ato Inseguro', val: (filteredAccidents.filter(a => a.unsafeAct).length / Math.max(filteredAccidents.length, 1)) * 100 },
+                  { label: 'Defic. M/E', val: (filteredAccidents.filter(a => a.machineDeficiency).length / Math.max(filteredAccidents.length, 1)) * 100 },
+                  { label: 'Desvio Fun.', val: (filteredAccidents.filter(a => a.functionDeviation).length / Math.max(filteredAccidents.length, 1)) * 100 },
+                  { label: 'Capacitado', val: (filteredAccidents.filter(a => a.hadTraining).length / Math.max(filteredAccidents.length, 1)) * 100 },
+                  { label: 'EPI OK', val: (filteredAccidents.filter(a => a.usedEPI).length / Math.max(filteredAccidents.length, 1)) * 100 }
+                ].map(item => (
+                  <div key={item.label} style={{ background: '#F8FAFC', padding: '0.75rem', borderRadius: '8px', textAlign: 'center', border: '1px solid #E2E8F0' }}>
+                    <div style={{ fontSize: '1.1rem', fontWeight: 900, color: '#0F172A' }}>{Math.round(item.val)}%</div>
+                    <div style={{ fontSize: '0.55rem', fontWeight: 800, color: '#64748B', textTransform: 'uppercase' }}>{item.label}</div>
+                  </div>
+                ))}
+              </div>
+            )}
 
-            const sortedAccidents = [...filteredAccidents].sort((a, b) => {
-              if (counts[b.employee] !== counts[a.employee]) {
-                return counts[b.employee] - counts[a.employee];
-              }
-              if (a.employee !== b.employee) {
-                return a.employee.localeCompare(b.employee);
-              }
-              return b.date.getTime() - a.date.getTime();
-            });
-
-            const rowsPerPage = 14;
-            const pages = [];
-            for (let i = 0; i < sortedAccidents.length; i += rowsPerPage) {
-              pages.push(sortedAccidents.slice(i, i + rowsPerPage));
-            }
-
-            return pages.map((pageAccidents, pageIdx) => (
-              <div key={pageIdx} style={{ display: 'flex', flexDirection: 'column', gap: '1rem', marginTop: pageIdx > 0 ? '2rem' : 0 }}>
-                {pageIdx > 0 && <div style={{ borderTop: '1px dashed #E2E8F0', paddingBottom: '1rem' }} />}
-                <h3 style={{ fontSize: '0.85rem', fontWeight: 800, color: '#0F172A', textTransform: 'uppercase' }}>
-                  Detalhamento de Ocorrências {pages.length > 1 && `(Parte ${pageIdx + 1})`}
-                </h3>
-                <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '0.65rem' }}>
-                  <thead>
-                    <tr style={{ textAlign: 'left', borderBottom: '2px solid #F1F5F9' }}>
-                      <th style={{ padding: '6px' }}>DATA</th>
-                      <th style={{ padding: '6px' }}>COLABORADOR / CARGO</th>
-                      <th style={{ padding: '6px' }}>RE</th>
-                      <th style={{ padding: '6px', textAlign: 'center' }}>FREQ.</th>
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
+              <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '0.65rem' }}>
+                <thead>
+                  <tr style={{ textAlign: 'left', borderBottom: '2px solid #F1F5F9' }}>
+                    <th style={{ padding: '6px' }}>DATA</th>
+                    <th style={{ padding: '6px' }}>COLABORADOR / CARGO</th>
+                    <th style={{ padding: '6px' }}>RE</th>
+                    <th style={{ padding: '6px', textAlign: 'center' }}>FREQ.</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {pageAccidents.map((a, idx) => (
+                    <tr key={idx} style={{ borderBottom: '1px solid #F1F5F9' }}>
+                      <td style={{ padding: '6px', fontWeight: 700 }}>{a.date.toLocaleDateString('pt-BR')}</td>
+                      <td style={{ padding: '6px' }}>
+                        <div style={{ fontWeight: 800, color: counts[a.employee] > 1 ? '#B91C1C' : 'inherit' }}>{a.employee}</div>
+                        <div style={{ fontSize: '0.55rem', color: '#64748B' }}>{a.role}</div>
+                      </td>
+                      <td style={{ padding: '6px' }}>{a.re}</td>
+                      <td style={{ padding: '6px', textAlign: 'center' }}>
+                        <span style={{ fontWeight: 900, color: counts[a.employee] > 1 ? '#B91C1C' : '#64748B' }}>{counts[a.employee]}</span>
+                      </td>
                     </tr>
-                  </thead>
-                  <tbody>
-                    {pageAccidents.map((a, idx) => (
-                      <tr key={idx} style={{ borderBottom: '1px solid #F1F5F9' }}>
-                        <td style={{ padding: '6px', fontWeight: 700 }}>{a.date.toLocaleDateString('pt-BR')}</td>
-                        <td style={{ padding: '6px' }}>
-                          <div style={{ fontWeight: 800, color: counts[a.employee] > 1 ? '#B91C1C' : 'inherit' }}>{a.employee}</div>
-                          <div style={{ fontSize: '0.55rem', color: '#64748B' }}>{a.role}</div>
-                        </td>
-                        <td style={{ padding: '6px' }}>{a.re}</td>
-                        <td style={{ padding: '6px', textAlign: 'center' }}>
-                          <span style={{ fontWeight: 900, color: counts[a.employee] > 1 ? '#B91C1C' : '#64748B' }}>{counts[a.employee]}</span>
-                        </td>
-                      </tr>
-                    ))}
-                  </tbody>
-                </table>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+
+            {pageIdx === breakdownPages.length - 1 && (
+              <div style={{ background: '#F8FAFC', padding: '1.25rem', borderRadius: '16px', border: '1px solid #E2E8F0', marginTop: 'auto' }}>
+                 <h3 style={{ fontSize: '0.85rem', fontWeight: 800, marginBottom: '0.75rem', color: '#0F172A' }}>PERFIL DE EXPERIÊNCIA</h3>
+                 <div style={{ fontSize: '0.7rem', color: '#475569', lineHeight: 1.5 }}>
+                   Média de tempo de casa: **{(filteredAccidents.reduce((sum, a) => sum + (a.experienceYears + a.experienceMonths/12), 0) / Math.max(filteredAccidents.length, 1)).toFixed(1)} anos**.
+                 </div>
               </div>
-            ));
-          })()}
+            )}
 
-          <div style={{ background: '#F8FAFC', padding: '1.25rem', borderRadius: '16px', border: '1px solid #E2E8F0', marginTop: 'auto' }}>
-             <h3 style={{ fontSize: '0.85rem', fontWeight: 800, marginBottom: '0.75rem', color: '#0F172A' }}>PERFIL DE EXPERIÊNCIA</h3>
-             <div style={{ fontSize: '0.7rem', color: '#475569', lineHeight: 1.5 }}>
-               Média de tempo de casa: **{(filteredAccidents.reduce((sum, a) => sum + (a.experienceYears + a.experienceMonths/12), 0) / Math.max(filteredAccidents.length, 1)).toFixed(1)} anos**.
-             </div>
+            <footer style={{ marginTop: 'auto', display: 'flex', justifyContent: 'space-between', alignItems: 'center', borderTop: '1px solid #E2E8F0', paddingTop: '1rem' }}>
+              <div style={{ fontSize: '0.65rem', color: '#94A3B8', fontWeight: 700 }}>DOCUMENTO TÉCNICO OFICIAL - GRUPO AÇOTUBO</div>
+              <div style={{ fontSize: '0.65rem', fontWeight: 900 }}>PÁGINA {formatPageNum(4 + pageIdx)} / {formatPageNum(totalPages)}</div>
+            </footer>
           </div>
-
-          <footer style={{ marginTop: 'auto', display: 'flex', justifyContent: 'space-between', alignItems: 'center', borderTop: '1px solid #E2E8F0', paddingTop: '1rem' }}>
-            <div style={{ fontSize: '0.65rem', color: '#94A3B8', fontWeight: 700 }}>DOCUMENTO TÉCNICO OFICIAL - GRUPO AÇOTUBO</div>
-            <div style={{ fontSize: '0.65rem', fontWeight: 900 }}>PÁGINA 04 / 04</div>
-          </footer>
         </div>
-      </div>
+      ))}
     </div>
   );
 };

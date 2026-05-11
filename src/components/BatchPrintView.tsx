@@ -337,7 +337,7 @@ const ReportPage: React.FC<{ accidents: Accident[], years: number[], unit: strin
 
         // Rows for the first page (with summary cards)
         const rowsFirstPage = 8;
-        const rowsSubsequentPages = 15;
+        const rowsSubsequentPages = 13;
         
         const pages = [];
         if (sortedAccidents.length > 0) {
@@ -533,7 +533,18 @@ export const BatchPrintView: React.FC<BatchPrintViewProps> = ({ accidents, confi
                           <td style={{ padding: '0.6rem', textAlign: 'center', fontWeight: 700 }}>{item.total}</td>
                           <td style={{ padding: '0.6rem', textAlign: 'center', fontWeight: 900, color: 'var(--primary)' }}>{item.lostDays}</td>
                           <td style={{ padding: '0.6rem', textAlign: 'center', fontWeight: 700, color: '#3B82F6', textTransform: 'uppercase' }}>{item.peakPeriod}</td>
-                          <td style={{ padding: '0.6rem', textAlign: 'right', fontWeight: 900, color: '#94A3B8' }}>P. {(originalIdx * 4) + chunks.length + 1}</td>
+                          <td style={{ padding: '0.6rem', textAlign: 'right', fontWeight: 900, color: '#94A3B8' }}>P. {(() => {
+                            // Calculate the start page for this specific config
+                            let p = Math.ceil(configs.length / 18) + 1;
+                            for (let i = 0; i < originalIdx; i++) {
+                              const c = configs[i];
+                              const f = accidents.filter(a => (c.years.includes(a.year) && (c.unit === 'ALL' || a.division === c.unit) && (c.area === 'ALL' || a.area === c.area)));
+                              let bCount = 1;
+                              if (f.length > 8) bCount = 1 + Math.ceil((f.length - 8) / 13);
+                              p += 4 + bCount;
+                            }
+                            return p;
+                          })()}</td>
                         </tr>
                       );
                     })}
@@ -568,27 +579,40 @@ export const BatchPrintView: React.FC<BatchPrintViewProps> = ({ accidents, confi
           ));
         })()}
 
-        {configs.map((config, idx) => {
-          const filtered = accidents.filter(a => {
-            const yearMatch = config.years.includes(a.year);
-            const unitMatch = config.unit === 'ALL' || a.division === config.unit;
-            const areaMatch = config.area === 'ALL' || a.area === config.area;
-            return yearMatch && unitMatch && areaMatch;
-          });
-
+        {(() => {
           const summaryPages = Math.ceil(configs.length / 18);
+          let currentPageNum = summaryPages + 1;
 
-          return (
-            <ReportPage 
-              key={idx} 
-              accidents={filtered} 
-              years={config.years} 
-              unit={config.unit} 
-              area={config.area} 
-              pageNum={(idx * 4) + summaryPages + 1} 
-            />
-          );
-        })}
+          return configs.map((config, idx) => {
+            const filtered = accidents.filter(a => {
+              const yearMatch = config.years.includes(a.year);
+              const unitMatch = config.unit === 'ALL' || a.division === config.unit;
+              const areaMatch = config.area === 'ALL' || a.area === config.area;
+              return yearMatch && unitMatch && areaMatch;
+            });
+
+            const rowsFirstPage = 8;
+            const rowsSubsequentPages = 13;
+            let breakdownPagesCount = 1;
+            if (filtered.length > rowsFirstPage) {
+              breakdownPagesCount = 1 + Math.ceil((filtered.length - rowsFirstPage) / rowsSubsequentPages);
+            }
+
+            const startPage = currentPageNum;
+            currentPageNum += 4 + breakdownPagesCount; // Cover + 3 fixed + breakdown pages
+
+            return (
+              <ReportPage 
+                key={idx} 
+                accidents={filtered} 
+                years={config.years} 
+                unit={config.unit} 
+                area={config.area} 
+                pageNum={startPage} 
+              />
+            );
+          });
+        })()}
       </div>
     </div>
   );
