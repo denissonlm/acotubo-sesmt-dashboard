@@ -455,7 +455,7 @@ export const Dashboard: React.FC<DashboardProps> = ({
             </p>
           </div>
           
-          {currentInsights.slice(0, 4).map((insight, idx) => {
+          {currentInsights.slice(0, 3).map((insight, idx) => {
             const colors = {
               danger: { bg: '#FEE2E2', text: '#EF4444', icon: <AlertCircle color="#EF4444" size={24} /> },
               warning: { bg: '#FEF3C7', text: '#F59E0B', icon: <Calendar color="#F59E0B" size={24} /> },
