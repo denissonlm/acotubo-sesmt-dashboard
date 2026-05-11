@@ -23,11 +23,12 @@ const ReportPage: React.FC<{ accidents: Accident[], years: number[], unit: strin
   const temporalStats = calculateTemporalStats(accidents);
 
   const getHeatmapColor = (count: number) => {
-    if (count === 0) return '#F8FAFC';
+    if (count === 0) return '#F1F5F9';
     if (count <= 2) return '#FEE2E2';
-    if (count <= 4) return '#FECACA';
-    if (count <= 7) return '#F87171';
-    return '#B91C1C';
+    if (count <= 4) return '#FCA5A5';
+    if (count <= 6) return '#EF4444';
+    if (count <= 8) return '#B91C1C';
+    return '#7F1D1D';
   };
 
   const reportTitle = React.useMemo(() => {
