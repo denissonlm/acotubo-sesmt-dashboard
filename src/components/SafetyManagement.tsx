@@ -16,7 +16,8 @@ export const SafetyManagement: React.FC<SafetyManagementProps> = ({ accidents })
   const records = useMemo(() => calculateSafetyRecords(accidents), [accidents]);
 
   const chartData = useMemo(() => {
-    return records.intervals.map(item => ({
+    return records.intervals.map((item, index) => ({
+      id: index,
       date: item.date.toLocaleDateString('pt-BR', { day: '2-digit', month: '2-digit', year: 'numeric' }),
       days: item.days,
       employee: item.employee,
@@ -100,9 +101,10 @@ export const SafetyManagement: React.FC<SafetyManagementProps> = ({ accidents })
               <LineChart data={chartData} margin={{ top: 20, right: 30, left: 0, bottom: 20 }}>
                 <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#F1F5F9" />
                 <XAxis 
-                  dataKey="date" 
+                  dataKey="id" 
                   axisLine={false} 
                   tickLine={false} 
+                  tickFormatter={(val) => chartData[val]?.date || ''}
                   tick={{ fontSize: 10, fill: '#64748B' }} 
                   dy={10}
                 />
