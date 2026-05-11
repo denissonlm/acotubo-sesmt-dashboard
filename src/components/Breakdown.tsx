@@ -1,4 +1,4 @@
-import React, { useMemo, useState } from 'react';
+import React, { useMemo, useState, useRef, useEffect } from 'react';
 import { 
   Users, AlertCircle, ShieldCheck, HardHat, 
   GraduationCap, ExternalLink, Activity, Clock, Settings, X
@@ -36,6 +36,32 @@ const ALL_COLUMNS = [
 export const Breakdown: React.FC<BreakdownProps> = ({ accidents }) => {
   const [visibleColumns, setVisibleColumns] = useState<string[]>(ALL_COLUMNS.map(c => c.id));
   const [isConfigOpen, setIsConfigOpen] = useState(false);
+  const [tableWidth, setTableWidth] = useState(0);
+
+  const topScrollRef = useRef<HTMLDivElement>(null);
+  const bottomScrollRef = useRef<HTMLDivElement>(null);
+  const tableRef = useRef<HTMLTableElement>(null);
+
+  useEffect(() => {
+    if (tableRef.current) {
+      // Small timeout to ensure DOM has updated before measuring width
+      setTimeout(() => {
+        if (tableRef.current) setTableWidth(tableRef.current.scrollWidth);
+      }, 50);
+    }
+  }, [visibleColumns, accidents]);
+
+  const handleTopScroll = () => {
+    if (bottomScrollRef.current && topScrollRef.current) {
+      bottomScrollRef.current.scrollLeft = topScrollRef.current.scrollLeft;
+    }
+  };
+
+  const handleBottomScroll = () => {
+    if (bottomScrollRef.current && topScrollRef.current) {
+      topScrollRef.current.scrollLeft = bottomScrollRef.current.scrollLeft;
+    }
+  };
 
   const toggleColumn = (id: string) => {
     setVisibleColumns(prev => 
@@ -205,12 +231,37 @@ export const Breakdown: React.FC<BreakdownProps> = ({ accidents }) => {
           </div>
         )}
 
-        <div style={{ overflowX: 'auto', paddingBottom: '1rem' }}>
-          <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '0.75rem', whiteSpace: 'nowrap' }}>
+        {/* Top Scrollbar */}
+        <div 
+          ref={topScrollRef} 
+          onScroll={handleTopScroll} 
+          style={{ overflowX: 'auto', marginBottom: '0.25rem' }}
+          className="custom-scrollbar"
+        >
+          <div style={{ width: tableWidth > 0 ? tableWidth : '100%', height: '1px' }}></div>
+        </div>
+
+        <div 
+          ref={bottomScrollRef} 
+          onScroll={handleBottomScroll} 
+          style={{ overflow: 'auto', maxHeight: '500px', paddingBottom: '1rem' }}
+          className="custom-scrollbar"
+        >
+          <table ref={tableRef} style={{ width: '100%', borderCollapse: 'collapse', fontSize: '0.75rem', whiteSpace: 'nowrap' }}>
             <thead>
-              <tr style={{ textAlign: 'left', borderBottom: '2px solid #F1F5F9' }}>
+              <tr style={{ textAlign: 'left' }}>
                 {ALL_COLUMNS.map(col => visibleColumns.includes(col.id) && (
-                  <th key={col.id} style={{ padding: '0.75rem' }}>{col.label}</th>
+                  <th key={col.id} style={{ 
+                    padding: '0.75rem', 
+                    position: 'sticky', 
+                    top: 0, 
+                    background: '#F8FAFC', 
+                    zIndex: 10, 
+                    borderBottom: '2px solid #E2E8F0',
+                    boxShadow: '0 2px 4px rgba(0,0,0,0.05)'
+                  }}>
+                    {col.label}
+                  </th>
                 ))}
               </tr>
             </thead>
