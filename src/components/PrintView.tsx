@@ -81,8 +81,8 @@ export const PrintView: React.FC<PrintViewProps> = ({
     } else {
       let currentIndex = 0;
       // First page can fit fewer rows due to the summary header blocks
-      const rowsPerPageFirst = 12;
-      const rowsPerPageRest = 16;
+      const rowsPerPageFirst = 10;
+      const rowsPerPageRest = 14;
       
       pages.push(sortedAccidents.slice(0, rowsPerPageFirst));
       currentIndex += rowsPerPageFirst;

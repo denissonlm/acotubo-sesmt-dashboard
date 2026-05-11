@@ -336,8 +336,8 @@ const ReportPage: React.FC<{ accidents: Accident[], years: number[], unit: strin
         });
 
         // Rows for the first page (with summary cards)
-        const rowsFirstPage = 8;
-        const rowsSubsequentPages = 13;
+        const rowsFirstPage = 7;
+        const rowsSubsequentPages = 11;
         
         const pages = [];
         if (sortedAccidents.length > 0) {
@@ -488,10 +488,10 @@ export const BatchPrintView: React.FC<BatchPrintViewProps> = ({ accidents, confi
             };
           }).sort((a, b) => b.lostDays - a.lostDays || b.total - a.total);
 
-          // Chunk summary data into pages of 18 items for Portrait
+          // Chunk summary data into pages of 14 items for Portrait
           const chunks = [];
-          for (let i = 0; i < summaryData.length; i += 18) {
-            chunks.push(summaryData.slice(i, i + 18));
+          for (let i = 0; i < summaryData.length; i += 14) {
+            chunks.push(summaryData.slice(i, i + 14));
           }
 
           return chunks.map((chunk, chunkIdx) => (
@@ -535,12 +535,12 @@ export const BatchPrintView: React.FC<BatchPrintViewProps> = ({ accidents, confi
                           <td style={{ padding: '0.6rem', textAlign: 'center', fontWeight: 700, color: '#3B82F6', textTransform: 'uppercase' }}>{item.peakPeriod}</td>
                           <td style={{ padding: '0.6rem', textAlign: 'right', fontWeight: 900, color: '#94A3B8' }}>P. {(() => {
                             // Calculate the start page for this specific config
-                            let p = Math.ceil(configs.length / 18) + 1;
+                            let p = Math.ceil(configs.length / 14) + 1;
                             for (let i = 0; i < originalIdx; i++) {
                               const c = configs[i];
                               const f = accidents.filter(a => (c.years.includes(a.year) && (c.unit === 'ALL' || a.division === c.unit) && (c.area === 'ALL' || a.area === c.area)));
                               let bCount = 1;
-                              if (f.length > 8) bCount = 1 + Math.ceil((f.length - 8) / 13);
+                              if (f.length > 7) bCount = 1 + Math.ceil((f.length - 7) / 11);
                               p += 4 + bCount;
                             }
                             return p;
@@ -580,7 +580,7 @@ export const BatchPrintView: React.FC<BatchPrintViewProps> = ({ accidents, confi
         })()}
 
         {(() => {
-          const summaryPages = Math.ceil(configs.length / 18);
+          const summaryPages = Math.ceil(configs.length / 14);
           let currentPageNum = summaryPages + 1;
 
           return configs.map((config, idx) => {
@@ -591,8 +591,8 @@ export const BatchPrintView: React.FC<BatchPrintViewProps> = ({ accidents, confi
               return yearMatch && unitMatch && areaMatch;
             });
 
-            const rowsFirstPage = 8;
-            const rowsSubsequentPages = 13;
+            const rowsFirstPage = 7;
+            const rowsSubsequentPages = 11;
             let breakdownPagesCount = 1;
             if (filtered.length > rowsFirstPage) {
               breakdownPagesCount = 1 + Math.ceil((filtered.length - rowsFirstPage) / rowsSubsequentPages);
