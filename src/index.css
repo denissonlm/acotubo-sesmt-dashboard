@@ -146,7 +146,7 @@ body {
 /* Grid Layout */
 .grid-main {
   display: grid;
-  grid-template-columns: 240px 1fr 280px;
+  grid-template-columns: 240px minmax(0, 1fr) 280px;
   gap: 1.5rem;
   align-items: start;
 }
@@ -200,6 +200,7 @@ body {
   display: flex;
   flex-direction: column;
   gap: 1.5rem;
+  min-width: 0;
 }
 
 .panel-premium {
