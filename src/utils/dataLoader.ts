@@ -183,16 +183,32 @@ export const generateInsights = (accidents: Accident[], targetYears: number[]): 
     const lastTotal = accidents.filter(a => a.year === lastYear).length;
     const prevTotal = accidents.filter(a => a.year === prevYear).length;
     
-    if (lastTotal < prevTotal && lastTotal > 0) {
+    const currentYear = new Date().getFullYear();
+    const currentMonth = new Date().getMonth() + 1;
+    
+    let lastTotalProjected = lastTotal;
+    let isProjected = false;
+
+    if (lastYear === currentYear && currentMonth < 12 && currentMonth > 0) {
+      const avgPerMonth = lastTotal / currentMonth;
+      lastTotalProjected = Math.round(avgPerMonth * 12);
+      isProjected = true;
+    }
+
+    if (lastTotalProjected < prevTotal && lastTotal > 0) {
       insights.push({
         title: `Tendência de Queda em ${lastYear}`,
-        text: `Redução de ${prevTotal - lastTotal} ocorrências em relação a ${prevYear}. As medidas de prevenção estão surtindo efeito.`,
+        text: isProjected 
+          ? `Projeção de ${lastTotalProjected} ocorrências até o fim do ano (vs ${prevTotal} em ${prevYear}). O ritmo atual indica melhora.`
+          : `Redução de ${prevTotal - lastTotal} ocorrências em relação a ${prevYear}. As medidas de prevenção estão surtindo efeito.`,
         type: 'success'
       });
-    } else if (lastTotal > prevTotal) {
+    } else if (lastTotalProjected > prevTotal) {
       insights.push({
         title: `Alerta de Elevação em ${lastYear}`,
-        text: `Houve um aumento de ${lastTotal - prevTotal} acidentes comparado a ${prevYear}. Recomendado intensificar inspeções de campo.`,
+        text: isProjected
+          ? `Projeção de ${lastTotalProjected} acidentes até o final do ano (vs ${prevTotal} em ${prevYear}). Recomendado intervenção para reverter a tendência.`
+          : `Houve um aumento de ${lastTotal - prevTotal} acidentes comparado a ${prevYear}. Recomendado intensificar inspeções de campo.`,
         type: 'danger'
       });
     }
