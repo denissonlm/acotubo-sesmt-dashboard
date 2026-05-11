@@ -315,7 +315,7 @@ export const calculateSafetyRecords = (accidents: Accident[]) => {
   if (diffDays === 0) currentStreak = 0;
 
   let historicalRecord = currentStreak;
-  const intervals: { date: Date, days: number }[] = [];
+  const intervals: { date: Date, days: number, employee: string, role: string }[] = [];
 
   for (let i = 1; i < sorted.length; i++) {
     const d1 = new Date(sorted[i-1].date);
@@ -326,7 +326,12 @@ export const calculateSafetyRecords = (accidents: Accident[]) => {
     const interval = Math.floor((d2.getTime() - d1.getTime()) / (1000 * 60 * 60 * 24)) - 1;
     const cleanInterval = Math.max(0, interval);
     
-    intervals.push({ date: d2, days: cleanInterval });
+    intervals.push({ 
+      date: d2, 
+      days: cleanInterval,
+      employee: sorted[i].employee,
+      role: sorted[i].role
+    });
     if (cleanInterval > historicalRecord) {
       historicalRecord = cleanInterval;
     }

@@ -18,7 +18,9 @@ export const SafetyManagement: React.FC<SafetyManagementProps> = ({ accidents })
   const chartData = useMemo(() => {
     return records.intervals.map(item => ({
       date: item.date.toLocaleDateString('pt-BR', { day: '2-digit', month: '2-digit' }),
-      days: item.days
+      days: item.days,
+      employee: item.employee,
+      role: item.role
     }));
   }, [records]);
 
@@ -95,10 +97,24 @@ export const SafetyManagement: React.FC<SafetyManagementProps> = ({ accidents })
               <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#F1F5F9" />
               <XAxis dataKey="date" axisLine={false} tickLine={false} tick={{ fontSize: 10, fill: '#64748B' }} />
               <YAxis axisLine={false} tickLine={false} tick={{ fontSize: 10, fill: '#64748B' }} />
-              <Tooltip 
-                contentStyle={{ borderRadius: '12px', border: 'none', boxShadow: '0 4px 12px rgba(0,0,0,0.1)' }}
-                labelStyle={{ fontWeight: 800, color: '#0F172A' }}
-              />
+              <Tooltip content={({ active, payload }) => {
+                if (active && payload && payload.length) {
+                  const data = payload[0].payload;
+                  return (
+                    <div style={{ background: 'white', padding: '10px 14px', borderRadius: '12px', boxShadow: '0 4px 12px rgba(0,0,0,0.1)', border: '1px solid #E2E8F0', fontSize: '0.8rem' }}>
+                      <p style={{ fontWeight: 800, color: '#0F172A', marginBottom: '4px', margin: 0 }}>{data.date}</p>
+                      <p style={{ margin: '0 0 4px 0', color: '#64748B' }}><span style={{ fontWeight: 700, color: '#0F172A' }}>Espaçamento:</span> {data.days} dias</p>
+                      {data.employee && (
+                        <div style={{ marginTop: '8px', paddingTop: '8px', borderTop: '1px solid #F1F5F9' }}>
+                          <p style={{ margin: '0 0 2px 0', fontWeight: 800, color: '#1E293B' }}>{data.employee}</p>
+                          <p style={{ margin: 0, color: '#64748B', fontSize: '0.7rem' }}>{data.role}</p>
+                        </div>
+                      )}
+                    </div>
+                  );
+                }
+                return null;
+              }} />
               <ReferenceLine y={records.historicalRecord} stroke="#B91C1C" strokeDasharray="5 5" label={{ position: 'right', value: 'Recorde', fill: '#B91C1C', fontSize: 10, fontWeight: 900 }} />
               <Line 
                 type="monotone" 
