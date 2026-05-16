@@ -22,7 +22,7 @@ function App() {
 
   useEffect(() => {
     const fetchData = async () => {
-      const data = await loadAccidentData('./Dash Acidentes.xlsx')
+      const data = await loadAccidentData('./data.xlsx')
       if (data.length > 0) {
         setAccidents(data)
       } else {

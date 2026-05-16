@@ -3,7 +3,7 @@ import { Reorder } from 'framer-motion';
 import { 
   Users, AlertCircle, ShieldCheck, HardHat, 
   GraduationCap, ExternalLink, Activity, Clock, Settings, X, Search,
-  Maximize2, Minimize2, GripVertical
+  Maximize2, Minimize2, GripVertical, Layers
 } from 'lucide-react';
 import type { Accident } from '../types';
 
@@ -36,12 +36,27 @@ const ALL_COLUMNS = [
 ];
 
 export const Breakdown: React.FC<BreakdownProps> = ({ accidents }) => {
-  const [visibleColumns, setVisibleColumns] = useState<string[]>(ALL_COLUMNS.map(c => c.id));
-  const [columnOrder, setColumnOrder] = useState<string[]>(ALL_COLUMNS.map(c => c.id));
+  const [visibleColumns, setVisibleColumns] = useState<string[]>(() => {
+    const saved = localStorage.getItem('breakdown_visible_columns');
+    return saved ? JSON.parse(saved) : ALL_COLUMNS.map(c => c.id);
+  });
+  const [columnOrder, setColumnOrder] = useState<string[]>(() => {
+    const saved = localStorage.getItem('breakdown_column_order');
+    return saved ? JSON.parse(saved) : ALL_COLUMNS.map(c => c.id);
+  });
   const [isConfigOpen, setIsConfigOpen] = useState(false);
   const [isMaximized, setIsMaximized] = useState(false);
   const [tableWidth, setTableWidth] = useState(0);
   const [searchQuery, setSearchQuery] = useState('');
+  const [groupBy, setGroupBy] = useState<'none' | 'division' | 'area' | 'year' | 'role'>('none');
+
+  useEffect(() => {
+    localStorage.setItem('breakdown_visible_columns', JSON.stringify(visibleColumns));
+  }, [visibleColumns]);
+
+  useEffect(() => {
+    localStorage.setItem('breakdown_column_order', JSON.stringify(columnOrder));
+  }, [columnOrder]);
 
   const filteredTableData = useMemo(() => {
     if (!searchQuery) return accidents;
@@ -128,6 +143,30 @@ export const Breakdown: React.FC<BreakdownProps> = ({ accidents }) => {
     }
   };
   
+  const groupedData = useMemo(() => {
+    if (groupBy === 'none') return null;
+    const groups: Record<string, Accident[]> = {};
+    const sorted = [...filteredTableData].sort((a, b) => b.date.getTime() - a.date.getTime());
+    
+    sorted.forEach(acc => {
+      let key = '';
+      if (groupBy === 'year') key = String(acc.year);
+      else if (groupBy === 'division') key = acc.division;
+      else if (groupBy === 'area') key = acc.area;
+      else if (groupBy === 'role') key = acc.role;
+      
+      if (!groups[key]) groups[key] = [];
+      groups[key].push(acc);
+    });
+    
+    // Sort keys (e.g., years descending, others alphabetical)
+    return Object.fromEntries(
+      Object.entries(groups).sort(([a], [b]) => 
+        groupBy === 'year' ? Number(b) - Number(a) : a.localeCompare(b)
+      )
+    );
+  }, [filteredTableData, groupBy]);
+
   const stats = useMemo(() => {
     if (accidents.length === 0) return null;
     
@@ -275,7 +314,7 @@ export const Breakdown: React.FC<BreakdownProps> = ({ accidents }) => {
       >
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1.5rem', flexWrap: 'wrap', gap: '1rem' }}>
           <h3 style={{ fontSize: '1rem', fontWeight: 900, margin: 0 }}>Detalhamento Geral de Ocorrências</h3>
-          <div style={{ display: 'flex', gap: '0.75rem', alignItems: 'center' }}>
+            <div style={{ display: 'flex', gap: '0.75rem', alignItems: 'center' }}>
             <div style={{ position: 'relative' }}>
               <Search size={14} color="#94A3B8" style={{ position: 'absolute', left: '10px', top: '50%', transform: 'translateY(-50%)' }} />
               <input 
@@ -295,6 +334,31 @@ export const Breakdown: React.FC<BreakdownProps> = ({ accidents }) => {
                 }} 
               />
             </div>
+            
+            <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', background: '#F8FAFC', padding: '2px 0.5rem', borderRadius: '8px', border: '1px solid #E2E8F0' }}>
+              <Layers size={14} color="#64748B" />
+              <select 
+                value={groupBy}
+                onChange={(e) => setGroupBy(e.target.value as any)}
+                style={{ 
+                  background: 'none', 
+                  border: 'none', 
+                  fontSize: '0.75rem', 
+                  fontWeight: 700, 
+                  color: '#475569', 
+                  outline: 'none',
+                  cursor: 'pointer',
+                  padding: '0.4rem 0'
+                }}
+              >
+                <option value="none">Sem Agrupamento</option>
+                <option value="division">Agrupar por Unidade</option>
+                <option value="area">Agrupar por Área</option>
+                <option value="year">Agrupar por Ano</option>
+                <option value="role">Agrupar por Cargo</option>
+              </select>
+            </div>
+
             <button 
               onClick={() => setIsMaximized(!isMaximized)}
               style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', padding: '0.5rem 1rem', background: '#F1F5F9', border: 'none', borderRadius: '8px', color: '#475569', fontWeight: 800, cursor: 'pointer', fontSize: '0.75rem' }}
@@ -418,18 +482,52 @@ export const Breakdown: React.FC<BreakdownProps> = ({ accidents }) => {
               </tr>
             </thead>
             <tbody>
-              {filteredTableData.slice().sort((a,b) => b.date.getTime() - a.date.getTime()).map((a, idx) => (
-                <tr key={idx} style={{ borderBottom: '1px solid #F1F5F9', transition: 'background 0.2s' }}>
-                  {columnOrder.map(colId => {
-                    if (!visibleColumns.includes(colId)) return null;
-                    return (
-                      <td key={colId} style={{ padding: '0.75rem' }}>
-                        {renderCell(colId, a)}
+              {groupedData ? (
+                Object.entries(groupedData).map(([groupName, items]) => (
+                  <React.Fragment key={groupName}>
+                    <tr style={{ background: '#F1F5F9' }}>
+                      <td 
+                        colSpan={visibleColumns.length} 
+                        style={{ 
+                          padding: '0.5rem 1rem', 
+                          fontWeight: 900, 
+                          color: '#475569', 
+                          fontSize: '0.7rem', 
+                          textTransform: 'uppercase',
+                          letterSpacing: '0.05em'
+                        }}
+                      >
+                        {groupName} — {items.length} {items.length === 1 ? 'Ocorrência' : 'Ocorrências'}
                       </td>
-                    );
-                  })}
-                </tr>
-              ))}
+                    </tr>
+                    {items.map((a, idx) => (
+                      <tr key={`${groupName}-${idx}`} style={{ borderBottom: '1px solid #F1F5F9', transition: 'background 0.2s' }}>
+                        {columnOrder.map(colId => {
+                          if (!visibleColumns.includes(colId)) return null;
+                          return (
+                            <td key={colId} style={{ padding: '0.75rem' }}>
+                              {renderCell(colId, a)}
+                            </td>
+                          );
+                        })}
+                      </tr>
+                    ))}
+                  </React.Fragment>
+                ))
+              ) : (
+                filteredTableData.slice().sort((a,b) => b.date.getTime() - a.date.getTime()).map((a, idx) => (
+                  <tr key={idx} style={{ borderBottom: '1px solid #F1F5F9', transition: 'background 0.2s' }}>
+                    {columnOrder.map(colId => {
+                      if (!visibleColumns.includes(colId)) return null;
+                      return (
+                        <td key={colId} style={{ padding: '0.75rem' }}>
+                          {renderCell(colId, a)}
+                        </td>
+                      );
+                    })}
+                  </tr>
+                ))
+              )}
             </tbody>
           </table>
         </div>
