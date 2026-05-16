@@ -1,7 +1,9 @@
 import React, { useMemo, useState, useRef, useEffect } from 'react';
+import { Reorder } from 'framer-motion';
 import { 
   Users, AlertCircle, ShieldCheck, HardHat, 
-  GraduationCap, ExternalLink, Activity, Clock, Settings, X, Search
+  GraduationCap, ExternalLink, Activity, Clock, Settings, X, Search,
+  Maximize2, Minimize2, GripVertical
 } from 'lucide-react';
 import type { Accident } from '../types';
 
@@ -35,7 +37,9 @@ const ALL_COLUMNS = [
 
 export const Breakdown: React.FC<BreakdownProps> = ({ accidents }) => {
   const [visibleColumns, setVisibleColumns] = useState<string[]>(ALL_COLUMNS.map(c => c.id));
+  const [columnOrder, setColumnOrder] = useState<string[]>(ALL_COLUMNS.map(c => c.id));
   const [isConfigOpen, setIsConfigOpen] = useState(false);
+  const [isMaximized, setIsMaximized] = useState(false);
   const [tableWidth, setTableWidth] = useState(0);
   const [searchQuery, setSearchQuery] = useState('');
 
@@ -82,6 +86,46 @@ export const Breakdown: React.FC<BreakdownProps> = ({ accidents }) => {
     setVisibleColumns(prev => 
       prev.includes(id) ? prev.filter(c => c !== id) : [...prev, id]
     );
+  };
+
+  const renderCell = (colId: string, a: Accident) => {
+    switch (colId) {
+      case 'id': return a.id;
+      case 'date': return <span style={{ fontWeight: 700 }}>{a.date.toLocaleDateString('pt-BR')}</span>;
+      case 'time': return a.time;
+      case 'period': return a.period;
+      case 'dayOfWeek': return ['Dom', 'Seg', 'Ter', 'Qua', 'Qui', 'Sex', 'Sáb'][a.dayOfWeek];
+      case 're': return a.re;
+      case 'employee': return <span style={{ fontWeight: 800 }}>{a.employee}</span>;
+      case 'role': return a.role;
+      case 'division': return a.division;
+      case 'area': return a.area;
+      case 'manager': return a.manager;
+      case 'type': return a.type;
+      case 'partAffected': return a.partAffected;
+      case 'experience': return `${Math.floor(a.experienceYears)}a ${Math.floor(a.experienceMonths)}m`;
+      case 'lostDays': return (
+        <div style={{ 
+          padding: '0.25rem', textAlign: 'center', borderRadius: '4px',
+          background: getLostDaysColor(a.lostDays), color: getLostDaysTextColor(a.lostDays), fontWeight: 900 
+        }}>{a.lostDays}d</div>
+      );
+      case 'unsafeAct': return (
+        <span style={{ padding: '2px 8px', borderRadius: '10px', background: a.unsafeAct ? '#FEE2E2' : '#F0FDF4', color: a.unsafeAct ? '#EF4444' : '#10B981', fontWeight: 900, fontSize: '0.6rem' }}>
+          {a.unsafeAct ? 'SIM' : 'NÃO'}
+        </span>
+      );
+      case 'machineDeficiency': return <span style={{ color: a.machineDeficiency ? '#EF4444' : '#64748B' }}>{a.machineDeficiency ? 'SIM' : 'NÃO'}</span>;
+      case 'functionDeviation': return <span style={{ color: a.functionDeviation ? '#EF4444' : '#64748B' }}>{a.functionDeviation ? 'SIM' : 'NÃO'}</span>;
+      case 'hadTraining': return <span style={{ color: a.hadTraining ? '#10B981' : '#EF4444' }}>{a.hadTraining ? 'SIM' : 'NÃO'}</span>;
+      case 'usedEPI': return <span style={{ color: a.usedEPI ? '#10B981' : '#EF4444' }}>{a.usedEPI ? 'SIM' : 'NÃO'}</span>;
+      case 'link': return a.investigationLink ? (
+        <a href={a.investigationLink} target="_blank" rel="noopener noreferrer" style={{ color: 'var(--primary)' }}>
+          <ExternalLink size={14} />
+        </a>
+      ) : '-';
+      default: return null;
+    }
   };
   
   const stats = useMemo(() => {
@@ -214,7 +258,21 @@ export const Breakdown: React.FC<BreakdownProps> = ({ accidents }) => {
 
       {/* Detailed Table */}
       {/* Detailed Table */}
-      <div className="panel-premium" style={{ position: 'relative' }}>
+      <div 
+        className="panel-premium" 
+        style={{ 
+          position: isMaximized ? 'fixed' : 'relative',
+          top: isMaximized ? 0 : 'auto',
+          left: isMaximized ? 0 : 'auto',
+          width: isMaximized ? '100vw' : 'auto',
+          height: isMaximized ? '100vh' : 'auto',
+          zIndex: isMaximized ? 1000 : 1,
+          borderRadius: isMaximized ? 0 : '24px',
+          display: 'flex',
+          flexDirection: 'column',
+          padding: isMaximized ? '2rem' : '1.5rem'
+        }}
+      >
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1.5rem', flexWrap: 'wrap', gap: '1rem' }}>
           <h3 style={{ fontSize: '1rem', fontWeight: 900, margin: 0 }}>Detalhamento Geral de Ocorrências</h3>
           <div style={{ display: 'flex', gap: '0.75rem', alignItems: 'center' }}>
@@ -238,6 +296,14 @@ export const Breakdown: React.FC<BreakdownProps> = ({ accidents }) => {
               />
             </div>
             <button 
+              onClick={() => setIsMaximized(!isMaximized)}
+              style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', padding: '0.5rem 1rem', background: '#F1F5F9', border: 'none', borderRadius: '8px', color: '#475569', fontWeight: 800, cursor: 'pointer', fontSize: '0.75rem' }}
+              title={isMaximized ? "Minimizar" : "Maximizar"}
+            >
+              {isMaximized ? <Minimize2 size={16} /> : <Maximize2 size={16} />}
+              {isMaximized ? "Minimizar" : "Maximizar"}
+            </button>
+            <button 
               onClick={() => setIsConfigOpen(!isConfigOpen)}
               style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', padding: '0.5rem 1rem', background: '#F1F5F9', border: 'none', borderRadius: '8px', color: '#475569', fontWeight: 800, cursor: 'pointer', fontSize: '0.75rem' }}
             >
@@ -247,23 +313,69 @@ export const Breakdown: React.FC<BreakdownProps> = ({ accidents }) => {
         </div>
 
         {isConfigOpen && (
-          <div style={{ position: 'absolute', top: '4rem', right: '1.5rem', background: 'white', border: '1px solid #E2E8F0', borderRadius: '12px', padding: '1.5rem', boxShadow: '0 10px 25px rgba(0,0,0,0.1)', zIndex: 10, width: '300px' }}>
+          <div style={{ 
+            position: 'absolute', 
+            top: '4.5rem', 
+            right: '1.5rem', 
+            background: 'white', 
+            border: '1px solid #E2E8F0', 
+            borderRadius: '12px', 
+            padding: '1.5rem', 
+            boxShadow: '0 20px 50px rgba(0,0,0,0.15)', 
+            zIndex: 1100, 
+            width: '320px' 
+          }}>
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1rem' }}>
-              <h4 style={{ margin: 0, fontSize: '0.85rem', fontWeight: 800 }}>Colunas Visíveis</h4>
+              <h4 style={{ margin: 0, fontSize: '0.85rem', fontWeight: 800 }}>Ordem e Visibilidade</h4>
               <button onClick={() => setIsConfigOpen(false)} style={{ background: 'none', border: 'none', cursor: 'pointer', color: '#64748B' }}><X size={16} /></button>
             </div>
-            <div style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem', maxHeight: '300px', overflowY: 'auto' }}>
-              {ALL_COLUMNS.map(col => (
-                <label key={col.id} style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', fontSize: '0.75rem', fontWeight: 600, cursor: 'pointer' }}>
-                  <input 
-                    type="checkbox" 
-                    checked={visibleColumns.includes(col.id)} 
-                    onChange={() => toggleColumn(col.id)} 
-                  />
-                  {col.label}
-                </label>
-              ))}
-            </div>
+            <Reorder.Group 
+              axis="y" 
+              values={columnOrder} 
+              onReorder={setColumnOrder}
+              style={{ display: 'flex', flexDirection: 'column', gap: '0.25rem', maxHeight: '400px', overflowY: 'auto', paddingRight: '0.5rem', listStyle: 'none', padding: 0 }}
+            >
+              {columnOrder.map((colId) => {
+                const col = ALL_COLUMNS.find(c => c.id === colId);
+                if (!col) return null;
+                return (
+                  <Reorder.Item 
+                    key={colId} 
+                    value={colId}
+                    style={{ 
+                      display: 'flex', 
+                      alignItems: 'center', 
+                      gap: '0.5rem', 
+                      padding: '0.4rem 0.5rem',
+                      background: '#F8FAFC',
+                      borderRadius: '8px',
+                      border: '1px solid #F1F5F9',
+                      cursor: 'grab'
+                    }}
+                    whileDrag={{ 
+                      scale: 1.02, 
+                      boxShadow: '0 5px 15px rgba(0,0,0,0.1)',
+                      zIndex: 1200,
+                      cursor: 'grabbing'
+                    }}
+                  >
+                    <div style={{ color: '#94A3B8', display: 'flex', alignItems: 'center' }}>
+                      <GripVertical size={14} />
+                    </div>
+                    <input 
+                      type="checkbox" 
+                      checked={visibleColumns.includes(colId)} 
+                      onChange={() => toggleColumn(colId)}
+                      onClick={(e) => e.stopPropagation()}
+                      style={{ cursor: 'pointer' }}
+                    />
+                    <span style={{ flex: 1, fontSize: '0.75rem', fontWeight: 600, color: visibleColumns.includes(colId) ? '#0F172A' : '#94A3B8', userSelect: 'none' }}>
+                      {col.label}
+                    </span>
+                  </Reorder.Item>
+                );
+              })}
+            </Reorder.Group>
           </div>
         )}
 
@@ -280,70 +392,42 @@ export const Breakdown: React.FC<BreakdownProps> = ({ accidents }) => {
         <div 
           ref={bottomScrollRef} 
           onScroll={handleBottomScroll} 
-          style={{ overflow: 'auto', maxHeight: '500px', paddingBottom: '1rem' }}
+          style={{ overflow: 'auto', flex: 1, paddingBottom: '1rem' }}
           className="custom-scrollbar"
         >
           <table ref={tableRef} style={{ width: '100%', borderCollapse: 'collapse', fontSize: '0.75rem', whiteSpace: 'nowrap' }}>
             <thead>
               <tr style={{ textAlign: 'left' }}>
-                {ALL_COLUMNS.map(col => visibleColumns.includes(col.id) && (
-                  <th key={col.id} style={{ 
-                    padding: '0.75rem', 
-                    position: 'sticky', 
-                    top: 0, 
-                    background: '#F8FAFC', 
-                    zIndex: 10, 
-                    borderBottom: '2px solid #E2E8F0',
-                    boxShadow: '0 2px 4px rgba(0,0,0,0.05)'
-                  }}>
-                    {col.label}
-                  </th>
-                ))}
+                {columnOrder.map(colId => {
+                  const col = ALL_COLUMNS.find(c => c.id === colId);
+                  if (!col || !visibleColumns.includes(colId)) return null;
+                  return (
+                    <th key={colId} style={{ 
+                      padding: '0.75rem', 
+                      position: 'sticky', 
+                      top: 0, 
+                      background: '#F8FAFC', 
+                      zIndex: 10, 
+                      borderBottom: '2px solid #E2E8F0',
+                      boxShadow: '0 2px 4px rgba(0,0,0,0.05)'
+                    }}>
+                      {col.label}
+                    </th>
+                  );
+                })}
               </tr>
             </thead>
             <tbody>
               {filteredTableData.slice().sort((a,b) => b.date.getTime() - a.date.getTime()).map((a, idx) => (
                 <tr key={idx} style={{ borderBottom: '1px solid #F1F5F9', transition: 'background 0.2s' }}>
-                  {visibleColumns.includes('id') && <td style={{ padding: '0.75rem' }}>{a.id}</td>}
-                  {visibleColumns.includes('date') && <td style={{ padding: '0.75rem', fontWeight: 700 }}>{a.date.toLocaleDateString('pt-BR')}</td>}
-                  {visibleColumns.includes('time') && <td style={{ padding: '0.75rem' }}>{a.time}</td>}
-                  {visibleColumns.includes('period') && <td style={{ padding: '0.75rem' }}>{a.period}</td>}
-                  {visibleColumns.includes('dayOfWeek') && <td style={{ padding: '0.75rem' }}>{['Dom', 'Seg', 'Ter', 'Qua', 'Qui', 'Sex', 'Sáb'][a.dayOfWeek]}</td>}
-                  {visibleColumns.includes('re') && <td style={{ padding: '0.75rem' }}>{a.re}</td>}
-                  {visibleColumns.includes('employee') && <td style={{ padding: '0.75rem', fontWeight: 800 }}>{a.employee}</td>}
-                  {visibleColumns.includes('role') && <td style={{ padding: '0.75rem' }}>{a.role}</td>}
-                  {visibleColumns.includes('division') && <td style={{ padding: '0.75rem' }}>{a.division}</td>}
-                  {visibleColumns.includes('area') && <td style={{ padding: '0.75rem' }}>{a.area}</td>}
-                  {visibleColumns.includes('manager') && <td style={{ padding: '0.75rem' }}>{a.manager}</td>}
-                  {visibleColumns.includes('type') && <td style={{ padding: '0.75rem' }}>{a.type}</td>}
-                  {visibleColumns.includes('partAffected') && <td style={{ padding: '0.75rem' }}>{a.partAffected}</td>}
-                  {visibleColumns.includes('experience') && <td style={{ padding: '0.75rem' }}>{Math.floor(a.experienceYears)}a {Math.floor(a.experienceMonths)}m</td>}
-                  {visibleColumns.includes('lostDays') && (
-                    <td style={{ 
-                      padding: '0.75rem', textAlign: 'center', 
-                      background: getLostDaysColor(a.lostDays), color: getLostDaysTextColor(a.lostDays), fontWeight: 900 
-                    }}>{a.lostDays}d</td>
-                  )}
-                  {visibleColumns.includes('unsafeAct') && (
-                    <td style={{ padding: '0.75rem', textAlign: 'center' }}>
-                      <span style={{ padding: '2px 8px', borderRadius: '10px', background: a.unsafeAct ? '#FEE2E2' : '#F0FDF4', color: a.unsafeAct ? '#EF4444' : '#10B981', fontWeight: 900, fontSize: '0.6rem' }}>
-                        {a.unsafeAct ? 'SIM' : 'NÃO'}
-                      </span>
-                    </td>
-                  )}
-                  {visibleColumns.includes('machineDeficiency') && <td style={{ padding: '0.75rem', textAlign: 'center', color: a.machineDeficiency ? '#EF4444' : '#64748B' }}>{a.machineDeficiency ? 'SIM' : 'NÃO'}</td>}
-                  {visibleColumns.includes('functionDeviation') && <td style={{ padding: '0.75rem', textAlign: 'center', color: a.functionDeviation ? '#EF4444' : '#64748B' }}>{a.functionDeviation ? 'SIM' : 'NÃO'}</td>}
-                  {visibleColumns.includes('hadTraining') && <td style={{ padding: '0.75rem', textAlign: 'center', color: a.hadTraining ? '#10B981' : '#EF4444' }}>{a.hadTraining ? 'SIM' : 'NÃO'}</td>}
-                  {visibleColumns.includes('usedEPI') && <td style={{ padding: '0.75rem', textAlign: 'center', color: a.usedEPI ? '#10B981' : '#EF4444' }}>{a.usedEPI ? 'SIM' : 'NÃO'}</td>}
-                  {visibleColumns.includes('link') && (
-                    <td style={{ padding: '0.75rem', textAlign: 'center' }}>
-                      {a.investigationLink ? (
-                        <a href={a.investigationLink} target="_blank" rel="noopener noreferrer" style={{ color: 'var(--primary)' }}>
-                          <ExternalLink size={14} />
-                        </a>
-                      ) : '-'}
-                    </td>
-                  )}
+                  {columnOrder.map(colId => {
+                    if (!visibleColumns.includes(colId)) return null;
+                    return (
+                      <td key={colId} style={{ padding: '0.75rem' }}>
+                        {renderCell(colId, a)}
+                      </td>
+                    );
+                  })}
                 </tr>
               ))}
             </tbody>
