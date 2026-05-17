@@ -293,6 +293,26 @@ body {
   position: relative;
 }
 
+.a4-landscape {
+  width: 297mm;
+  height: 210mm;
+  background: white;
+  margin: 0 auto 2rem;
+  padding: 10mm 12mm;
+  box-shadow: 0 0 20px rgba(0,0,0,0.1);
+  overflow: hidden;
+  box-sizing: border-box;
+  position: relative;
+  display: flex;
+  flex-direction: column;
+}
+
+.print-landscape-container {
+  min-height: 100vh;
+  background: #f1f5f9;
+  padding: 4rem 2rem 2rem;
+}
+
 @media print {
   @page {
     size: portrait;
@@ -331,5 +351,22 @@ body {
     display: flex !important;
     flex-direction: column !important;
     -webkit-print-color-adjust: exact !important;
+  }
+}
+
+@media print {
+  .print-landscape-container .a4-landscape {
+    margin: 0 !important;
+    box-shadow: none !important;
+    width: 100% !important;
+    height: 100vh !important;
+    padding: 8mm 10mm !important;
+    page-break-after: always;
+    page-break-inside: avoid;
+  }
+
+  @page landscape-page {
+    size: landscape;
+    margin: 0;
   }
 }
