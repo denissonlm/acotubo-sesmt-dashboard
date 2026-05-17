@@ -105,7 +105,17 @@ function App() {
 
             targetUnits.forEach(u => {
               targetAreas.forEach(a => {
-                configs.push({ years, unit: u, area: a });
+                // Only add config if there are actual accidents in this combination
+                const hasData = accidents.some(acc => {
+                  const matchesYear = years.includes(acc.year);
+                  const matchesUnit = u === 'ALL' || acc.division === u;
+                  const matchesArea = a === 'ALL' || acc.area === a;
+                  return matchesYear && matchesUnit && matchesArea;
+                });
+
+                if (hasData) {
+                  configs.push({ years, unit: u, area: a });
+                }
               });
             });
 

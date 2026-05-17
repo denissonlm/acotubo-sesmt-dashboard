@@ -18,6 +18,20 @@ export const BatchSelector: React.FC<BatchSelectorProps> = ({ accidents, onCance
   const [reportMode, setReportMode] = useState<'unit' | 'area'>('unit');
   const [selectedItems, setSelectedItems] = useState<string[]>([]);
 
+  // Count how many selected combos actually have accidents in the selected years
+  const validReportCount = useMemo(() => {
+    if (selectedItems.length === 0 || selectedYears.length === 0) return 0;
+    return selectedItems.filter(item =>
+      accidents.some(acc => {
+        const matchesYear = selectedYears.includes(acc.year);
+        const matchesFilter = reportMode === 'unit' ? acc.division === item : acc.area === item;
+        return matchesYear && matchesFilter;
+      })
+    ).length;
+  }, [selectedItems, selectedYears, reportMode, accidents]);
+
+  const skippedCount = selectedItems.length - validReportCount;
+
   const toggleItem = (list: any[], setList: any, item: any) => {
     if (list.includes(item)) {
       setList(list.filter(i => i !== item));
@@ -122,11 +136,22 @@ export const BatchSelector: React.FC<BatchSelectorProps> = ({ accidents, onCance
         </div>
 
         <footer style={{ padding: '2rem', background: '#F8FAFC', borderTop: '1px solid var(--border)', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-          <div style={{ display: 'flex', gap: '1.5rem' }}>
+          <div style={{ display: 'flex', gap: '1.5rem', alignItems: 'center' }}>
             <div style={{ textAlign: 'center' }}>
-              <div style={{ fontSize: '1.25rem', fontWeight: 900, color: 'var(--text)' }}>{selectedItems.length}</div>
-              <div style={{ fontSize: '0.65rem', fontWeight: 800, color: 'var(--text-muted)' }}>RELATÓRIOS</div>
+              <div style={{ fontSize: '1.25rem', fontWeight: 900, color: 'var(--text)' }}>{validReportCount}</div>
+              <div style={{ fontSize: '0.65rem', fontWeight: 800, color: 'var(--text-muted)' }}>COM DADOS</div>
             </div>
+            {skippedCount > 0 && (
+              <div style={{ textAlign: 'center' }}>
+                <div style={{ fontSize: '1.25rem', fontWeight: 900, color: '#94A3B8' }}>{skippedCount}</div>
+                <div style={{ fontSize: '0.65rem', fontWeight: 800, color: '#94A3B8' }}>SEM EVENTOS</div>
+              </div>
+            )}
+            {skippedCount > 0 && (
+              <div style={{ fontSize: '0.72rem', color: '#64748B', fontWeight: 500, maxWidth: '220px', lineHeight: 1.4, borderLeft: '3px solid #E2E8F0', paddingLeft: '0.75rem' }}>
+                {skippedCount} {skippedCount === 1 ? 'relatório sem ocorrências será ignorado' : 'relatórios sem ocorrências serão ignorados'} no período selecionado.
+              </div>
+            )}
           </div>
 
           <div style={{ display: 'flex', gap: '1rem' }}>
@@ -134,17 +159,17 @@ export const BatchSelector: React.FC<BatchSelectorProps> = ({ accidents, onCance
               Cancelar
             </button>
             <button 
-              disabled={selectedYears.length === 0 || selectedItems.length === 0}
+              disabled={validReportCount === 0}
               onClick={handleGenerate}
               style={{ 
                 padding: '0.8rem 2.5rem', borderRadius: '12px', border: 'none', 
-                background: (selectedYears.length === 0 || selectedItems.length === 0) ? '#CBD5E1' : 'var(--primary)', 
-                color: 'white', fontWeight: 900, cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '0.75rem',
-                boxShadow: '0 4px 12px rgba(185, 28, 28, 0.2)'
+                background: validReportCount === 0 ? '#CBD5E1' : 'var(--primary)', 
+                color: 'white', fontWeight: 900, cursor: validReportCount === 0 ? 'not-allowed' : 'pointer', display: 'flex', alignItems: 'center', gap: '0.75rem',
+                boxShadow: validReportCount > 0 ? '0 4px 12px rgba(185, 28, 28, 0.2)' : 'none'
               }}
             >
               <Printer size={20} />
-              Gerar {selectedItems.length} Relatórios
+              Gerar {validReportCount} Relatórios
             </button>
           </div>
         </footer>
