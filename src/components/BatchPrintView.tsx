@@ -421,7 +421,7 @@ const ReportPage: React.FC<{ accidents: Accident[], years: number[], unit: strin
                 <div style={{ marginTop: 'auto', padding: '1.25rem', background: '#F5F3FF', borderRadius: '16px', border: '1px solid #DDD6FE' }}>
                   <h4 style={{ fontSize: '0.85rem', fontWeight: 900, color: '#5B21B6', marginBottom: '0.5rem' }}>Análise Consolidada</h4>
                   <p style={{ fontSize: '0.7rem', color: '#5B21B6', lineHeight: 1.5 }}>
-                    Média de experiência dos envolvidos: **{(accidents.reduce((sum, a) => sum + (a.experienceYears + a.experienceMonths/12), 0) / Math.max(accidents.length, 1)).toFixed(1)} anos**. Relatório gerado para fins de auditoria interna SESMT.
+                    Média de experiência dos envolvidos: <strong>{(accidents.reduce((sum, a) => sum + (a.experienceYears + a.experienceMonths/12), 0) / Math.max(accidents.length, 1)).toFixed(1)} anos</strong>. Relatório gerado para fins de auditoria interna SESMT.
                   </p>
                 </div>
               )}

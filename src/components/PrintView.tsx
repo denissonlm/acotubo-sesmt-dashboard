@@ -502,7 +502,7 @@ export const PrintView: React.FC<PrintViewProps> = ({
               <div style={{ background: '#F8FAFC', padding: '1.25rem', borderRadius: '16px', border: '1px solid #E2E8F0', marginTop: 'auto' }}>
                  <h3 style={{ fontSize: '0.85rem', fontWeight: 800, marginBottom: '0.75rem', color: '#0F172A' }}>PERFIL DE EXPERIÊNCIA</h3>
                  <div style={{ fontSize: '0.7rem', color: '#475569', lineHeight: 1.5 }}>
-                   Média de tempo de casa: **{(filteredAccidents.reduce((sum, a) => sum + (a.experienceYears + a.experienceMonths/12), 0) / Math.max(filteredAccidents.length, 1)).toFixed(1)} anos**.
+                   Média de tempo de casa: <strong>{(filteredAccidents.reduce((sum, a) => sum + (a.experienceYears + a.experienceMonths/12), 0) / Math.max(filteredAccidents.length, 1)).toFixed(1)} anos</strong>.
                  </div>
               </div>
             )}
