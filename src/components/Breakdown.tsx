@@ -220,10 +220,10 @@ export const Breakdown: React.FC<BreakdownProps> = ({ accidents }) => {
   };
 
   return (
-    <div style={{ display: 'flex', flexDirection: 'column', gap: '2rem' }}>
+    <div className="breakdown-container">
       
       {/* Causal Indicators */}
-      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(5, 1fr)', gap: '1rem' }}>
+      <div className="causal-indicators-grid">
         {[
           { label: 'Ato Inseguro', value: stats?.unsafeAct, icon: <AlertCircle size={18} />, color: '#EF4444' },
           { label: 'Defic. M/E', value: stats?.machineDeficiency, icon: <Activity size={18} />, color: '#F59E0B' },
@@ -239,7 +239,7 @@ export const Breakdown: React.FC<BreakdownProps> = ({ accidents }) => {
         ))}
       </div>
 
-      <div style={{ display: 'grid', gridTemplateColumns: '1.2fr 0.8fr', gap: '1.5rem' }}>
+      <div className="breakdown-rankings-grid">
         
         {/* Top Employees Ranking */}
         <div className="panel-premium" style={{ display: 'flex', flexDirection: 'column', maxHeight: '450px' }}>

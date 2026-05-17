@@ -33,9 +33,8 @@ export const SafetyManagement: React.FC<SafetyManagementProps> = ({ accidents })
       initial={{ opacity: 0, y: 20 }}
       animate={{ opacity: 1, y: 0 }}
       className="safety-records"
-      style={{ display: 'flex', flexDirection: 'column', gap: '2rem' }}
     >
-      <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: '1.5rem' }}>
+      <div className="safety-stats-grid">
         
         {/* Current Streak */}
         <div className="panel-premium" style={{ background: 'linear-gradient(135deg, #0F172A 0%, #1E293B 100%)', color: 'white', border: 'none' }}>

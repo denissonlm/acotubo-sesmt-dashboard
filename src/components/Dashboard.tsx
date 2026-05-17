@@ -148,19 +148,19 @@ export const Dashboard: React.FC<DashboardProps> = ({
 
   return (
     <div className="dashboard">
-      <header className="header no-print" style={{ padding: '0.75rem 2rem' }}>
-        <div style={{ display: 'flex', alignItems: 'center', gap: '1.5rem' }}>
-          <div style={{ background: 'linear-gradient(135deg, #B91C1C 0%, #7F1D1D 100%)', padding: '0.75rem', borderRadius: '0.75rem', boxShadow: '0 4px 12px rgba(185, 28, 28, 0.2)' }}>
-            <img src={LOGO_BASE64} alt="Logo" style={{ height: '32px', filter: 'brightness(0) invert(1)' }} />
+      <header className="header no-print">
+        <div className="header-brand">
+          <div className="brand-logo-container">
+            <img src={LOGO_BASE64} alt="Logo" className="brand-logo" />
           </div>
-          <div>
-            <h1 style={{ fontSize: '1.4rem', margin: 0, fontWeight: 900 }}>{dashboardTitle}</h1>
-            <p style={{ margin: 0, fontSize: '0.8rem', fontWeight: 600, opacity: 0.8 }}>Grupo Açotubo</p>
+          <div className="brand-title">
+            <h1>{dashboardTitle}</h1>
+            <p>Grupo Açotubo</p>
           </div>
         </div>
 
-        <div style={{ flex: 1, display: 'flex', justifyContent: 'center' }}>
-          <div style={{ display: 'flex', gap: '0.4rem' }}>
+        <div className="header-years">
+          <div className="years-btn-group">
             {allAvailableYears.map(year => (
               <button
                 key={year}
@@ -170,18 +170,7 @@ export const Dashboard: React.FC<DashboardProps> = ({
                     : [...selectedYears, year];
                   onYearsChange(newYears.sort((a, b) => a - b));
                 }}
-                style={{
-                  padding: '0.4rem 0.9rem',
-                  borderRadius: '10px',
-                  border: '1px solid ' + (selectedYears.includes(year) ? 'var(--primary)' : '#334155'),
-                  background: selectedYears.includes(year) ? 'var(--primary)' : 'rgba(255,255,255,0.05)',
-                  color: 'white',
-                  fontSize: '0.8rem',
-                  fontWeight: 800,
-                  cursor: 'pointer',
-                  transition: 'all 0.2s',
-                  boxShadow: selectedYears.includes(year) ? '0 4px 12px rgba(185, 28, 28, 0.3)' : 'none'
-                }}
+                className={`year-select-btn ${selectedYears.includes(year) ? 'active' : ''}`}
               >
                 {year}
               </button>
@@ -189,60 +178,56 @@ export const Dashboard: React.FC<DashboardProps> = ({
           </div>
         </div>
 
-        <div className="action-buttons" style={{ display: 'flex', gap: '0.75rem' }}>
+        <div className="action-buttons">
           <button 
             onClick={onReset} 
-            className="btn-pdf" 
+            className="btn-action reset" 
             title="Reenviar Excel"
-            style={{ background: '#334155', width: '42px', height: '42px', padding: 0, display: 'flex', alignItems: 'center', justifyContent: 'center', borderRadius: '12px' }}
           >
             <Upload size={20} />
           </button>
           <button 
             onClick={onBatchPrint}
-            className="btn-pdf" 
+            className="btn-action batch" 
             title="Relatórios em Massa"
-            style={{ background: '#3B82F6', width: '42px', height: '42px', padding: 0, display: 'flex', alignItems: 'center', justifyContent: 'center', borderRadius: '12px' }}
           >
             <Layers size={22} />
           </button>
           <button 
             onClick={onLandscapePrint} 
-            className="btn-pdf" 
+            className="btn-action landscape" 
             title="Gerar Quadro Paisagem (Gestão à Vista)"
-            style={{ background: '#10B981', width: '42px', height: '42px', padding: 0, display: 'flex', alignItems: 'center', justifyContent: 'center', borderRadius: '12px' }}
           >
             <Monitor size={22} />
           </button>
           <button 
             onClick={onPrint} 
-            className="btn-pdf" 
+            className="btn-action print" 
             title="Gerar Relatório PDF (Retrato)"
-            style={{ background: 'var(--primary)', width: '42px', height: '42px', padding: 0, display: 'flex', alignItems: 'center', justifyContent: 'center', borderRadius: '12px' }}
           >
             <Printer size={22} />
           </button>
         </div>
       </header>
 
-      <div className="filters-bar no-print" style={{ alignItems: 'center', justifyContent: 'space-between' }}>
-        <div style={{ display: 'flex', gap: '2rem' }}>
+      <div className="filters-bar no-print">
+        <div className="filters-selectors">
           <div className="filter-group">
-            <label><div style={{ width: '8px', height: '8px', borderRadius: '50%', background: '#3B82F6', marginRight: '8px' }}></div>Unidade</label>
+            <label><div className="filter-dot blue"></div>Unidade</label>
             <select value={filterDivision} onChange={e => onDivisionChange(e.target.value)}>
               <option value="ALL">Todas as Unidades</option>
               {uniqueDivisions.map(d => <option key={d} value={d}>{d}</option>)}
             </select>
           </div>
           <div className="filter-group">
-            <label><div style={{ width: '8px', height: '8px', borderRadius: '50%', background: '#10B981', marginRight: '8px' }}></div>Superior Direto</label>
+            <label><div className="filter-dot green"></div>Superior Direto</label>
             <select value={filterManager} onChange={e => onManagerChange(e.target.value)}>
               <option value="ALL">Todos os Superiores</option>
               {uniqueManagers.map(m => <option key={m} value={m}>{m}</option>)}
             </select>
           </div>
           <div className="filter-group">
-            <label><div style={{ width: '8px', height: '8px', borderRadius: '50%', background: '#F59E0B', marginRight: '8px' }}></div>Área</label>
+            <label><div className="filter-dot orange"></div>Área</label>
             <select value={filterArea} onChange={e => onAreaChange(e.target.value)}>
               <option value="ALL">Todas as Áreas</option>
               {uniqueAreas.map(a => <option key={a} value={a}>{a}</option>)}
@@ -250,72 +235,28 @@ export const Dashboard: React.FC<DashboardProps> = ({
           </div>
         </div>
 
-        <div style={{ display: 'flex', gap: '0.5rem', background: '#F1F5F9', padding: '0.4rem', borderRadius: '12px' }}>
+        <div className="filters-tabs">
           <button
             onClick={() => setActiveTab('monthly')}
-            style={{
-              padding: '0.6rem 1.2rem',
-              borderRadius: '8px',
-              border: 'none',
-              background: activeTab === 'monthly' ? 'white' : 'transparent',
-              color: activeTab === 'monthly' ? 'var(--primary)' : 'var(--text-muted)',
-              fontWeight: 800,
-              fontSize: '0.8rem',
-              cursor: 'pointer',
-              boxShadow: activeTab === 'monthly' ? '0 2px 8px rgba(0,0,0,0.05)' : 'none',
-              transition: 'all 0.2s'
-            }}
+            className={`tab-btn ${activeTab === 'monthly' ? 'active' : ''}`}
           >
             Visão Mensal
           </button>
           <button
             onClick={() => setActiveTab('temporal')}
-            style={{
-              padding: '0.6rem 1.2rem',
-              borderRadius: '8px',
-              border: 'none',
-              background: activeTab === 'temporal' ? 'white' : 'transparent',
-              color: activeTab === 'temporal' ? 'var(--primary)' : 'var(--text-muted)',
-              fontWeight: 800,
-              fontSize: '0.8rem',
-              cursor: 'pointer',
-              boxShadow: activeTab === 'temporal' ? '0 2px 8px rgba(0,0,0,0.05)' : 'none',
-              transition: 'all 0.2s'
-            }}
+            className={`tab-btn ${activeTab === 'temporal' ? 'active' : ''}`}
           >
             Análise Temporal
           </button>
           <button
             onClick={() => setActiveTab('safety')}
-            style={{
-              padding: '0.6rem 1.2rem',
-              borderRadius: '8px',
-              border: 'none',
-              background: activeTab === 'safety' ? 'white' : 'transparent',
-              color: activeTab === 'safety' ? 'var(--primary)' : 'var(--text-muted)',
-              fontWeight: 800,
-              fontSize: '0.8rem',
-              cursor: 'pointer',
-              boxShadow: activeTab === 'safety' ? '0 2px 8px rgba(0,0,0,0.05)' : 'none',
-              transition: 'all 0.2s'
-            }}
+            className={`tab-btn ${activeTab === 'safety' ? 'active' : ''}`}
           >
             Gestão de Segurança
           </button>
           <button
             onClick={() => setActiveTab('breakdown')}
-            style={{
-              padding: '0.6rem 1.2rem',
-              borderRadius: '8px',
-              border: 'none',
-              background: activeTab === 'breakdown' ? 'white' : 'transparent',
-              color: activeTab === 'breakdown' ? 'var(--primary)' : 'var(--text-muted)',
-              fontWeight: 800,
-              fontSize: '0.8rem',
-              cursor: 'pointer',
-              boxShadow: activeTab === 'breakdown' ? '0 2px 8px rgba(0,0,0,0.05)' : 'none',
-              transition: 'all 0.2s'
-            }}
+            className={`tab-btn ${activeTab === 'breakdown' ? 'active' : ''}`}
           >
             Breakdown
           </button>
@@ -394,33 +335,35 @@ export const Dashboard: React.FC<DashboardProps> = ({
               <div className="panel-premium">
                 <h2 style={{textAlign: 'center', marginBottom: '0.5rem', fontWeight: 900, color: 'var(--text)'}}>Mapa de <span style={{color: 'var(--primary)'}}>Intensidade</span></h2>
                 <p style={{textAlign: 'center', fontSize: '0.75rem', color: 'var(--text-muted)', marginBottom: '1.5rem'}}>Frequência mensal de ocorrências (Mapa de Calor)</p>
-                <table className="heatmap-table">
-                  <thead>
-                    <tr>
-                      <th></th>
-                      {MONTH_NAMES.map(m => <th key={m}>{m.toUpperCase()}</th>)}
-                    </tr>
-                  </thead>
-                  <tbody>
-                    {selectedYears.map(year => {
-                      const s = stats[year];
-                      if (!s) return null;
-                      return (
-                        <tr key={year}>
-                          <td style={{fontWeight: 700, color: 'var(--text-muted)'}}>{year}</td>
-                          {stats[year]?.monthly.map((m, i) => (
-                            <td 
-                              key={i} 
-                              style={{ background: getHeatmapColor(m.count), color: m.count > 5 ? 'white' : 'var(--text)' }}
-                            >
-                              <div>{m.count > 0 ? m.count : '-'}</div>
-                            </td>
-                          ))}
-                        </tr>
-                      );
-                    })}
-                  </tbody>
-                </table>
+                <div className="heatmap-container">
+                  <table className="heatmap-table">
+                    <thead>
+                      <tr>
+                        <th></th>
+                        {MONTH_NAMES.map(m => <th key={m}>{m.toUpperCase()}</th>)}
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {selectedYears.map(year => {
+                        const s = stats[year];
+                        if (!s) return null;
+                        return (
+                          <tr key={year}>
+                            <td style={{fontWeight: 700, color: 'var(--text-muted)'}}>{year}</td>
+                            {stats[year]?.monthly.map((m, i) => (
+                              <td 
+                                key={i} 
+                                style={{ background: getHeatmapColor(m.count), color: m.count > 5 ? 'white' : 'var(--text)' }}
+                              >
+                                <div>{m.count > 0 ? m.count : '-'}</div>
+                              </td>
+                            ))}
+                          </tr>
+                        );
+                      })}
+                    </tbody>
+                  </table>
+                </div>
                 
                 <div style={{display: 'flex', justifyContent: 'center', alignItems: 'center', gap: '8px', marginTop: '1.5rem', fontSize: '0.7rem', color: 'var(--text-muted)'}}>
                   <span>Menos</span>

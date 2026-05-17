@@ -20,9 +20,9 @@ export const TemporalAnalysis: React.FC<TemporalAnalysisProps> = ({ accidents })
       initial={{ opacity: 0, y: 20 }}
       animate={{ opacity: 1, y: 0 }}
       transition={{ duration: 0.5 }}
-      style={{ display: 'flex', flexDirection: 'column', gap: '2rem' }}
+      className="temporal-analysis-container"
     >
-      <div className="grid-temporal" style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '2rem' }}>
+      <div className="grid-temporal">
         
         {/* Distribuição por Período */}
         <div className="panel-premium">
@@ -33,7 +33,7 @@ export const TemporalAnalysis: React.FC<TemporalAnalysisProps> = ({ accidents })
             <h3 style={{ margin: 0, fontSize: '1.1rem', fontWeight: 800 }}>Ocorrências por Período</h3>
           </div>
           
-          <div style={{ display: 'grid', gridTemplateColumns: '1fr 200px', gap: '1rem', alignItems: 'center' }}>
+          <div className="pie-chart-container">
             <div style={{ height: 250 }}>
               <ResponsiveContainer width="100%" height="100%">
                 <PieChart>

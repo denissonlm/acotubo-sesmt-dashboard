@@ -110,6 +110,8 @@ body {
   border-radius: 1.25rem;
   border: 1px solid var(--border);
   display: flex;
+  justify-content: space-between;
+  align-items: center;
   gap: 2rem;
   margin-bottom: 2.5rem;
   box-shadow: var(--shadow);
@@ -272,6 +274,353 @@ body {
 
 .insight-card:hover {
   transform: translateX(5px);
+}
+
+/* Custom responsive helper elements & layout classes */
+.brand-logo-container {
+  background: linear-gradient(135deg, #B91C1C 0%, #7F1D1D 100%);
+  padding: 0.75rem;
+  border-radius: 0.75rem;
+  box-shadow: 0 4px 12px rgba(185, 28, 28, 0.2);
+  display: flex;
+  align-items: center;
+}
+
+.brand-logo {
+  height: 32px;
+  filter: brightness(0) invert(1);
+}
+
+.header-brand {
+  display: flex;
+  align-items: center;
+  gap: 1.5rem;
+}
+
+.header-years {
+  flex: 1;
+  display: flex;
+  justify-content: center;
+}
+
+.years-btn-group {
+  display: flex;
+  gap: 0.4rem;
+}
+
+.year-select-btn {
+  padding: 0.4rem 0.9rem;
+  border-radius: 10px;
+  border: 1px solid #334155;
+  background: rgba(255,255,255,0.05);
+  color: white;
+  font-size: 0.8rem;
+  font-weight: 800;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.year-select-btn.active {
+  border-color: var(--primary);
+  background: var(--primary);
+  box-shadow: 0 4px 12px rgba(185, 28, 28, 0.3);
+}
+
+.action-buttons {
+  display: flex;
+  gap: 0.75rem;
+}
+
+.btn-action {
+  width: 42px;
+  height: 42px;
+  padding: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 12px;
+  border: none;
+  color: white;
+  cursor: pointer;
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+}
+
+.btn-action.reset {
+  background: #334155;
+}
+
+.btn-action.batch {
+  background: #3B82F6;
+}
+
+.btn-action.print {
+  background: var(--primary);
+}
+
+.btn-action.landscape {
+  background: #10B981;
+}
+
+.btn-action:hover {
+  transform: translateY(-2px) scale(1.05);
+}
+
+.btn-action:active {
+  transform: translateY(0) scale(0.95);
+}
+
+.filters-selectors {
+  display: flex;
+  gap: 2rem;
+}
+
+.filter-dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  margin-right: 8px;
+}
+
+.filter-dot.blue { background: #3B82F6; }
+.filter-dot.green { background: #10B981; }
+.filter-dot.orange { background: #F59E0B; }
+
+.filters-tabs {
+  display: flex;
+  gap: 0.5rem;
+  background: #F1F5F9;
+  padding: 0.4rem;
+  border-radius: 12px;
+}
+
+.tab-btn {
+  padding: 0.6rem 1.2rem;
+  border-radius: 8px;
+  border: none;
+  background: transparent;
+  color: var(--text-muted);
+  font-weight: 800;
+  font-size: 0.8rem;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.tab-btn.active {
+  background: white;
+  color: var(--primary);
+  box-shadow: 0 2px 8px rgba(0,0,0,0.05);
+}
+
+.heatmap-container {
+  overflow-x: auto;
+  padding-bottom: 0.5rem;
+}
+
+/* Safety records styles */
+.safety-records {
+  display: flex;
+  flex-direction: column;
+  gap: 2rem;
+}
+
+.safety-stats-grid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 1.5rem;
+}
+
+/* Temporal analysis styles */
+.temporal-analysis-container {
+  display: flex;
+  flex-direction: column;
+  gap: 2rem;
+}
+
+.pie-chart-container {
+  display: grid;
+  grid-template-columns: 1fr 200px;
+  gap: 1rem;
+  align-items: center;
+}
+
+/* Breakdown styles */
+.breakdown-container {
+  display: flex;
+  flex-direction: column;
+  gap: 2rem;
+}
+
+.causal-indicators-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
+  gap: 1rem;
+}
+
+.breakdown-rankings-grid {
+  display: grid;
+  grid-template-columns: 1.2fr 0.8fr;
+  gap: 1.5rem;
+}
+
+/* Media Queries & Responsive Layouts */
+@media (max-width: 1200px) {
+  .dashboard-container {
+    padding: 2rem 4rem;
+  }
+}
+
+@media (max-width: 1024px) {
+  .dashboard-container {
+    padding: 1.5rem;
+  }
+
+  .grid-main {
+    grid-template-columns: 1fr;
+    gap: 2rem;
+  }
+
+  .panorama-panel {
+    flex-direction: row;
+    flex-wrap: wrap;
+    justify-content: center;
+    gap: 1rem;
+  }
+
+  .panorama-panel h2 {
+    width: 100%;
+    text-align: center;
+    margin-bottom: 0.5rem;
+  }
+
+  .year-card {
+    flex: 1 1 calc(33.333% - 1rem);
+    min-width: 150px;
+  }
+
+  .panorama-panel > div:last-child {
+    width: 100%;
+    margin-top: 1rem;
+  }
+}
+
+@media (max-width: 768px) {
+  .dashboard-container {
+    padding: 0.75rem;
+  }
+
+  .header {
+    flex-direction: column;
+    align-items: stretch;
+    gap: 1.25rem;
+    padding: 1.25rem;
+    text-align: center;
+  }
+
+  .header-brand {
+    flex-direction: column;
+    gap: 1rem;
+    align-items: center;
+  }
+
+  .brand-logo-container {
+    display: inline-flex;
+    justify-content: center;
+  }
+
+  .header-years {
+    justify-content: center;
+    width: 100%;
+  }
+
+  .years-btn-group {
+    flex-wrap: wrap;
+    justify-content: center;
+    width: 100%;
+  }
+
+  .action-buttons {
+    justify-content: center;
+    width: 100%;
+  }
+
+  .filters-bar {
+    flex-direction: column;
+    align-items: stretch;
+    gap: 1.5rem;
+    padding: 1.25rem;
+  }
+
+  .filters-selectors {
+    flex-direction: column;
+    gap: 1rem;
+    width: 100%;
+  }
+
+  .filter-group {
+    width: 100%;
+  }
+
+  .filter-group select {
+    width: 100%;
+  }
+
+  .filters-tabs {
+    width: 100%;
+    overflow-x: auto;
+    white-space: nowrap;
+    padding: 0.3rem;
+    -webkit-overflow-scrolling: touch;
+  }
+
+  .tab-btn {
+    flex: 1 0 auto;
+    padding: 0.5rem 1rem;
+    font-size: 0.75rem;
+  }
+
+  .safety-stats-grid {
+    grid-template-columns: 1fr;
+    gap: 1rem;
+  }
+
+  .grid-temporal {
+    grid-template-columns: 1fr;
+    gap: 1.5rem;
+  }
+
+  .pie-chart-container {
+    grid-template-columns: 1fr;
+    gap: 1.5rem;
+    text-align: center;
+  }
+
+  .pie-chart-container > div:last-child {
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: center;
+    gap: 0.75rem;
+  }
+
+  .breakdown-rankings-grid {
+    grid-template-columns: 1fr;
+    gap: 1.5rem;
+  }
+
+  .causal-indicators-grid {
+    grid-template-columns: repeat(2, 1fr);
+    gap: 0.75rem;
+  }
+}
+
+@media (max-width: 480px) {
+  .year-card {
+    flex: 1 1 100%;
+  }
+  
+  .causal-indicators-grid {
+    grid-template-columns: 1fr;
+  }
 }
 
 /* Print Specific Layout */
