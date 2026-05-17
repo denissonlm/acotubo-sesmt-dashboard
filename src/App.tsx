@@ -4,6 +4,7 @@ import type { Accident } from './types'
 import { Dashboard } from './components/Dashboard'
 import { UploadSection } from './components/UploadSection'
 import { PrintView } from './components/PrintView'
+import { LandscapePrintView } from './components/LandscapePrintView'
 import { BatchSelector } from './components/BatchSelector'
 import { BatchPrintView } from './components/BatchPrintView'
 import { Loader2 } from 'lucide-react'
@@ -13,6 +14,7 @@ function App() {
   const [loading, setLoading] = useState(true)
   const [showUpload, setShowUpload] = useState(false)
   const [isPrinting, setIsPrinting] = useState(false)
+  const [isLandscapePrinting, setIsLandscapePrinting] = useState(false)
   const [isBatchSelecting, setIsBatchSelecting] = useState(false)
   const [batchConfigs, setBatchConfigs] = useState<{ years: number[], unit: string, area: string }[]>([])
   const [selectedYears, setSelectedYears] = useState<number[]>([2024, 2025, 2026])
@@ -66,6 +68,19 @@ function App() {
     )
   }
 
+  if (isLandscapePrinting) {
+    return (
+      <LandscapePrintView 
+        accidents={accidents} 
+        selectedYears={selectedYears} 
+        filterDivision={filterDivision}
+        filterManager={filterManager}
+        filterArea={filterArea}
+        onBack={() => setIsLandscapePrinting(false)} 
+      />
+    )
+  }
+
   if (batchConfigs.length > 0) {
     return (
       <BatchPrintView 
@@ -90,6 +105,7 @@ function App() {
         onAreaChange={setFilterArea}
         onReset={() => setShowUpload(true)}
         onPrint={() => setIsPrinting(true)}
+        onLandscapePrint={() => setIsLandscapePrinting(true)}
         onBatchPrint={() => setIsBatchSelecting(true)}
       />
       {isBatchSelecting && (

@@ -2,7 +2,7 @@ import React, { useMemo, useState } from 'react';
 import { 
   BarChart, Bar, XAxis, YAxis, Tooltip, Legend, ResponsiveContainer
 } from 'recharts';
-import { AlertCircle, TrendingUp, Calendar, Printer, ShieldCheck, Layers, Upload } from 'lucide-react';
+import { AlertCircle, TrendingUp, Calendar, Printer, ShieldCheck, Layers, Upload, Monitor } from 'lucide-react';
 import type { Accident } from '../types';
 import { calculateStats, generateInsights, generateTemporalInsights } from '../utils/dataLoader';
 import { motion } from 'framer-motion';
@@ -24,6 +24,7 @@ interface DashboardProps {
   onAreaChange: (val: string) => void;
   onReset: () => void;
   onPrint: () => void;
+  onLandscapePrint: () => void;
   onBatchPrint: () => void;
 }
 
@@ -41,6 +42,7 @@ export const Dashboard: React.FC<DashboardProps> = ({
   onAreaChange,
   onReset, 
   onPrint, 
+  onLandscapePrint,
   onBatchPrint 
 }) => {
   const [activeTab, setActiveTab] = useState<'monthly' | 'temporal' | 'safety' | 'breakdown'>('monthly');
@@ -205,9 +207,17 @@ export const Dashboard: React.FC<DashboardProps> = ({
             <Layers size={22} />
           </button>
           <button 
+            onClick={onLandscapePrint} 
+            className="btn-pdf" 
+            title="Gerar Quadro Paisagem (Gestão à Vista)"
+            style={{ background: '#10B981', width: '42px', height: '42px', padding: 0, display: 'flex', alignItems: 'center', justifyContent: 'center', borderRadius: '12px' }}
+          >
+            <Monitor size={22} />
+          </button>
+          <button 
             onClick={onPrint} 
             className="btn-pdf" 
-            title="Gerar Relatório PDF"
+            title="Gerar Relatório PDF (Retrato)"
             style={{ background: 'var(--primary)', width: '42px', height: '42px', padding: 0, display: 'flex', alignItems: 'center', justifyContent: 'center', borderRadius: '12px' }}
           >
             <Printer size={22} />
