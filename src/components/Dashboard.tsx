@@ -147,7 +147,7 @@ export const Dashboard: React.FC<DashboardProps> = ({
   }, [yearsLabel]);
 
   return (
-    <div className="dashboard">
+    <div className="dashboard-container">
       <header className="header no-print">
         <div className="header-brand">
           <div className="brand-logo-container">
