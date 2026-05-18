@@ -396,7 +396,7 @@ export const LandscapePrintView: React.FC<LandscapePrintViewProps> = ({
                             key={i} 
                             style={{ 
                               background: getHeatmapColor(m.count), 
-                              color: m.count > 0 ? '#B91C1C' : '#94A3B8',
+                              color: m.count === 0 ? '#94A3B8' : m.count > 2 ? '#FFFFFF' : '#B91C1C',
                               height: '20px',
                               borderRadius: '3px',
                               fontSize: '9px',

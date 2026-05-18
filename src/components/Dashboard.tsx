@@ -353,7 +353,7 @@ export const Dashboard: React.FC<DashboardProps> = ({
                             {stats[year]?.monthly.map((m, i) => (
                               <td 
                                 key={i} 
-                                style={{ background: getHeatmapColor(m.count), color: m.count > 5 ? 'white' : 'var(--text)' }}
+                                style={{ background: getHeatmapColor(m.count), color: m.count > 4 ? 'white' : 'var(--text)' }}
                               >
                                 <div>{m.count > 0 ? m.count : '-'}</div>
                               </td>

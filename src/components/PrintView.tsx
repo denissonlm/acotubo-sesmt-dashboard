@@ -222,7 +222,7 @@ export const PrintView: React.FC<PrintViewProps> = ({
                         textAlign: 'center',
                         fontSize: '9px',
                         fontWeight: 800,
-                        color: m.count > 5 ? 'white' : '#0F172A',
+                        color: m.count > 4 ? 'white' : '#0F172A',
                       }}>
                         {m.count > 0 ? m.count : ''}
                       </td>
