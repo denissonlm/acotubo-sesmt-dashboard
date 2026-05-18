@@ -164,27 +164,50 @@ export const generateInsights = (accidents: Accident[], targetYears: number[]): 
     const year1 = sortedYearsAsc[0];
     const year2 = sortedYearsAsc[1];
     
-    const count1 = accidents.filter(a => a.year === year1).length;
-    const count2 = accidents.filter(a => a.year === year2).length;
+    const currentYear = new Date().getFullYear();
+    let count1 = 0;
+    let count2 = 0;
+    let isProportional = false;
+    let limitMonth = 12;
+    
+    if (year2 === currentYear) {
+      const year2Accidents = accidents.filter(a => a.year === year2);
+      limitMonth = year2Accidents.length > 0 
+        ? Math.max(...year2Accidents.map(a => a.month), 1)
+        : new Date().getMonth() + 1;
+      
+      count1 = accidents.filter(a => a.year === year1 && a.month <= limitMonth).length;
+      count2 = accidents.filter(a => a.year === year2 && a.month <= limitMonth).length;
+      isProportional = true;
+    } else {
+      count1 = accidents.filter(a => a.year === year1).length;
+      count2 = accidents.filter(a => a.year === year2).length;
+    }
     
     if (count1 > 0 && count2 < count1) {
       const dropPercent = Math.round(((count1 - count2) / count1) * 100);
       insights.push({
         title: `Evolução Positiva ${year1}-${year2}`,
-        text: `Houve uma redução substancial de ${dropPercent}% no volume de acidentes (de ${count1} para ${count2} ocorrências) entre ${year1} e ${year2}, refletindo a maturação e efetividade das campanhas preventivas adotadas.`,
+        text: isProportional
+          ? `Houve uma redução substancial de ${dropPercent}% no volume de acidentes no período proporcional de janeiro a ${monthNames[limitMonth-1].toLowerCase()} (de ${count1} para ${count2} ocorrências) entre ${year1} e ${year2}, refletindo a maturação e efetividade das campanhas preventivas adotadas.`
+          : `Houve uma redução substancial de ${dropPercent}% no volume de acidentes (de ${count1} para ${count2} ocorrências) entre ${year1} e ${year2}, refletindo a maturação e efetividade das campanhas preventivas adotadas.`,
         type: 'success'
       });
     } else if (count2 > count1 && count1 > 0) {
       const incPercent = Math.round(((count2 - count1) / count1) * 100);
       insights.push({
         title: `Alerta de Crescimento ${year1}-${year2}`,
-        text: `Houve um aumento de ${incPercent}% nas ocorrências (de ${count1} para ${count2}) entre ${year1} e ${year2}, indicando a necessidade de revisão nas estratégias de contenção de riscos.`,
+        text: isProportional
+          ? `Houve um aumento de ${incPercent}% nas ocorrências no período proporcional de janeiro a ${monthNames[limitMonth-1].toLowerCase()} (de ${count1} para ${count2} acidentes) entre ${year1} e ${year2}, indicando a necessidade de revisão nas estratégias de contenção de riscos.`
+          : `Houve um aumento de ${incPercent}% nas ocorrências (de ${count1} para ${count2}) entre ${year1} e ${year2}, indicando a necessidade de revisão nas estratégias de contenção de riscos.`,
         type: 'warning'
       });
     } else if (count1 > 0) {
       insights.push({
         title: `Estabilidade ${year1}-${year2}`,
-        text: `O número de acidentes manteve-se constante entre ${year1} e ${year2}, com ${count1} ocorrências registradas em ambos os anos.`,
+        text: isProportional
+          ? `O número de acidentes manteve-se constante no período proporcional de janeiro a ${monthNames[limitMonth-1].toLowerCase()} entre ${year1} e ${year2}, com ${count1} ocorrências registradas em ambos.`
+          : `O número de acidentes manteve-se constante entre ${year1} e ${year2}, com ${count1} ocorrências registradas em ambos os anos.`,
         type: 'info'
       });
     }

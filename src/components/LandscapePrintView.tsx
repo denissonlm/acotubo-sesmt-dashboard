@@ -342,6 +342,18 @@ export const LandscapePrintView: React.FC<LandscapePrintViewProps> = ({
                 </div>
               );
             })}
+            
+            {/* Streak de dias sem acidentes */}
+            <div className="panel-premium" style={{ flex: 1, display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '0.45rem 1rem', borderLeft: '5px solid #10B981', background: '#FFF' }}>
+              <div>
+                <h3 style={{ margin: 0, color: '#64748B', fontWeight: 800, fontSize: '0.75rem' }}>DIAS SEM ACIDENTES</h3>
+                <div style={{ fontSize: '0.58rem', fontWeight: 800, color: '#94A3B8', textTransform: 'uppercase', marginTop: '1px' }}>streak atual de segurança</div>
+              </div>
+              <div style={{ display: 'flex', alignItems: 'baseline', gap: '0.4rem' }}>
+                <span style={{ fontSize: '1.85rem', fontWeight: 900, color: '#10B981', lineHeight: 1 }}>{safetyRecords.currentStreak}</span>
+                <span style={{ fontSize: '0.7rem', fontWeight: 800, color: '#475569' }}>dias</span>
+              </div>
+            </div>
           </div>
 
           {/* Centro: Gráficos Lado a Lado (Comparativo Mensal e Mapa de Calor) */}
