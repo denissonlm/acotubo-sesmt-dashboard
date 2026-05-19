@@ -34,6 +34,7 @@ export interface MonthlyStats {
 export interface YearStats {
   year: number;
   total: number;
+  totalLostDays: number;
   monthly: MonthlyStats[];
   avgPerMonth: number;
   vsPrevious?: number;

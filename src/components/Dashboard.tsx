@@ -276,12 +276,23 @@ export const Dashboard: React.FC<DashboardProps> = ({
                 initial={{ opacity: 0, x: -20 }}
                 animate={{ opacity: 1, x: 0 }}
                 transition={{ delay: i * 0.1 }}
+                style={{ padding: '1rem', background: 'white', borderRadius: '12px', border: '1px solid #E2E8F0', boxShadow: '0 4px 6px -1px rgba(0, 0, 0, 0.05)', marginBottom: '1rem' }}
               >
-                <h3>{year}</h3>
-                <div className="count">{s.total}</div>
-                <div className="stats-line">
-                  <span>acidentes</span>
-                  <strong>média {s.avgPerMonth}/mês</strong>
+                <h3 style={{ margin: '0 0 0.5rem 0', textAlign: 'center', color: '#64748B', fontSize: '0.9rem', fontWeight: 800 }}>{year}</h3>
+                
+                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '0.5rem', textAlign: 'center' }}>
+                  <div style={{ borderRight: '1px solid #E2E8F0', paddingRight: '0.5rem' }}>
+                    <div style={{ fontSize: '1.6rem', fontWeight: 900, color: 'var(--primary)', lineHeight: 1.1 }}>{s.total}</div>
+                    <div style={{ fontSize: '0.65rem', color: '#64748B', fontWeight: 700, marginTop: '2px', textTransform: 'uppercase' }}>acidentes</div>
+                  </div>
+                  <div style={{ paddingLeft: '0.5rem' }}>
+                    <div style={{ fontSize: '1.6rem', fontWeight: 900, color: '#475569', lineHeight: 1.1 }}>{s.totalLostDays}</div>
+                    <div style={{ fontSize: '0.65rem', color: '#64748B', fontWeight: 700, marginTop: '2px', textTransform: 'uppercase' }}>dias afast.</div>
+                  </div>
+                </div>
+
+                <div style={{ marginTop: '0.75rem', borderTop: '1px dashed #E2E8F0', paddingTop: '0.5rem', fontSize: '0.65rem', color: '#64748B', textAlign: 'center', fontWeight: 700 }}>
+                  média {s.avgPerMonth} acid/mês
                 </div>
               </motion.div>
             );

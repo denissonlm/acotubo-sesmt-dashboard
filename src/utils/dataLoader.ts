@@ -110,10 +110,12 @@ export const calculateStats = (accidents: Accident[], targetYears: number[]): Re
     }
 
     const total = yearAccidents.length;
+    const totalLostDays = yearAccidents.reduce((sum, a) => sum + (a.lostDays || 0), 0);
     
     stats[year] = {
       year,
       total,
+      totalLostDays,
       monthly,
       avgPerMonth: Number((total / monthsToConsider).toFixed(1))
     };
