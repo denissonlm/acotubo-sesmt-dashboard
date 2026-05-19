@@ -690,8 +690,9 @@ body {
     print-color-adjust: exact !important;
   }
 
-  .print-container {
+  .print-container, .print-landscape-container {
     padding: 0 !important;
+    margin: 0 !important;
     background: white !important;
   }
 
@@ -703,6 +704,10 @@ body {
     padding: 10mm !important;
     page-break-after: always;
     page-break-inside: avoid;
+  }
+
+  .a4-portrait:last-child {
+    page-break-after: auto;
   }
 
   .no-print {
@@ -726,6 +731,10 @@ body {
     padding: 3mm 5mm !important;
     page-break-after: always;
     page-break-inside: avoid;
+  }
+
+  .print-landscape-container .a4-landscape:last-child {
+    page-break-after: auto;
   }
 }
 
