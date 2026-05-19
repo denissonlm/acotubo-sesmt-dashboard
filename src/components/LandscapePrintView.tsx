@@ -80,25 +80,6 @@ export const LandscapePrintView: React.FC<LandscapePrintViewProps> = ({
       type: 'warning' as const
     }
   ], [filteredAccidents]);
-
-  const occurrenceInsights = useMemo(() => [
-    {
-      title: 'Total de Ocorrências',
-      text: `${filteredAccidents.length} acidentes registrados no período trienal analisado.`,
-      type: 'info' as const
-    },
-    {
-      title: 'Dias Perdidos',
-      text: `${filteredAccidents.reduce((sum, a) => sum + a.lostDays, 0)} dias totais de afastamento acumulados no período.`,
-      type: 'danger' as const
-    },
-    {
-      title: 'Gravidade de Eventos',
-      text: `${Math.round((filteredAccidents.filter(a => a.lostDays > 0).length / Math.max(filteredAccidents.length, 1)) * 100)}% dos acidentes resultaram em afastamento.`,
-      type: 'warning' as const
-    }
-  ], [filteredAccidents]);
-
   const reportTitle = useMemo(() => {
     const yearsCount = selectedYears.length;
     switch (yearsCount) {
