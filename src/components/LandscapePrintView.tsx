@@ -124,8 +124,8 @@ export const LandscapePrintView: React.FC<LandscapePrintViewProps> = ({
     const sorted = [...filteredAccidents].sort((a, b) => b.date.getTime() - a.date.getTime());
     if (sorted.length === 0) return [[]];
     const chunks: typeof filteredAccidents[] = [];
-    for (let i = 0; i < sorted.length; i += 12) {
-      chunks.push(sorted.slice(i, i + 12));
+    for (let i = 0; i < sorted.length; i += 15) {
+      chunks.push(sorted.slice(i, i + 15));
     }
     return chunks;
   }, [filteredAccidents]);
@@ -856,28 +856,25 @@ export const LandscapePrintView: React.FC<LandscapePrintViewProps> = ({
               </div>
             </header>
 
-            <div className="grid-main">
-              {renderLeftSidebar()}
-
-              <main className="content-area">
-                <div className="panel-premium" style={{ height: '490px', display: 'flex', flexDirection: 'column' }}>
+            <div style={{ flex: 1, display: 'flex', flexDirection: 'column', height: 'calc(100% - 60px)', marginTop: '0.65rem' }}>
+              <main style={{ flex: 1, display: 'flex', flexDirection: 'column' }}>
+                <div className="panel-premium" style={{ flex: 1, display: 'flex', flexDirection: 'column' }}>
                   <h3 style={{ fontSize: '0.85rem', fontWeight: 900, margin: '0 0 0.6rem 0' }}>Detalhamento de Acidentes e Afastamentos (Parte {chunkIdx + 1})</h3>
                   <div style={{ flex: 1, overflow: 'hidden' }}>
                     <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '0.75rem', whiteSpace: 'nowrap' }}>
                       <thead>
                         <tr style={{ textAlign: 'left', background: '#F8FAFC', borderBottom: '1px solid #E2E8F0' }}>
-                          <th style={{ padding: '6px 8px', fontWeight: 900, width: '75px' }}>DATA</th>
+                          <th style={{ padding: '6px 8px', fontWeight: 900, width: '90px' }}>DATA</th>
                           <th style={{ padding: '6px 8px', fontWeight: 900 }}>COLABORADOR</th>
                           <th style={{ padding: '6px 8px', fontWeight: 900 }}>CARGO</th>
                           <th style={{ padding: '6px 8px', fontWeight: 900 }}>ÁREA</th>
-                          <th style={{ padding: '6px 8px', fontWeight: 900 }}>TIPO</th>
-                          <th style={{ padding: '6px 8px', fontWeight: 900, width: '50px', textAlign: 'center' }}>AFAS.</th>
+                          <th style={{ padding: '6px 8px', fontWeight: 900, width: '75px', textAlign: 'center' }}>DIAS AFAST.</th>
                         </tr>
                       </thead>
                       <tbody>
                         {chunk.length === 0 ? (
                           <tr>
-                            <td colSpan={6} style={{ textAlign: 'center', padding: '2rem', color: '#64748B' }}>Nenhum evento registrado.</td>
+                            <td colSpan={5} style={{ textAlign: 'center', padding: '2rem', color: '#64748B' }}>Nenhum evento registrado.</td>
                           </tr>
                         ) : (
                           chunk.map((a, idx) => (
@@ -893,7 +890,6 @@ export const LandscapePrintView: React.FC<LandscapePrintViewProps> = ({
                               </td>
                               <td style={{ padding: '4px 8px', color: '#475569' }}>{a.role}</td>
                               <td style={{ padding: '4px 8px', color: '#475569' }}>{a.area}</td>
-                              <td style={{ padding: '4px 8px' }}>{a.type}</td>
                               <td style={{ padding: '4px 8px', textAlign: 'center', fontWeight: 900, color: a.lostDays > 0 ? '#B91C1C' : '#475569' }}>
                                 {a.lostDays > 0 ? `${a.lostDays}d` : '0d'}
                               </td>
@@ -905,8 +901,6 @@ export const LandscapePrintView: React.FC<LandscapePrintViewProps> = ({
                   </div>
                 </div>
               </main>
-
-              {renderRightSidebar('Detalhamento de', 'Casos', 'Resumo de dias de afastamento e gravidade', occurrenceInsights)}
             </div>
 
             <footer style={{ display: 'flex', justifyContent: 'space-between', borderTop: '1px solid #E2E8F0', paddingTop: '0.4rem', fontSize: '0.55rem', color: '#94A3B8', fontWeight: 800 }}>
