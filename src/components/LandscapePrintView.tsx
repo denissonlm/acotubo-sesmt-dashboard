@@ -237,7 +237,7 @@ export const LandscapePrintView: React.FC<LandscapePrintViewProps> = ({
   );
 
   // Insight List Renders
-  const renderRightSidebar = (title: string, subtitle: string, desc: string, insights: Array<{ title: string, text: string, type: 'danger' | 'warning' | 'info' | 'success' }>) => (
+  const renderRightSidebar = (title: string, subtitle: string, desc: string, insights: Array<{ title: string, text: string, type: 'danger' | 'warning' | 'info' | 'success' }>, limit = 3) => (
     <aside className="insights-panel">
       <div>
         <h2 style={{ fontSize: '0.9rem', fontWeight: 900, color: '#0F172A', margin: 0 }}>
@@ -248,7 +248,7 @@ export const LandscapePrintView: React.FC<LandscapePrintViewProps> = ({
         </p>
       </div>
 
-      {insights.slice(0, 3).map((insight, idx) => {
+      {insights.slice(0, limit).map((insight, idx) => {
         const colors = {
           danger: { bg: '#FEE2E2', text: '#EF4444', icon: <AlertCircle color="#EF4444" /> },
           warning: { bg: '#FEF3C7', text: '#F59E0B', icon: <Calendar color="#F59E0B" /> },
@@ -740,45 +740,45 @@ export const LandscapePrintView: React.FC<LandscapePrintViewProps> = ({
           <main className="content-area">
             {/* Causal Indicators Panels */}
             {page4Stats && (
-              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(5, 1fr)', gap: '0.5rem', height: '85px' }}>
+              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(5, 1fr)', gap: '0.75rem', height: '115px' }}>
                 {[
-                  { label: 'Ato Inseguro', value: page4Stats.unsafeAct, icon: <AlertCircle size={14} />, color: '#EF4444' },
-                  { label: 'Defic. M/E', value: page4Stats.machineDeficiency, icon: <Activity size={14} />, color: '#F59E0B' },
-                  { label: 'Desvio Função', value: page4Stats.functionDeviation, icon: <ShieldCheck size={14} />, color: '#3B82F6' },
-                  { label: 'Treinado', value: page4Stats.hadTraining, icon: <GraduationCap size={14} />, color: '#10B981' },
-                  { label: 'Uso EPI', value: page4Stats.usedEPI, icon: <HardHat size={14} />, color: '#8B5CF6' }
+                  { label: 'Ato Inseguro', value: page4Stats.unsafeAct, icon: <AlertCircle size={22} />, color: '#EF4444' },
+                  { label: 'Defic. M/E', value: page4Stats.machineDeficiency, icon: <Activity size={22} />, color: '#F59E0B' },
+                  { label: 'Desvio Função', value: page4Stats.functionDeviation, icon: <ShieldCheck size={22} />, color: '#3B82F6' },
+                  { label: 'Treinado', value: page4Stats.hadTraining, icon: <GraduationCap size={22} />, color: '#10B981' },
+                  { label: 'Uso EPI', value: page4Stats.usedEPI, icon: <HardHat size={22} />, color: '#8B5CF6' }
                 ].map((item, idx) => (
-                  <div key={idx} className="panel-premium" style={{ padding: '0.4rem', textAlign: 'center', display: 'flex', flexDirection: 'column', justifyContent: 'center' }}>
-                    <div style={{ color: item.color, marginBottom: '2px', display: 'flex', justifyContent: 'center' }}>{item.icon}</div>
-                    <div style={{ fontSize: '0.95rem', fontWeight: 900, color: '#0F172A', lineHeight: 1.1 }}>{item.value?.toFixed(0)}%</div>
-                    <div style={{ fontSize: '0.5rem', fontWeight: 800, color: '#64748B', textTransform: 'uppercase', marginTop: '2px', whiteSpace: 'nowrap' }}>{item.label}</div>
+                  <div key={idx} className="panel-premium" style={{ padding: '0.6rem', textAlign: 'center', display: 'flex', flexDirection: 'column', justifyContent: 'center' }}>
+                    <div style={{ color: item.color, marginBottom: '6px', display: 'flex', justifyContent: 'center' }}>{item.icon}</div>
+                    <div style={{ fontSize: '1.4rem', fontWeight: 900, color: '#0F172A', lineHeight: 1.1 }}>{item.value?.toFixed(0)}%</div>
+                    <div style={{ fontSize: '0.55rem', fontWeight: 800, color: '#64748B', textTransform: 'uppercase', marginTop: '6px', lineHeight: 1.1 }}>{item.label}</div>
                   </div>
                 ))}
               </div>
             )}
 
             {/* Recorrência e Média por Área */}
-            <div style={{ display: 'grid', gridTemplateColumns: '1.2fr 0.8fr', gap: '0.75rem', height: '390px' }}>
+            <div style={{ display: 'grid', gridTemplateColumns: '1.2fr 0.8fr', gap: '0.75rem', flex: 1, minHeight: 0 }}>
               {/* Recorrência Colaborador */}
               <div className="panel-premium" style={{ display: 'flex', flexDirection: 'column' }}>
-                <h3 style={{ fontSize: '0.85rem', fontWeight: 900, margin: '0 0 0.8rem 0', display: 'flex', alignItems: 'center', gap: '6px' }}>
-                  <Users size={16} color="var(--primary)" /> Recorrência por Colaborador
+                <h3 style={{ fontSize: '0.8rem', fontWeight: 900, margin: '0 0 1rem 0', display: 'flex', alignItems: 'center', gap: '8px' }}>
+                  <Users size={18} color="var(--primary)" /> Recorrência por Colaborador
                 </h3>
-                <div style={{ display: 'flex', flexDirection: 'column', gap: '0.6rem', flex: 1, overflow: 'hidden' }}>
+                <div style={{ display: 'flex', flexDirection: 'column', gap: '0.85rem', flex: 1, overflow: 'hidden' }}>
                   {employeeRanking.length === 0 ? (
-                    <div style={{ textAlign: 'center', fontSize: '0.75rem', padding: '2rem', color: '#64748B', fontWeight: 700 }}>Nenhum colaborador com recorrência.</div>
+                    <div style={{ textAlign: 'center', fontSize: '0.8rem', padding: '2rem', color: '#64748B', fontWeight: 700 }}>Nenhum colaborador com recorrência.</div>
                   ) : (
                     employeeRanking.slice(0, 4).map(([name, data], idx) => (
-                      <div key={name} style={{ display: 'flex', alignItems: 'center', gap: '0.75rem', padding: '0.6rem 0.8rem', background: '#F8FAFC', borderRadius: '10px', border: '1px solid #E2E8F0' }}>
-                        <div style={{ width: '22px', height: '22px', background: idx === 0 ? 'var(--primary)' : '#E2E8F0', color: idx === 0 ? 'white' : '#64748B', borderRadius: '50%', display: 'flex', alignItems: 'center', justifyContent: 'center', fontWeight: 900, fontSize: '0.75rem' }}>
+                      <div key={name} style={{ display: 'flex', alignItems: 'center', gap: '0.85rem', padding: '0.8rem 1rem', background: '#F8FAFC', borderRadius: '12px', border: '1px solid #E2E8F0' }}>
+                        <div style={{ width: '28px', height: '28px', background: idx === 0 ? 'var(--primary)' : '#E2E8F0', color: idx === 0 ? 'white' : '#64748B', borderRadius: '50%', display: 'flex', alignItems: 'center', justifyContent: 'center', fontWeight: 900, fontSize: '0.85rem' }}>
                           {idx + 1}
                         </div>
                         <div style={{ flex: 1, minWidth: 0 }}>
-                          <div style={{ fontWeight: 800, fontSize: '0.8rem', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', color: '#0F172A' }}>{name}</div>
-                          <div style={{ fontSize: '0.65rem', color: '#64748B', fontWeight: 700 }}>{data.division} • RE: {data.re}</div>
+                          <div style={{ fontWeight: 800, fontSize: '0.75rem', color: '#0F172A', lineHeight: 1.2 }}>{name}</div>
+                          <div style={{ fontSize: '0.65rem', color: '#64748B', fontWeight: 700, marginTop: '2px' }}>{data.division} • RE: {data.re}</div>
                         </div>
-                        <div style={{ fontWeight: 900, color: 'var(--primary)', fontSize: '0.75rem', whiteSpace: 'nowrap' }}>
-                          {data.count} acidentes
+                        <div style={{ fontWeight: 900, color: 'var(--primary)', fontSize: '0.85rem', whiteSpace: 'nowrap' }}>
+                          {data.count} acd.
                         </div>
                       </div>
                     ))
@@ -788,17 +788,17 @@ export const LandscapePrintView: React.FC<LandscapePrintViewProps> = ({
 
               {/* Experiência por Área */}
               <div className="panel-premium" style={{ display: 'flex', flexDirection: 'column' }}>
-                <h3 style={{ fontSize: '0.85rem', fontWeight: 900, margin: '0 0 0.8rem 0', display: 'flex', alignItems: 'center', gap: '6px' }}>
-                  <Clock size={16} color="var(--primary)" /> Média Experiência por Área
+                <h3 style={{ fontSize: '0.8rem', fontWeight: 900, margin: '0 0 1rem 0', display: 'flex', alignItems: 'center', gap: '8px' }}>
+                  <Clock size={18} color="var(--primary)" /> Média Exp. por Área
                 </h3>
-                <div style={{ display: 'flex', flexDirection: 'column', gap: '0.7rem', flex: 1, overflow: 'hidden' }}>
+                <div style={{ display: 'flex', flexDirection: 'column', gap: '1rem', flex: 1, overflow: 'hidden' }}>
                   {experienceRanking.slice(0, 5).map(({ area, avgExp }) => (
                     <div key={area}>
-                      <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '0.7rem', fontWeight: 800, marginBottom: '3px' }}>
-                        <span style={{ overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', maxWidth: '120px' }}>{area}</span>
+                      <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '0.75rem', fontWeight: 800, marginBottom: '5px' }}>
+                        <span style={{ overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', maxWidth: '140px' }}>{area}</span>
                         <span style={{ color: avgExp < 1 ? '#EF4444' : '#475569', fontWeight: 900 }}>{avgExp.toFixed(1)}a</span>
                       </div>
-                      <div style={{ height: '6px', background: '#F1F5F9', borderRadius: '3px', overflow: 'hidden' }}>
+                      <div style={{ height: '8px', background: '#F1F5F9', borderRadius: '4px', overflow: 'hidden' }}>
                         <div style={{ width: `${Math.min(100, (avgExp / 10) * 100)}%`, height: '100%', background: avgExp < 1 ? '#EF4444' : 'var(--primary)' }}></div>
                       </div>
                     </div>
@@ -808,7 +808,7 @@ export const LandscapePrintView: React.FC<LandscapePrintViewProps> = ({
             </div>
           </main>
 
-          {renderRightSidebar('Detalhes de', 'Causas', 'Fatores causais e perfil de experiência', breakdownInsights)}
+          {renderRightSidebar('Detalhes de', 'Causas', 'Fatores causais e perfil de experiência', breakdownInsights, 4)}
         </div>
 
         <footer style={{ display: 'flex', justifyContent: 'space-between', borderTop: '1px solid #E2E8F0', paddingTop: '0.4rem', fontSize: '0.55rem', color: '#94A3B8', fontWeight: 800 }}>
