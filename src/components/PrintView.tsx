@@ -9,7 +9,7 @@ interface PrintViewProps {
   selectedYears: number[];
   filterDivision: string;
   filterManager: string;
-  filterArea: string;
+  filterArea: string[];
   onBack: () => void;
 }
 
@@ -28,7 +28,7 @@ export const PrintView: React.FC<PrintViewProps> = ({
       const matchesYear = selectedYears.includes(a.year);
       const matchesDivision = filterDivision === 'ALL' || a.division === filterDivision;
       const matchesManager = filterManager === 'ALL' || a.manager === filterManager;
-      const matchesArea = filterArea === 'ALL' || a.area === filterArea;
+      const matchesArea = filterArea.length === 0 || filterArea.includes(a.area);
       return matchesYear && matchesDivision && matchesManager && matchesArea;
     });
   }, [accidents, selectedYears, filterDivision, filterManager, filterArea]);
@@ -139,7 +139,7 @@ export const PrintView: React.FC<PrintViewProps> = ({
               <h1 style={{ color: '#0F172A', fontSize: '1.5rem', fontWeight: 900, textTransform: 'uppercase', letterSpacing: '-0.02em', margin: 0 }}>{reportTitle}</h1>
               <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', marginTop: '0.2rem', color: '#64748B', fontWeight: 600, fontSize: '0.75rem' }}>
                 <FileText size={12} />
-                <span>{filterDivision === 'ALL' ? 'Grupo Açotubo' : filterDivision} • {filterArea === 'ALL' ? 'Todas as Áreas' : filterArea} • {selectedYears.join(' - ')}</span>
+                <span>{filterDivision === 'ALL' ? 'Grupo Açotubo' : filterDivision} • {filterArea.length === 0 ? 'Todas as Áreas' : filterArea.length === 1 ? filterArea[0] : 'Múltiplas Áreas'} • {selectedYears.join(' - ')}</span>
               </div>
             </div>
           </div>

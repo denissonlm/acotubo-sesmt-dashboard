@@ -20,7 +20,7 @@ function App() {
   const [selectedYears, setSelectedYears] = useState<number[]>([2024, 2025, 2026])
   const [filterDivision, setFilterDivision] = useState('ALL')
   const [filterManager, setFilterManager] = useState('ALL')
-  const [filterArea, setFilterArea] = useState('ALL')
+  const [filterArea, setFilterArea] = useState<string[]>([])
 
   useEffect(() => {
     const fetchData = async () => {

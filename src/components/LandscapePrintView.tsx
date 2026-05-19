@@ -23,7 +23,7 @@ interface LandscapePrintViewProps {
   selectedYears: number[];
   filterDivision: string;
   filterManager: string;
-  filterArea: string;
+  filterArea: string[];
   onBack: () => void;
 }
 
@@ -43,7 +43,7 @@ export const LandscapePrintView: React.FC<LandscapePrintViewProps> = ({
       const matchesYear = selectedYears.includes(a.year);
       const matchesDivision = filterDivision === 'ALL' || a.division === filterDivision;
       const matchesManager = filterManager === 'ALL' || a.manager === filterManager;
-      const matchesArea = filterArea === 'ALL' || a.area === filterArea;
+      const matchesArea = filterArea.length === 0 || filterArea.includes(a.area);
       return matchesYear && matchesDivision && matchesManager && matchesArea;
     });
   }, [accidents, selectedYears, filterDivision, filterManager, filterArea]);
@@ -321,7 +321,7 @@ export const LandscapePrintView: React.FC<LandscapePrintViewProps> = ({
             <div>
               <h1 style={{ color: '#0F172A', fontSize: '1.15rem', fontWeight: 900, textTransform: 'uppercase', margin: 0, letterSpacing: '0.5px' }}>{reportTitle} — Panorama Geral</h1>
               <div style={{ fontSize: '0.65rem', color: '#64748B', fontWeight: 700 }}>
-                {filterDivision === 'ALL' ? 'Grupo Açotubo' : filterDivision} • {filterArea === 'ALL' ? 'Todas as Áreas' : filterArea} • Anos: {selectedYears.join(', ')}
+                {filterDivision === 'ALL' ? 'Grupo Açotubo' : filterDivision} • {filterArea.length === 0 ? 'Todas as Áreas' : filterArea.length === 1 ? filterArea[0] : 'Múltiplas Áreas'} • Anos: {selectedYears.join(', ')}
               </div>
             </div>
           </div>

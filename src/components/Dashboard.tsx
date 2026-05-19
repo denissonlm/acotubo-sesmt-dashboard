@@ -20,8 +20,8 @@ interface DashboardProps {
   onDivisionChange: (val: string) => void;
   filterManager: string;
   onManagerChange: (val: string) => void;
-  filterArea: string;
-  onAreaChange: (val: string) => void;
+  filterArea: string[];
+  onAreaChange: (val: string[]) => void;
   onReset: () => void;
   onPrint: () => void;
   onLandscapePrint: () => void;
@@ -46,13 +46,14 @@ export const Dashboard: React.FC<DashboardProps> = ({
   onBatchPrint 
 }) => {
   const [activeTab, setActiveTab] = useState<'monthly' | 'temporal' | 'safety' | 'breakdown'>('monthly');
+  const [areaDropdownOpen, setAreaDropdownOpen] = useState(false);
 
   const filteredAccidents = useMemo(() => {
     return accidents.filter(a => {
       const matchesYear = selectedYears.includes(a.year);
       const matchesDivision = filterDivision === 'ALL' || a.division === filterDivision;
       const matchesManager = filterManager === 'ALL' || a.manager === filterManager;
-      const matchesArea = filterArea === 'ALL' || a.area === filterArea;
+      const matchesArea = filterArea.length === 0 || filterArea.includes(a.area);
       return matchesYear && matchesDivision && matchesManager && matchesArea;
     });
   }, [accidents, selectedYears, filterDivision, filterManager, filterArea]);
@@ -226,12 +227,44 @@ export const Dashboard: React.FC<DashboardProps> = ({
               {uniqueManagers.map(m => <option key={m} value={m}>{m}</option>)}
             </select>
           </div>
-          <div className="filter-group">
+          <div className="filter-group" style={{ position: 'relative' }}>
             <label><div className="filter-dot orange"></div>Área</label>
-            <select value={filterArea} onChange={e => onAreaChange(e.target.value)}>
-              <option value="ALL">Todas as Áreas</option>
-              {uniqueAreas.map(a => <option key={a} value={a}>{a}</option>)}
-            </select>
+            <div 
+              onClick={() => setAreaDropdownOpen(!areaDropdownOpen)}
+              style={{ padding: '0.4rem 0.75rem', background: 'white', border: '1px solid var(--border)', borderRadius: '8px', fontSize: '0.8rem', fontWeight: 600, color: 'var(--text)', cursor: 'pointer', display: 'flex', justifyContent: 'space-between', alignItems: 'center', minWidth: '160px', height: '34px' }}
+            >
+              <span style={{ overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                {filterArea.length === 0 ? 'Todas as Áreas' : filterArea.length === 1 ? filterArea[0] : `${filterArea.length} áreas selec.`}
+              </span>
+              <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" style={{ flexShrink: 0, marginLeft: '8px' }}><polyline points="6 9 12 15 18 9"></polyline></svg>
+            </div>
+            
+            {areaDropdownOpen && (
+              <>
+                <div 
+                  style={{ position: 'fixed', top: 0, left: 0, right: 0, bottom: 0, zIndex: 40 }}
+                  onClick={() => setAreaDropdownOpen(false)}
+                />
+                <div style={{ position: 'absolute', top: '100%', left: 0, marginTop: '4px', width: '220px', background: 'white', border: '1px solid var(--border)', borderRadius: '8px', boxShadow: '0 10px 15px -3px rgba(0, 0, 0, 0.1)', zIndex: 50, maxHeight: '250px', overflowY: 'auto', padding: '0.5rem' }}>
+                  <label style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', padding: '0.4rem', cursor: 'pointer', borderBottom: '1px solid #E2E8F0', marginBottom: '0.25rem', fontWeight: 700 }}>
+                    <input type="checkbox" checked={filterArea.length === 0} onChange={() => onAreaChange([])} />
+                    <span>Todas as Áreas</span>
+                  </label>
+                  {uniqueAreas.map(a => (
+                    <label key={a} style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', padding: '0.4rem', cursor: 'pointer', borderRadius: '4px', background: filterArea.includes(a) ? '#FFF7ED' : 'transparent' }}>
+                      <input type="checkbox" checked={filterArea.includes(a)} onChange={() => {
+                        if (filterArea.includes(a)) {
+                          onAreaChange(filterArea.filter(item => item !== a));
+                        } else {
+                          onAreaChange([...filterArea, a]);
+                        }
+                      }} />
+                      <span style={{ fontSize: '0.8rem', color: '#475569', fontWeight: filterArea.includes(a) ? 700 : 500 }}>{a}</span>
+                    </label>
+                  ))}
+                </div>
+              </>
+            )}
           </div>
         </div>
 
