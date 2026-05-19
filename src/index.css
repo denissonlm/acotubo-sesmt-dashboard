@@ -438,6 +438,12 @@ body {
   gap: 2rem;
 }
 
+.grid-temporal {
+  display: grid;
+  grid-template-columns: 1.1fr 0.9fr;
+  gap: 1.5rem;
+}
+
 .pie-chart-container {
   display: grid;
   grid-template-columns: 1fr 200px;
