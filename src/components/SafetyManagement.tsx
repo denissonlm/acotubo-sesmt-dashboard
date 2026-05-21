@@ -3,7 +3,7 @@ import {
   LineChart, Line, XAxis, YAxis, Tooltip as RechartsTooltip, ResponsiveContainer, 
   CartesianGrid, ReferenceLine, BarChart, Bar, Cell
 } from 'recharts';
-import { Medal, ShieldAlert, ShieldCheck } from 'lucide-react';
+import { Medal, ShieldAlert, ShieldCheck, CalendarDays, TrendingUp, Trophy } from 'lucide-react';
 import type { Accident, GroupSafetyRecord } from '../types';
 import { calculateSafetyRecords, calculateSafetyRanking } from '../utils/dataLoader';
 import { motion } from 'framer-motion';
@@ -19,6 +19,12 @@ export const SafetyManagement: React.FC<SafetyManagementProps> = ({ accidents, g
 
   const records = useMemo(() => calculateSafetyRecords(accidents), [accidents]);
   const ranking = useMemo(() => calculateSafetyRanking(accidents, groupBy), [accidents, groupBy]);
+
+  const currentDaysSafe = Math.max(0, records.currentStreak);
+  const averageDaysSafe = records.intervals.length > 0 
+    ? Math.round(records.intervals.reduce((acc, curr) => acc + curr.days, 0) / records.intervals.length) 
+    : currentDaysSafe;
+  const maxDaysSafe = records.historicalRecord;
 
   const chartData = useMemo(() => {
     return records.intervals.map((item, index) => ({
@@ -185,6 +191,39 @@ export const SafetyManagement: React.FC<SafetyManagementProps> = ({ accidents, g
             >
               Por Divisão
             </button>
+          </div>
+        </div>
+
+        {/* Actionable KPIs Cards */}
+        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '1.5rem', marginBottom: '2rem' }}>
+          <div style={{ background: '#F8FAFC', borderRadius: '12px', padding: '1.25rem', border: '1px solid #E2E8F0', display: 'flex', alignItems: 'center', gap: '1rem' }}>
+            <div style={{ background: '#ECFDF5', padding: '0.75rem', borderRadius: '12px', color: '#059669' }}>
+              <CalendarDays size={24} strokeWidth={2.5} />
+            </div>
+            <div>
+              <div style={{ fontSize: '0.75rem', fontWeight: 800, color: '#64748B', textTransform: 'uppercase', letterSpacing: '0.05em' }}>Dias Sem Acidentes (Atual)</div>
+              <div style={{ fontSize: '1.5rem', fontWeight: 900, color: '#0F172A', marginTop: '0.25rem' }}>{currentDaysSafe} <span style={{ fontSize: '0.8rem', color: '#64748B', fontWeight: 700 }}>dias</span></div>
+            </div>
+          </div>
+          
+          <div style={{ background: '#F8FAFC', borderRadius: '12px', padding: '1.25rem', border: '1px solid #E2E8F0', display: 'flex', alignItems: 'center', gap: '1rem' }}>
+            <div style={{ background: '#EFF6FF', padding: '0.75rem', borderRadius: '12px', color: '#2563EB' }}>
+              <TrendingUp size={24} strokeWidth={2.5} />
+            </div>
+            <div>
+              <div style={{ fontSize: '0.75rem', fontWeight: 800, color: '#64748B', textTransform: 'uppercase', letterSpacing: '0.05em' }}>Média Entre Acidentes</div>
+              <div style={{ fontSize: '1.5rem', fontWeight: 900, color: '#0F172A', marginTop: '0.25rem' }}>{averageDaysSafe} <span style={{ fontSize: '0.8rem', color: '#64748B', fontWeight: 700 }}>dias</span></div>
+            </div>
+          </div>
+
+          <div style={{ background: '#F8FAFC', borderRadius: '12px', padding: '1.25rem', border: '1px solid #E2E8F0', display: 'flex', alignItems: 'center', gap: '1rem' }}>
+            <div style={{ background: '#FEFCE8', padding: '0.75rem', borderRadius: '12px', color: '#D97706' }}>
+              <Trophy size={24} strokeWidth={2.5} />
+            </div>
+            <div>
+              <div style={{ fontSize: '0.75rem', fontWeight: 800, color: '#64748B', textTransform: 'uppercase', letterSpacing: '0.05em' }}>Período Máximo (Recorde)</div>
+              <div style={{ fontSize: '1.5rem', fontWeight: 900, color: '#0F172A', marginTop: '0.25rem' }}>{maxDaysSafe} <span style={{ fontSize: '0.8rem', color: '#64748B', fontWeight: 700 }}>dias</span></div>
+            </div>
           </div>
         </div>
 
