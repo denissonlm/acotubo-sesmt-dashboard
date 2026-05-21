@@ -470,6 +470,95 @@ body {
   gap: 1.5rem;
 }
 
+/* Safety Layout Overrides */
+.grid-safety-layout {
+  grid-template-columns: 1fr !important;
+}
+
+/* Premium Ranking Table */
+.ranking-table-premium {
+  width: 100%;
+  border-collapse: separate;
+  border-spacing: 0;
+  margin-top: 1.5rem;
+  box-shadow: var(--shadow);
+  border-radius: 12px;
+  background: white;
+}
+
+.ranking-table-premium th {
+  background: #0F172A;
+  color: white;
+  font-size: 0.75rem;
+  font-weight: 800;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  padding: 1rem;
+  text-align: left;
+  border: none;
+}
+
+.ranking-table-premium th:first-child {
+  border-radius: 12px 0 0 0;
+}
+
+.ranking-table-premium th:last-child {
+  border-radius: 0 12px 0 0;
+}
+
+.ranking-table-premium td {
+  padding: 1.25rem 1rem;
+  font-size: 0.85rem;
+  border-bottom: 1px solid var(--border);
+  background: white;
+  transition: all 0.2s;
+  vertical-align: middle;
+}
+
+.ranking-table-premium tr:last-child td {
+  border-bottom: none;
+}
+
+.ranking-table-premium tr:last-child td:first-child {
+  border-radius: 0 0 0 12px;
+}
+
+.ranking-table-premium tr:last-child td:last-child {
+  border-radius: 0 0 12px 0;
+}
+
+.ranking-table-premium tbody tr:hover td {
+  background: #F8FAFC;
+}
+
+/* Toggle Switch Styles */
+.toggle-switch-container {
+  display: inline-flex;
+  background: #F1F5F9;
+  padding: 0.35rem;
+  border-radius: 12px;
+  border: 1px solid #E2E8F0;
+  box-shadow: inset 0 2px 4px rgba(0,0,0,0.05);
+}
+
+.toggle-btn {
+  padding: 0.6rem 1.75rem;
+  border-radius: 8px;
+  font-size: 0.85rem;
+  font-weight: 800;
+  color: #64748B;
+  background: transparent;
+  border: none;
+  cursor: pointer;
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.toggle-btn.active {
+  background: white;
+  color: var(--primary);
+  box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+}
+
 /* Media Queries & Responsive Layouts */
 @media (max-width: 1200px) {
   .dashboard-container {

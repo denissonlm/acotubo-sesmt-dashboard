@@ -45,3 +45,13 @@ export interface Insight {
   text: string;
   type: 'danger' | 'warning' | 'info' | 'success';
 }
+
+export interface GroupSafetyRecord {
+  name: string;
+  days: number;
+  lastDate: Date | null;
+  neverHad: boolean;
+  totalAccidents: number;
+  lastAccident?: Accident;
+}
+

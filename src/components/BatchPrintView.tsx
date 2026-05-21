@@ -1,7 +1,7 @@
 import React from 'react';
 import { Printer, ArrowLeft, Clock, ShieldCheck, FileText, Target } from 'lucide-react';
 import type { Accident } from '../types';
-import { calculateStats, generateInsights, calculateTemporalStats, generateTemporalInsights, calculateSafetyRecords } from '../utils/dataLoader';
+import { calculateStats, generateInsights, calculateTemporalStats, generateTemporalInsights, calculateSafetyRecords, calculateSafetyRanking } from '../utils/dataLoader';
 import { LOGO_BASE64 } from '../constants';
 
 interface BatchPrintViewProps {
@@ -11,12 +11,13 @@ interface BatchPrintViewProps {
     unit: string;
     area: string;
   }[];
+  safetyGroupBy: 'area' | 'division';
   onBack: () => void;
 }
 
 const MONTH_NAMES = ['Jan', 'Fev', 'Mar', 'Abr', 'Mai', 'Jun', 'Jul', 'Ago', 'Set', 'Out', 'Nov', 'Dez'];
 
-const ReportPage: React.FC<{ accidents: Accident[], years: number[], unit: string, area: string, pageNum: number }> = ({ accidents, years, unit, area, pageNum }) => {
+const ReportPage: React.FC<{ accidents: Accident[], years: number[], unit: string, area: string, safetyGroupBy: 'area' | 'division', pageNum: number }> = ({ accidents, years, unit, area, safetyGroupBy, pageNum }) => {
   const stats = calculateStats(accidents, years);
   const monthlyInsights = generateInsights(accidents, years);
   const temporalInsights = generateTemporalInsights(accidents);
@@ -254,62 +255,61 @@ const ReportPage: React.FC<{ accidents: Accident[], years: number[], unit: strin
           <img src={LOGO_BASE64} alt="Açotubo" style={{ height: '36px' }} />
         </header>
 
-        <div style={{ display: 'flex', flexDirection: 'column', gap: '1.5rem' }}>
-          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1.5rem' }}>
-            <div style={{ background: '#0F172A', padding: '1.5rem', borderRadius: '16px', color: 'white' }}>
-               <div style={{ fontSize: '0.7rem', fontWeight: 800, opacity: 0.6, marginBottom: '0.5rem' }}>STATUS ATUAL</div>
-               <div style={{ fontSize: '3rem', fontWeight: 900 }}>{calculateSafetyRecords(accidents).currentStreak}</div>
-               <div style={{ fontSize: '0.8rem', fontWeight: 700, color: '#10B981' }}>Dias sem Acidentes</div>
+        <div style={{ display: 'flex', flexDirection: 'column', gap: '1.25rem', flex: 1, minHeight: 0 }}>
+          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: '1rem' }}>
+            <div style={{ background: '#0F172A', padding: '1.25rem', borderRadius: '12px', color: 'white' }}>
+               <div style={{ fontSize: '0.65rem', fontWeight: 800, opacity: 0.6, marginBottom: '0.25rem' }}>STATUS ATUAL</div>
+               <div style={{ fontSize: '2.5rem', fontWeight: 900, lineHeight: 1 }}>{calculateSafetyRecords(accidents).currentStreak}</div>
+               <div style={{ fontSize: '0.75rem', fontWeight: 700, color: '#10B981', marginTop: '4px' }}>Dias sem Acidentes</div>
             </div>
-            <div style={{ background: '#F8FAFC', padding: '1.5rem', border: '1px solid #E2E8F0', borderRadius: '16px' }}>
-               <div style={{ fontSize: '0.7rem', fontWeight: 800, color: '#64748B', marginBottom: '0.5rem' }}>RECORDE HISTÓRICO</div>
-               <div style={{ fontSize: '3rem', fontWeight: 900, color: '#0F172A' }}>{calculateSafetyRecords(accidents).historicalRecord}</div>
-               <div style={{ fontSize: '0.8rem', fontWeight: 700, color: '#B91C1C' }}>Marca de Referência</div>
+            <div style={{ background: '#F8FAFC', padding: '1.25rem', border: '1px solid #E2E8F0', borderRadius: '12px' }}>
+               <div style={{ fontSize: '0.65rem', fontWeight: 800, color: '#64748B', marginBottom: '0.25rem' }}>RECORDE HISTÓRICO</div>
+               <div style={{ fontSize: '2.5rem', fontWeight: 900, color: '#0F172A', lineHeight: 1 }}>{calculateSafetyRecords(accidents).historicalRecord}</div>
+               <div style={{ fontSize: '0.75rem', fontWeight: 700, color: '#B91C1C', marginTop: '4px' }}>Melhor Marca</div>
+            </div>
+            <div style={{ background: '#F8FAFC', padding: '1.25rem', border: '1px solid #E2E8F0', borderRadius: '12px' }}>
+               <div style={{ fontSize: '0.65rem', fontWeight: 800, color: '#64748B', marginBottom: '0.25rem' }}>TOTAL OCORRÊNCIAS</div>
+               <div style={{ fontSize: '2.5rem', fontWeight: 900, color: '#0F172A', lineHeight: 1 }}>{accidents.length}</div>
+               <div style={{ fontSize: '0.75rem', fontWeight: 700, color: '#3B82F6', marginTop: '4px' }}>No Período</div>
             </div>
           </div>
 
-          <div style={{ background: 'white', border: '1px solid #E2E8F0', padding: '1.5rem', borderRadius: '16px' }}>
-            <h3 style={{ fontSize: '0.85rem', fontWeight: 800, marginBottom: '1.25rem', color: '#0F172A', textAlign: 'center' }}>ESPAÇAMENTO MÉDIO ENTRE OCORRÊNCIAS</h3>
-            {(() => {
-              const records = calculateSafetyRecords(accidents);
-              const displayIntervals = records.intervals.slice(-20);
-              const maxVal = Math.max(...records.intervals.map(x => x.days), 1);
-              
-              if (displayIntervals.length === 0) {
-                return (
-                  <div style={{ height: '180px', display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#94A3B8', fontSize: '0.7rem', fontWeight: 700, background: '#F8FAFC', borderRadius: '12px' }}>
-                    Dados insuficientes para gerar histórico de records.
-                  </div>
-                );
-              }
-
-              return (
-                <div style={{ height: '180px', display: 'flex', alignItems: 'flex-end', gap: '4px', background: '#F8FAFC', padding: '10px', borderRadius: '12px' }}>
-                  {displayIntervals.map((item, i) => (
-                      <div 
-                        key={i} 
-                        style={{ 
-                          flex: 1, 
-                          background: 'linear-gradient(180deg, #10B981 0%, #059669 100%)', 
-                          height: `${Math.max(5, (item.days / maxVal) * 100)}%`, 
-                          borderRadius: '4px 4px 0 0',
-                          position: 'relative'
-                        }}
-                      >
-                        <span style={{ position: 'absolute', top: '-14px', left: 0, right: 0, textAlign: 'center', fontSize: '7px', fontWeight: 900, color: '#059669' }}>
-                          {item.days}
-                        </span>
-                      </div>
+          <div style={{ background: 'white', border: '1px solid #E2E8F0', borderRadius: '12px', flex: 1, display: 'flex', flexDirection: 'column', overflow: 'hidden' }}>
+            <div style={{ padding: '1rem', borderBottom: '1px solid #E2E8F0', background: '#F8FAFC', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+               <h3 style={{ fontSize: '0.9rem', fontWeight: 900, margin: 0, color: '#0F172A' }}>Ranking Abrangente por {safetyGroupBy === 'area' ? 'Área' : 'Divisão'}</h3>
+               <span style={{ fontSize: '0.65rem', background: '#E2E8F0', padding: '2px 8px', borderRadius: '12px', fontWeight: 800, color: '#475569' }}>Ordem: Dias Sem Acidentes</span>
+            </div>
+            
+            <div style={{ flex: 1, overflowY: 'auto', padding: '0 1rem' }}>
+              <table style={{ width: '100%', borderCollapse: 'collapse', marginTop: '0.5rem', marginBottom: '1rem' }}>
+                <thead>
+                  <tr style={{ borderBottom: '2px solid #E2E8F0' }}>
+                    <th style={{ padding: '0.5rem', fontSize: '0.65rem', textAlign: 'center', color: '#64748B', fontWeight: 800 }}>Pos.</th>
+                    <th style={{ padding: '0.5rem', fontSize: '0.65rem', textAlign: 'left', color: '#64748B', fontWeight: 800 }}>{safetyGroupBy === 'area' ? 'Área' : 'Divisão'}</th>
+                    <th style={{ padding: '0.5rem', fontSize: '0.65rem', textAlign: 'center', color: '#64748B', fontWeight: 800 }}>Dias Invicto</th>
+                    <th style={{ padding: '0.5rem', fontSize: '0.65rem', textAlign: 'center', color: '#64748B', fontWeight: 800 }}>Última Ocorrência</th>
+                    <th style={{ padding: '0.5rem', fontSize: '0.65rem', textAlign: 'center', color: '#64748B', fontWeight: 800 }}>Total de Acidentes</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {calculateSafetyRanking(accidents, safetyGroupBy).map((row, idx) => (
+                    <tr key={row.name} style={{ borderBottom: '1px solid #F1F5F9' }}>
+                      <td style={{ padding: '0.5rem', fontSize: '0.75rem', fontWeight: 900, textAlign: 'center', color: idx < 3 ? '#0F172A' : '#64748B' }}>{idx + 1}º</td>
+                      <td style={{ padding: '0.5rem', fontSize: '0.75rem', fontWeight: 800, color: '#1E293B' }}>{row.name}</td>
+                      <td style={{ padding: '0.5rem', fontSize: '0.85rem', fontWeight: 900, textAlign: 'center', color: row.neverHad ? '#10B981' : '#0F172A' }}>
+                        {row.neverHad ? `+${row.days}` : row.days}
+                      </td>
+                      <td style={{ padding: '0.5rem', fontSize: '0.7rem', color: '#64748B', textAlign: 'center', fontWeight: 700 }}>
+                        {row.neverHad ? 'Nenhum' : (row.lastDate ? row.lastDate.toLocaleDateString('pt-BR') : '-')}
+                      </td>
+                      <td style={{ padding: '0.5rem', fontSize: '0.75rem', fontWeight: 800, textAlign: 'center', color: '#64748B' }}>
+                        {row.totalAccidents}
+                      </td>
+                    </tr>
                   ))}
-                </div>
-              );
-            })()}
-            <div style={{ textAlign: 'center', fontSize: '0.6rem', color: '#64748B', marginTop: '0.75rem', fontWeight: 700 }}>Intervalos de dias sem acidentes entre cada ocorrência</div>
-          </div>
-
-          <div style={{ padding: '1rem', background: '#F0F9FF', borderRadius: '12px', border: '1px solid #BAE6FD' }}>
-             <h4 style={{ fontSize: '0.75rem', fontWeight: 900, color: '#0369A1', marginBottom: '0.25rem' }}>Compromisso com a Vida</h4>
-             <p style={{ fontSize: '0.65rem', color: '#0369A1', lineHeight: 1.4 }}>Este indicador reflete o sucesso das barreiras de prevenção implementadas na unidade. O objetivo é a superação contínua do recorde histórico.</p>
+                </tbody>
+              </table>
+            </div>
           </div>
         </div>
 
@@ -438,7 +438,7 @@ const ReportPage: React.FC<{ accidents: Accident[], years: number[], unit: strin
   );
 };
 
-export const BatchPrintView: React.FC<BatchPrintViewProps> = ({ accidents, configs, onBack }) => {
+export const BatchPrintView: React.FC<BatchPrintViewProps> = ({ accidents, configs, safetyGroupBy, onBack }) => {
   return (
     <div className="batch-print-container">
       <div className="print-controls no-print" style={{ 
@@ -609,6 +609,7 @@ export const BatchPrintView: React.FC<BatchPrintViewProps> = ({ accidents, confi
                 years={config.years} 
                 unit={config.unit} 
                 area={config.area} 
+                safetyGroupBy={safetyGroupBy}
                 pageNum={startPage} 
               />
             );

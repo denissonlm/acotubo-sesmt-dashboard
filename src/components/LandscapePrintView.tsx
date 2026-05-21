@@ -5,7 +5,7 @@ import {
 } from 'recharts';
 import { 
   Printer, ArrowLeft, ShieldCheck, Clock, Target, FileText, 
-  AlertCircle, TrendingUp, Calendar, Trophy, Zap, Users, Activity, HardHat, GraduationCap, ClipboardList
+  AlertCircle, TrendingUp, Calendar, Zap, Users, Activity, HardHat, GraduationCap, ClipboardList
 } from 'lucide-react';
 import type { Accident } from '../types';
 import { 
@@ -14,7 +14,7 @@ import {
   generateInsights,
   generateTemporalInsights, 
   calculateSafetyRecords,
-  generateSafetyInsights
+  calculateSafetyRanking
 } from '../utils/dataLoader';
 import { LOGO_BASE64 } from '../constants';
 
@@ -24,6 +24,7 @@ interface LandscapePrintViewProps {
   filterDivision: string;
   filterManager: string;
   filterArea: string[];
+  safetyGroupBy: 'area' | 'division';
   onBack: () => void;
 }
 
@@ -35,6 +36,7 @@ export const LandscapePrintView: React.FC<LandscapePrintViewProps> = ({
   filterDivision,
   filterManager,
   filterArea,
+  safetyGroupBy,
   onBack
 }) => {
   // 1. Filtered Accidents (only print those matching filters, as requested in users first request)
@@ -56,7 +58,6 @@ export const LandscapePrintView: React.FC<LandscapePrintViewProps> = ({
   // 3. Insights
   const monthlyInsights = useMemo(() => generateInsights(filteredAccidents, selectedYears), [filteredAccidents, selectedYears]);
   const temporalInsights = useMemo(() => generateTemporalInsights(filteredAccidents), [filteredAccidents]);
-  const safetyInsights = useMemo(() => generateSafetyInsights(filteredAccidents), [filteredAccidents]);
   
   const breakdownInsights = useMemo(() => [
     { 
@@ -593,114 +594,68 @@ export const LandscapePrintView: React.FC<LandscapePrintViewProps> = ({
         </header>
 
         <div style={{ display: 'flex', flexDirection: 'column', gap: '0.65rem', height: 'calc(100% - 60px)', marginTop: '0.65rem' }}>
-          {/* Extremo Superior: Year Cards + Safety KPIs */}
-          <div style={{ display: 'flex', gap: '0.75rem' }}>
-            {/* Year Cards */}
-            {selectedYears.slice(0, 3).map(year => {
-              const s = stats[year];
-              if (!s) return null;
-              return (
-                <div key={year} className="panel-premium" style={{ flex: 1, display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '0.45rem 1rem', borderLeft: '4px solid var(--primary)', background: '#FFF' }}>
-                  <div>
-                    <h3 style={{ margin: 0, color: '#64748B', fontWeight: 800, fontSize: '0.75rem' }}>ANO {year}</h3>
-                    <div style={{ fontSize: '0.58rem', fontWeight: 800, color: '#94A3B8', textTransform: 'uppercase' }}>acidentes</div>
-                  </div>
-                  <div style={{ display: 'flex', alignItems: 'baseline', gap: '0.3rem' }}>
-                    <span style={{ fontSize: '1.6rem', fontWeight: 900, color: '#0F172A', lineHeight: 1 }}>{s.total}</span>
-                    <span style={{ fontSize: '0.65rem', fontWeight: 800, color: '#475569' }}>({s.avgPerMonth}/m)</span>
-                  </div>
-                </div>
-              );
-            })}
-
-            {/* KPI 1 */}
-            <div className="panel-premium" style={{ flex: 1, background: 'linear-gradient(135deg, #0F172A 0%, #1E293B 100%)', border: 'none', color: 'white', display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '0.45rem 1rem' }}>
+          {/* Topo: Histórico DSA Gráfico */}
+          <div className="panel-premium" style={{ display: 'flex', flexDirection: 'column', padding: '0.75rem', height: '180px', flexShrink: 0 }}>
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '0.15rem' }}>
               <div>
-                <div style={{ fontSize: '0.75rem', fontWeight: 900, color: '#10B981', display: 'flex', alignItems: 'center', gap: '3px' }}>
-                  <Target size={12} color="#10B981" /> <span>Sem Ocorrências</span>
-                </div>
-                <div style={{ fontSize: '0.58rem', fontWeight: 800, color: '#94A3B8', textTransform: 'uppercase', marginTop: '1px' }}>dias atuais</div>
+                <h3 style={{ fontSize: '0.85rem', fontWeight: 900, margin: '0 0 0.15rem 0', color: '#0F172A' }}>Espaçamento de Dias Sem Acidentes entre Ocorrências</h3>
+                <p style={{ fontSize: '0.58rem', color: 'var(--text-muted)', margin: 0 }}>Histórico cronológico de dias entre eventos consecutivos</p>
               </div>
-              <div style={{ fontSize: '1.75rem', fontWeight: 900, color: '#10B981', lineHeight: 1 }}>{safetyRecords.currentStreak}</div>
-            </div>
-
-            {/* KPI 2 */}
-            <div className="panel-premium" style={{ flex: 1, display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '0.45rem 1rem', background: '#FFF' }}>
-              <div>
-                <div style={{ fontSize: '0.75rem', fontWeight: 900, color: '#F59E0B', display: 'flex', alignItems: 'center', gap: '3px' }}>
-                  <Trophy size={12} color="#F59E0B" /> <span>Recorde DSA</span>
-                </div>
-                <div style={{ fontSize: '0.58rem', fontWeight: 800, color: '#94A3B8', textTransform: 'uppercase', marginTop: '1px' }}>histórico</div>
-              </div>
-              <div style={{ fontSize: '1.75rem', fontWeight: 900, color: '#0F172A', lineHeight: 1 }}>{safetyRecords.historicalRecord}</div>
-            </div>
-
-            {/* KPI 3 */}
-            <div className="panel-premium" style={{ flex: 1, display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '0.45rem 1rem', background: '#FFF' }}>
-              <div>
-                <div style={{ fontSize: '0.75rem', fontWeight: 900, color: '#3B82F6', display: 'flex', alignItems: 'center', gap: '3px' }}>
-                  <Calendar size={12} color="#3B82F6" /> <span>Intervalo DSA</span>
-                </div>
-                <div style={{ fontSize: '0.58rem', fontWeight: 800, color: '#94A3B8', textTransform: 'uppercase', marginTop: '1px' }}>média dias</div>
-              </div>
-              <div style={{ fontSize: '1.75rem', fontWeight: 900, color: '#0F172A', lineHeight: 1 }}>
-                {safetyRecords.intervals.length > 0 
-                  ? Math.round(safetyRecords.intervals.reduce((sum, item) => sum + item.days, 0) / safetyRecords.intervals.length)
-                  : '-'}
+              <div style={{ textAlign: 'right' }}>
+                <div style={{ fontSize: '0.9rem', fontWeight: 900, color: '#10B981', lineHeight: 1 }}>{safetyRecords.currentStreak} dias atuais</div>
+                <div style={{ fontSize: '0.6rem', color: '#64748B', fontWeight: 700, marginTop: '2px' }}>Recorde: {safetyRecords.historicalRecord} dias</div>
               </div>
             </div>
-          </div>
-
-          {/* Centro: Histórico DSA Gráfico em Largura Total */}
-          <div className="panel-premium" style={{ flex: 1, display: 'flex', flexDirection: 'column', padding: '0.75rem', minHeight: 0 }}>
-            <h3 style={{ fontSize: '0.85rem', fontWeight: 900, margin: '0 0 0.15rem 0', color: '#0F172A' }}>Espaçamento de Dias Sem Acidentes entre Ocorrências</h3>
-            <p style={{ fontSize: '0.58rem', color: 'var(--text-muted)', margin: '0 0 0.35rem 0' }}>Linha do tempo cronológica com a contagem de dias entre eventos consecutivos vs recorde de segurança</p>
-            <div style={{ flex: 1, minHeight: 0 }}>
+            
+            <div style={{ flex: 1, minHeight: 0, marginTop: '4px' }}>
               <ResponsiveContainer width="100%" height="100%">
                 <LineChart data={safetyChartData} margin={{ top: 10, right: 20, left: -25, bottom: 0 }}>
                   <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#F1F5F9" />
                   <XAxis dataKey="date" axisLine={false} tickLine={false} tick={{ fontSize: 8, fill: '#64748B', fontWeight: 700 }} />
                   <YAxis axisLine={false} tickLine={false} tick={{ fontSize: 8, fill: '#64748B' }} />
-                  <Tooltip />
                   <ReferenceLine y={safetyRecords.historicalRecord} stroke="#B91C1C" strokeDasharray="4 4" label={{ position: 'right', value: 'Recorde', fill: '#B91C1C', fontSize: 8, fontWeight: 900 }} />
-                  <Line 
-                    type="monotone" 
-                    dataKey="days" 
-                    stroke="#0F172A" 
-                    strokeWidth={3} 
-                    dot={{ fill: '#B91C1C', strokeWidth: 1.5, r: 3.5, stroke: '#FFF' }}
-                  />
+                  <Line type="monotone" dataKey="days" stroke="#0F172A" strokeWidth={2.5} dot={{ fill: '#B91C1C', strokeWidth: 1.5, r: 3, stroke: '#FFF' }} />
                 </LineChart>
               </ResponsiveContainer>
             </div>
           </div>
 
-          {/* Extremo Inferior: Gestão de Indicadores Storytelling */}
-          <div style={{ display: 'flex', flexDirection: 'column', gap: '0.25rem' }}>
-            <h2 style={{ fontSize: '0.8rem', fontWeight: 900, color: '#0F172A', margin: 0, paddingLeft: '0.15rem' }}>
-              Gestão de <span style={{ color: 'var(--primary)' }}>Indicadores</span> • <span style={{ fontSize: '0.65rem', color: 'var(--text-muted)', fontWeight: 500 }}>Fatores críticos de performance de segurança</span>
-            </h2>
-            <div style={{ display: 'flex', gap: '0.75rem' }}>
-              {safetyInsights.slice(0, 3).map((insight, idx) => {
-                const colors = {
-                  danger: { bg: '#FEE2E2', text: '#EF4444', icon: <AlertCircle color="#EF4444" size={16} /> },
-                  warning: { bg: '#FEF3C7', text: '#F59E0B', icon: <Calendar color="#F59E0B" size={16} /> },
-                  info: { bg: '#DBEAFE', text: '#3B82F6', icon: <TrendingUp color="#3B82F6" size={16} /> },
-                  success: { bg: '#D1FAE5', text: '#10B981', icon: <ShieldCheck color="#10B981" size={16} /> }
-                };
-                const config = colors[insight.type];
-                return (
-                  <div key={idx} className="insight-card" style={{ flex: 1, display: 'flex', alignItems: 'center', gap: '0.6rem', padding: '0.45rem 0.75rem', borderLeft: `4px solid ${config.text}`, background: '#FFF' }}>
-                    <div className="insight-icon" style={{ backgroundColor: config.bg, width: '26px', height: '26px', display: 'flex', alignItems: 'center', justifyContent: 'center', borderRadius: '50%', flexShrink: 0 }}>
-                      {config.icon}
-                    </div>
-                    <div className="insight-content" style={{ minWidth: 0 }}>
-                      <h4 style={{ fontSize: '0.72rem', fontWeight: 900, margin: 0, color: '#0F172A' }}>{insight.title}</h4>
-                      <p style={{ fontSize: '0.62rem', margin: '2px 0 0 0', color: '#64748B', lineHeight: 1.2 }}>{insight.text}</p>
-                    </div>
-                  </div>
-                );
-              })}
+          {/* Centro: Tabela de Ranking */}
+          <div className="panel-premium" style={{ flex: 1, padding: '0.75rem', overflow: 'hidden', display: 'flex', flexDirection: 'column' }}>
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '0.5rem' }}>
+               <h3 style={{ fontSize: '0.85rem', fontWeight: 900, margin: 0, color: '#0F172A' }}>Ranking Abrangente por {safetyGroupBy === 'area' ? 'Área' : 'Divisão'}</h3>
+               <span style={{ fontSize: '0.6rem', background: '#F1F5F9', padding: '2px 6px', borderRadius: '4px', fontWeight: 800, color: '#64748B' }}>Ordem: Dias Sem Acidentes</span>
+            </div>
+            
+            <div style={{ flex: 1, overflowY: 'auto' }} className="custom-scrollbar">
+              <table className="ranking-table-premium" style={{ marginTop: 0 }}>
+                <thead>
+                  <tr>
+                    <th style={{ padding: '0.4rem 0.75rem', fontSize: '0.6rem' }}>Pos.</th>
+                    <th style={{ padding: '0.4rem 0.75rem', fontSize: '0.6rem' }}>Nome</th>
+                    <th style={{ padding: '0.4rem 0.75rem', fontSize: '0.6rem', textAlign: 'center' }}>Dias Invicto</th>
+                    <th style={{ padding: '0.4rem 0.75rem', fontSize: '0.6rem', textAlign: 'center' }}>Última Ocorrência</th>
+                    <th style={{ padding: '0.4rem 0.75rem', fontSize: '0.6rem', textAlign: 'center' }}>Acidentes Totais</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {calculateSafetyRanking(filteredAccidents, safetyGroupBy).map((row, idx) => (
+                    <tr key={row.name}>
+                      <td style={{ padding: '0.3rem 0.75rem', fontSize: '0.65rem', fontWeight: 900, textAlign: 'center', color: idx < 3 ? '#0F172A' : '#64748B', borderBottom: '1px solid var(--border)' }}>{idx + 1}º</td>
+                      <td style={{ padding: '0.3rem 0.75rem', fontSize: '0.65rem', fontWeight: 800, borderBottom: '1px solid var(--border)' }}>{row.name}</td>
+                      <td style={{ padding: '0.3rem 0.75rem', fontSize: '0.75rem', fontWeight: 900, textAlign: 'center', color: row.neverHad ? '#10B981' : '#0F172A', borderBottom: '1px solid var(--border)' }}>
+                        {row.neverHad ? `+${row.days}` : row.days}
+                      </td>
+                      <td style={{ padding: '0.3rem 0.75rem', fontSize: '0.6rem', color: '#64748B', textAlign: 'center', fontWeight: 700, borderBottom: '1px solid var(--border)' }}>
+                        {row.neverHad ? 'Nenhum' : (row.lastDate ? row.lastDate.toLocaleDateString('pt-BR') : '-')}
+                      </td>
+                      <td style={{ padding: '0.3rem 0.75rem', fontSize: '0.65rem', fontWeight: 800, textAlign: 'center', color: '#64748B', borderBottom: '1px solid var(--border)' }}>
+                        {row.totalAccidents}
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
             </div>
           </div>
         </div>

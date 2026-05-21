@@ -1,5 +1,5 @@
 import * as XLSX from 'xlsx';
-import type { Accident, YearStats, MonthlyStats, Insight } from '../types';
+import type { Accident, YearStats, MonthlyStats, Insight, GroupSafetyRecord } from '../types';
 
 export const loadAccidentData = async (filePath: string): Promise<Accident[]> => {
   try {
@@ -434,4 +434,69 @@ export const generateSafetyInsights = (accidents: Accident[]): Insight[] => {
   }
 
   return insights;
+};
+
+export const calculateSafetyRanking = (
+  accidents: Accident[],
+  groupBy: 'area' | 'division'
+): GroupSafetyRecord[] => {
+  const uniqueGroups = Array.from(new Set(accidents.map(a => a[groupBy]))).filter(Boolean);
+  
+  const today = new Date();
+  today.setHours(0, 0, 0, 0);
+  
+  let baseDate = new Date('2024-01-01');
+  if (accidents.length > 0) {
+    const sortedAccidentsAsc = [...accidents].sort((a, b) => a.date.getTime() - b.date.getTime());
+    const earliestDate = new Date(sortedAccidentsAsc[0].date);
+    earliestDate.setHours(0, 0, 0, 0);
+    if (earliestDate < baseDate) {
+      baseDate = earliestDate;
+    }
+  }
+  baseDate.setHours(0, 0, 0, 0);
+  
+  return uniqueGroups.map(name => {
+    const groupAccidents = accidents.filter(a => a[groupBy] === name);
+    const totalAccidents = groupAccidents.length;
+    
+    if (totalAccidents === 0) {
+      const diffTime = today.getTime() - baseDate.getTime();
+      const diffDays = Math.floor(diffTime / (1000 * 60 * 60 * 24));
+      return {
+        name,
+        days: Math.max(0, diffDays - 1),
+        lastDate: null,
+        neverHad: true,
+        totalAccidents: 0
+      };
+    }
+    
+    const sorted = [...groupAccidents].sort((a, b) => b.date.getTime() - a.date.getTime());
+    const lastAccident = sorted[0];
+    const lastAccidentDate = new Date(lastAccident.date);
+    lastAccidentDate.setHours(0, 0, 0, 0);
+    
+    const diffTime = today.getTime() - lastAccidentDate.getTime();
+    const diffDays = Math.floor(diffTime / (1000 * 60 * 60 * 24));
+    
+    let days = Math.max(0, diffDays - 1);
+    if (diffDays === 0) days = 0;
+    
+    return {
+      name,
+      days,
+      lastDate: lastAccident.date,
+      neverHad: false,
+      totalAccidents
+    };
+  }).sort((a, b) => {
+    if (b.days !== a.days) {
+      return b.days - a.days;
+    }
+    if (a.totalAccidents !== b.totalAccidents) {
+      return a.totalAccidents - b.totalAccidents;
+    }
+    return a.name.localeCompare(b.name);
+  });
 };

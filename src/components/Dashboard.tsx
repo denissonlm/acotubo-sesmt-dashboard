@@ -22,6 +22,8 @@ interface DashboardProps {
   onManagerChange: (val: string) => void;
   filterArea: string[];
   onAreaChange: (val: string[]) => void;
+  safetyGroupBy: 'area' | 'division';
+  onSafetyGroupByChange: (val: 'area' | 'division') => void;
   onReset: () => void;
   onPrint: () => void;
   onLandscapePrint: () => void;
@@ -40,6 +42,8 @@ export const Dashboard: React.FC<DashboardProps> = ({
   onManagerChange,
   filterArea,
   onAreaChange,
+  safetyGroupBy,
+  onSafetyGroupByChange,
   onReset, 
   onPrint, 
   onLandscapePrint,
@@ -296,7 +300,8 @@ export const Dashboard: React.FC<DashboardProps> = ({
         </div>
       </div>
 
-      <div className="grid-main">
+      <div className={`grid-main ${activeTab === 'safety' ? 'grid-safety-layout' : ''}`}>
+        {activeTab !== 'safety' && (
         <aside className="panorama-panel">
           <h2 style={{fontSize: '1.25rem', fontWeight: 800, marginBottom: '0.5rem'}}>Panorama Geral</h2>
           {selectedYears.map((year, i) => {
@@ -338,6 +343,7 @@ export const Dashboard: React.FC<DashboardProps> = ({
             </span>
           </div>
         </aside>
+        )}
 
         <main className="content-area">
           {activeTab === 'monthly' ? (
@@ -420,7 +426,11 @@ export const Dashboard: React.FC<DashboardProps> = ({
           ) : activeTab === 'temporal' ? (
             <TemporalAnalysis accidents={filteredAccidents} />
           ) : activeTab === 'safety' ? (
-            <SafetyManagement accidents={filteredAccidents} />
+            <SafetyManagement 
+              accidents={filteredAccidents} 
+              groupBy={safetyGroupBy}
+              onGroupByChange={onSafetyGroupByChange}
+            />
           ) : (
             <Breakdown accidents={filteredAccidents} />
           )}
@@ -429,12 +439,13 @@ export const Dashboard: React.FC<DashboardProps> = ({
         {/* Right: Períodos de Atenção */}
         {/* Right: Insights / Storytelling */}
         {/* Right: Insights / Storytelling (Top 3) */}
+        {activeTab !== 'safety' && (
         <aside className="insights-panel">
           <div style={{ marginBottom: '1.5rem' }}>
             <h2 style={{ fontSize: '1.4rem', fontWeight: 900, color: 'var(--text)', margin: 0, letterSpacing: '-0.02em' }}>
-              {activeTab === 'monthly' ? 'Períodos de ' : activeTab === 'temporal' ? 'Análise de ' : activeTab === 'safety' ? 'Gestão de ' : 'Detalhes de '}
+              {activeTab === 'monthly' ? 'Períodos de ' : activeTab === 'temporal' ? 'Análise de ' : 'Detalhes de '}
               <span style={{ color: 'var(--primary)' }}>
-                {activeTab === 'monthly' ? 'Atenção' : activeTab === 'temporal' ? 'Padrões' : activeTab === 'safety' ? 'Indicadores' : 'Causas'}
+                {activeTab === 'monthly' ? 'Atenção' : activeTab === 'temporal' ? 'Padrões' : 'Causas'}
               </span>
             </h2>
             <p style={{ fontSize: '0.8rem', color: 'var(--text-muted)', marginTop: '0.25rem', fontWeight: 500 }}>
@@ -442,9 +453,7 @@ export const Dashboard: React.FC<DashboardProps> = ({
                 ? `Padrões identificados na comparação ${yearsLabel.adj}` 
                 : activeTab === 'temporal' 
                   ? 'Storytelling baseado em horários e dias' 
-                  : activeTab === 'safety'
-                    ? 'Fatores críticos de performance de segurança'
-                    : 'Fatores causais e perfil de experiência'}
+                  : 'Fatores causais e perfil de experiência'}
             </p>
           </div>
           
@@ -478,6 +487,7 @@ export const Dashboard: React.FC<DashboardProps> = ({
             );
           })}
         </aside>
+        )}
       </div>
 
       {/* Fourth Insight (Full Width Bottom) */}

@@ -21,6 +21,7 @@ function App() {
   const [filterDivision, setFilterDivision] = useState('ALL')
   const [filterManager, setFilterManager] = useState('ALL')
   const [filterArea, setFilterArea] = useState<string[]>([])
+  const [safetyGroupBy, setSafetyGroupBy] = useState<'area' | 'division'>('area')
 
   useEffect(() => {
     const fetchData = async () => {
@@ -63,6 +64,7 @@ function App() {
         filterDivision={filterDivision}
         filterManager={filterManager}
         filterArea={filterArea}
+        safetyGroupBy={safetyGroupBy}
         onBack={() => setIsPrinting(false)} 
       />
     )
@@ -76,6 +78,7 @@ function App() {
         filterDivision={filterDivision}
         filterManager={filterManager}
         filterArea={filterArea}
+        safetyGroupBy={safetyGroupBy}
         onBack={() => setIsLandscapePrinting(false)} 
       />
     )
@@ -86,6 +89,7 @@ function App() {
       <BatchPrintView 
         accidents={accidents} 
         configs={batchConfigs} 
+        safetyGroupBy={safetyGroupBy}
         onBack={() => setBatchConfigs([])} 
       />
     )
@@ -103,6 +107,8 @@ function App() {
         onManagerChange={setFilterManager}
         filterArea={filterArea}
         onAreaChange={setFilterArea}
+        safetyGroupBy={safetyGroupBy}
+        onSafetyGroupByChange={setSafetyGroupBy}
         onReset={() => setShowUpload(true)}
         onPrint={() => setIsPrinting(true)}
         onLandscapePrint={() => setIsLandscapePrinting(true)}
