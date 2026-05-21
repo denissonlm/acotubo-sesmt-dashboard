@@ -272,7 +272,7 @@ export const PrintView: React.FC<PrintViewProps> = ({
               <Clock size={28} />
             </div>
             <div>
-              <h1 style={{ color: '#0F172A', fontSize: '1.5rem', fontWeight: 900, textTransform: 'uppercase', letterSpacing: '-0.02em', margin: 0 }}>Análise Temporal</h1>
+              <h1 style={{ color: '#0F172A', fontSize: '1.5rem', fontWeight: 900, textTransform: 'uppercase', letterSpacing: '-0.02em', margin: 0 }}>Análise de Períodos</h1>
               <div style={{ fontSize: '0.75rem', color: '#64748B', fontWeight: 700 }}>Frequência por Horário e Dia da Semana</div>
             </div>
           </div>

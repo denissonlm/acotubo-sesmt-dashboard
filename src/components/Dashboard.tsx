@@ -283,13 +283,13 @@ export const Dashboard: React.FC<DashboardProps> = ({
             onClick={() => setActiveTab('temporal')}
             className={`tab-btn ${activeTab === 'temporal' ? 'active' : ''}`}
           >
-            Análise Temporal
+            Análise de Períodos
           </button>
           <button
             onClick={() => setActiveTab('safety')}
             className={`tab-btn ${activeTab === 'safety' ? 'active' : ''}`}
           >
-            Gestão de Segurança
+            Dias sem Acidentes
           </button>
           <button
             onClick={() => setActiveTab('breakdown')}

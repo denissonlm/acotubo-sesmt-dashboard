@@ -466,7 +466,7 @@ export const LandscapePrintView: React.FC<LandscapePrintViewProps> = ({
         </footer>
       </div>
 
-      {/* PAGE 2: Análise Temporal */}
+      {/* PAGE 2: Análise de Períodos */}
       <div className="a4-landscape">
         {/* Header */}
         <header style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', borderBottom: '2px solid #3B82F6', paddingBottom: '0.4rem' }}>
@@ -475,7 +475,7 @@ export const LandscapePrintView: React.FC<LandscapePrintViewProps> = ({
               <Clock size={20} />
             </div>
             <div>
-              <h1 style={{ color: '#0F172A', fontSize: '1.15rem', fontWeight: 900, textTransform: 'uppercase', margin: 0, letterSpacing: '0.5px' }}>{reportTitle} — Análise Temporal</h1>
+              <h1 style={{ color: '#0F172A', fontSize: '1.15rem', fontWeight: 900, textTransform: 'uppercase', margin: 0, letterSpacing: '0.5px' }}>{reportTitle} — Análise de Períodos</h1>
               <div style={{ fontSize: '0.65rem', color: '#64748B', fontWeight: 700 }}>Identificação de Padrões por Período, Dia e Horários</div>
             </div>
           </div>
@@ -583,7 +583,7 @@ export const LandscapePrintView: React.FC<LandscapePrintViewProps> = ({
               <Target size={20} />
             </div>
             <div>
-              <h1 style={{ color: '#0F172A', fontSize: '1.15rem', fontWeight: 900, textTransform: 'uppercase', margin: 0, letterSpacing: '0.5px' }}>{reportTitle} — Gestão de Segurança</h1>
+              <h1 style={{ color: '#0F172A', fontSize: '1.15rem', fontWeight: 900, textTransform: 'uppercase', margin: 0, letterSpacing: '0.5px' }}>{reportTitle} — Dias sem Acidentes</h1>
               <div style={{ fontSize: '0.65rem', color: '#64748B', fontWeight: 700 }}>Recordes de Dias Sem Acidentes e Cronologia de Incidentes</div>
             </div>
           </div>
