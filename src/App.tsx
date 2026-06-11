@@ -25,6 +25,23 @@ function App() {
 
   useEffect(() => {
     const fetchData = async () => {
+      try {
+        const savedData = localStorage.getItem('savedAccidentsData')
+        if (savedData) {
+          const parsedData = JSON.parse(savedData) as Accident[]
+          parsedData.forEach(d => {
+            d.date = new Date(d.date)
+          })
+          if (parsedData.length > 0) {
+            setAccidents(parsedData)
+            setLoading(false)
+            return
+          }
+        }
+      } catch (e) {
+        console.error('Failed to load saved data from localStorage:', e)
+      }
+
       const data = await loadAccidentData('./data.xlsx')
       if (data.length > 0) {
         setAccidents(data)

@@ -19,6 +19,11 @@ export const UploadSection: React.FC<UploadSectionProps> = ({ onDataLoaded }) =>
       const arrayBuffer = e.target?.result as ArrayBuffer;
       const data = parseAccidentData(arrayBuffer);
       if (data.length > 0) {
+        try {
+          localStorage.setItem('savedAccidentsData', JSON.stringify(data));
+        } catch (error) {
+          console.warn('Could not save to localStorage. The file might be too large.', error);
+        }
         onDataLoaded(data);
       } else {
         alert('Erro ao processar o arquivo. Verifique se a aba "BD" existe.');
