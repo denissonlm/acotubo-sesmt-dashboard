@@ -18,26 +18,27 @@ export const ExpandableChart: React.FC<ExpandableChartProps> = ({ children, titl
         {children(false)}
         <button 
           onClick={() => setIsMaximized(true)}
-          className="no-print"
+          className="no-print maximize-btn"
           title="Expandir Gráfico"
           style={{ 
             position: 'absolute', 
             top: 5, 
             right: 5, 
-            background: 'rgba(255, 255, 255, 0.9)', 
-            border: '1px solid #E2E8F0', 
-            borderRadius: '6px', 
+            background: 'transparent', 
+            border: 'none', 
             cursor: 'pointer', 
             padding: '4px',
             display: 'flex',
             alignItems: 'center',
             justifyContent: 'center',
-            color: '#64748B',
-            boxShadow: '0 2px 4px rgba(0,0,0,0.05)',
-            zIndex: 10
+            color: '#CBD5E1',
+            zIndex: 10,
+            transition: 'color 0.2s'
           }}
+          onMouseOver={(e) => e.currentTarget.style.color = '#3B82F6'}
+          onMouseOut={(e) => e.currentTarget.style.color = '#CBD5E1'}
         >
-          <Maximize2 size={16} />
+          <Maximize2 size={18} />
         </button>
       </div>
 

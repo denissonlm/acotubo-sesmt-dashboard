@@ -2,7 +2,7 @@ import React, { useMemo, useState } from 'react';
 import { 
   BarChart, Bar, XAxis, YAxis, Tooltip, Legend, ResponsiveContainer
 } from 'recharts';
-import { AlertCircle, TrendingUp, Calendar, Printer, ShieldCheck, Layers, Upload, Monitor } from 'lucide-react';
+import { AlertCircle, TrendingUp, Calendar, Printer, ShieldCheck, Layers, Upload, Monitor, X, ExternalLink } from 'lucide-react';
 import type { Accident } from '../types';
 import { calculateStats, generateInsights, generateTemporalInsights } from '../utils/dataLoader';
 import { motion } from 'framer-motion';
@@ -12,6 +12,39 @@ import { SafetyManagement } from './SafetyManagement';
 import { Breakdown } from './Breakdown';
 import { generateSafetyInsights } from '../utils/dataLoader';
 import { ExpandableChart } from './ExpandableChart';
+
+const MonthlyTooltip = ({ active, payload, label, drillDownYear }: any) => {
+  if (active && payload && payload.length) {
+    if (drillDownYear) {
+      return (
+        <div style={{ background: 'white', padding: '1rem', border: '1px solid #E2E8F0', borderRadius: '12px', boxShadow: '0 4px 6px rgba(0,0,0,0.05)' }}>
+          <h4 style={{ margin: '0 0 0.5rem 0', fontWeight: 800 }}>{label} {drillDownYear}</h4>
+          <div style={{ fontWeight: 700, fontSize: '0.9rem', marginBottom: '4px', color: '#B91C1C' }}>
+            {payload[0].value} Acidente{payload[0].value !== 1 ? 's' : ''}
+          </div>
+          <div style={{ marginTop: '0.5rem', fontSize: '0.65rem', color: '#94A3B8', fontWeight: 600, fontStyle: 'italic', background: '#F8FAFC', padding: '4px 6px', borderRadius: '4px' }}>
+            Clique na barra para detalhes completos
+          </div>
+        </div>
+      );
+    } else {
+      return (
+        <div style={{ background: 'white', padding: '1rem', border: '1px solid #E2E8F0', borderRadius: '12px', boxShadow: '0 4px 6px rgba(0,0,0,0.05)' }}>
+          <h4 style={{ margin: '0 0 0.5rem 0', fontWeight: 800 }}>{label}</h4>
+          {payload.map((entry: any, index: number) => (
+            <div key={index} style={{ color: entry.color, fontWeight: 700, fontSize: '0.85rem', marginBottom: '2px' }}>
+              {entry.name}: {entry.value}
+            </div>
+          ))}
+          <div style={{ marginTop: '0.5rem', fontSize: '0.65rem', color: '#94A3B8', fontWeight: 600, fontStyle: 'italic', background: '#F8FAFC', padding: '4px 6px', borderRadius: '4px' }}>
+            Clique na barra para detalhar o ano
+          </div>
+        </div>
+      );
+    }
+  }
+  return null;
+};
 
 interface DashboardProps {
   accidents: Accident[];
@@ -52,6 +85,12 @@ export const Dashboard: React.FC<DashboardProps> = ({
 }) => {
   const [activeTab, setActiveTab] = useState<'monthly' | 'temporal' | 'safety' | 'breakdown'>('monthly');
   const [areaDropdownOpen, setAreaDropdownOpen] = useState(false);
+  const [drillDownYear, setDrillDownYear] = useState<number | null>(null);
+  const [monthDetailsModal, setMonthDetailsModal] = useState<{ monthIndex: number } | null>(null);
+
+  const sortedSelectedYears = useMemo(() => {
+    return [...selectedYears].sort((a, b) => a - b);
+  }, [selectedYears]);
 
   const filteredAccidents = useMemo(() => {
     return accidents.filter(a => {
@@ -305,7 +344,7 @@ export const Dashboard: React.FC<DashboardProps> = ({
         {activeTab !== 'safety' && (
         <aside className="panorama-panel">
           <h2 style={{fontSize: '1.25rem', fontWeight: 800, marginBottom: '0.5rem'}}>Panorama Geral</h2>
-          {selectedYears.map((year, i) => {
+          {sortedSelectedYears.map((year, i) => {
             const s = stats[year];
             if (!s) return null;
             return (
@@ -350,32 +389,56 @@ export const Dashboard: React.FC<DashboardProps> = ({
           {activeTab === 'monthly' ? (
             <>
               {/* Monthly View Content */}
-              <div className="panel-premium">
+              <div className="panel-premium" style={{ position: 'relative' }}>
                 <h2 style={{textAlign: 'center', marginBottom: '0.5rem', fontWeight: 900, color: 'var(--text)'}}>Comparativo <span style={{color: 'var(--primary)'}}>Mensal</span></h2>
                 <p style={{textAlign: 'center', fontSize: '0.75rem', color: 'var(--text-muted)', marginBottom: '2rem'}}>Distribuição histórica de acidentes no {yearsLabel.noun} selecionado</p>
+                
+                {drillDownYear && (
+                  <button 
+                    onClick={() => setDrillDownYear(null)}
+                    style={{ position: 'absolute', top: '1.5rem', left: '1.5rem', background: '#F1F5F9', border: 'none', padding: '0.5rem 1rem', borderRadius: '8px', color: '#475569', fontWeight: 700, cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '0.5rem', fontSize: '0.8rem', zIndex: 10 }}
+                  >
+                    ← Voltar para Visão Anual
+                  </button>
+                )}
+
                 <div style={{ height: 350, overflowX: 'auto', overflowY: 'hidden', paddingBottom: '1rem' }}>
-                  <ExpandableChart title="Comparativo Mensal">
+                  <ExpandableChart title={drillDownYear ? `Detalhes Mensais de ${drillDownYear}` : "Comparativo Mensal"}>
                     {(isMaximized) => (
                       <div style={{ 
-                        minWidth: selectedYears.length > 2 ? `${selectedYears.length * 400}px` : '100%', 
+                        minWidth: (drillDownYear ? 1 : selectedYears.length) > 2 ? `${(drillDownYear ? 1 : selectedYears.length) * 400}px` : '100%', 
                         height: isMaximized ? '100%' : '100%' 
                       }}>
                         <ResponsiveContainer width="100%" height="100%">
                           <BarChart data={chartData} margin={{ top: 25, right: 30, left: 0, bottom: 0 }}>
                             <XAxis dataKey="month" axisLine={false} tickLine={false} tick={{fontSize: 12, fill: '#64748B'}} />
                             <YAxis axisLine={false} tickLine={false} tick={{fontSize: 12, fill: '#64748B'}} domain={[0, 'dataMax + 2']} />
-                            <Tooltip cursor={{fill: '#F1F5F9'}} contentStyle={{borderRadius: '12px', border: '1px solid var(--border)'}} />
+                            <Tooltip 
+                              cursor={{fill: '#F1F5F9'}} 
+                              content={<MonthlyTooltip drillDownYear={drillDownYear} />} 
+                              wrapperStyle={{ pointerEvents: 'none', zIndex: 1000 }}
+                            />
                             <Legend verticalAlign="top" align="center" iconType="circle" />
-                            {selectedYears.map((year, idx) => {
-                              const colors = ['#B91C1C', '#94A3B8', '#0F172A', '#3B82F6', '#10B981', '#F59E0B'];
+                            {(drillDownYear ? [drillDownYear] : sortedSelectedYears).map((year, idx) => {
+                              const colors = drillDownYear ? ['#B91C1C'] : ['#B91C1C', '#94A3B8', '#0F172A', '#3B82F6', '#10B981', '#F59E0B'];
                               return (
                                 <Bar 
                                   key={year}
                                   dataKey={String(year)} 
                                   fill={colors[idx % colors.length]} 
                                   radius={[4, 4, 0, 0]} 
-                                  barSize={selectedYears.length > 3 ? 12 : (isMaximized ? 40 : 20)}
+                                  barSize={(drillDownYear ? 1 : selectedYears.length) > 3 ? 12 : (isMaximized ? 40 : 20)}
                                   label={{ position: 'top', fill: '#64748B', fontSize: isMaximized ? 14 : 10, fontWeight: 700 }}
+                                  onClick={(entry, index) => {
+                                    if (!drillDownYear) {
+                                      setDrillDownYear(year);
+                                    } else {
+                                      const monthStr = (entry as any)?.payload?.month || (entry as any)?.month;
+                                      const actualIndex = monthStr ? MONTH_NAMES.indexOf(monthStr) : -1;
+                                      setMonthDetailsModal({ monthIndex: actualIndex !== -1 ? actualIndex : index });
+                                    }
+                                  }}
+                                  style={{ cursor: 'pointer' }}
                                 />
                               );
                             })}
@@ -401,13 +464,13 @@ export const Dashboard: React.FC<DashboardProps> = ({
                           </tr>
                         </thead>
                         <tbody>
-                          {selectedYears.map(year => {
-                            const s = stats[year];
-                            if (!s) return null;
+                          {sortedSelectedYears.map(year => {
+                            const yearStats = stats[year];
+                            if (!yearStats) return null;
                             return (
                               <tr key={year}>
                                 <td style={{fontWeight: 700, color: 'var(--text-muted)'}}>{year}</td>
-                                {stats[year]?.monthly.map((m, i) => (
+                                {yearStats?.monthly.map((m, i) => (
                                   <td 
                                     key={i} 
                                     style={{ 
@@ -530,6 +593,101 @@ export const Dashboard: React.FC<DashboardProps> = ({
             </p>
           </div>
         </motion.div>
+      )}
+
+      {monthDetailsModal && drillDownYear && (
+        <div style={{ position: 'fixed', top: 0, left: 0, width: '100vw', height: '100vh', background: 'rgba(15, 23, 42, 0.75)', backdropFilter: 'blur(4px)', zIndex: 999999, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '1rem' }}>
+          <div style={{ background: '#F8FAFC', borderRadius: '20px', width: '100%', maxWidth: '900px', maxHeight: '90vh', display: 'flex', flexDirection: 'column', boxShadow: '0 25px 50px -12px rgba(0, 0, 0, 0.5)', overflow: 'hidden', border: '1px solid rgba(255,255,255,0.1)' }}>
+            
+            {/* Modal Header */}
+            <div style={{ padding: '1.5rem 2rem', borderBottom: '1px solid #E2E8F0', display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', background: 'white' }}>
+              <div>
+                <h2 style={{ margin: 0, fontWeight: 900, color: 'var(--text)', fontSize: '1.4rem', display: 'flex', alignItems: 'center', gap: '0.5rem', letterSpacing: '-0.02em' }}>
+                  <Calendar color="var(--primary)" size={28} />
+                  Ocorrências em {MONTH_NAMES[monthDetailsModal.monthIndex]} de {drillDownYear}
+                </h2>
+                <p style={{ margin: '0.25rem 0 0 0', fontSize: '0.9rem', color: '#64748B', fontWeight: 500, display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+                  <span style={{ display: 'inline-block', width: '8px', height: '8px', borderRadius: '50%', background: 'var(--primary)' }}></span>
+                  Exibindo o registro detalhado de todas as vítimas e causas raízes deste mês.
+                </p>
+              </div>
+              <button 
+                onClick={() => setMonthDetailsModal(null)}
+                style={{ background: '#F1F5F9', border: 'none', padding: '0.5rem', borderRadius: '12px', cursor: 'pointer', color: '#64748B', display: 'flex', alignItems: 'center', justifyContent: 'center', transition: 'background 0.2s' }}
+                onMouseOver={(e) => e.currentTarget.style.background = '#E2E8F0'}
+                onMouseOut={(e) => e.currentTarget.style.background = '#F1F5F9'}
+              >
+                <X size={24} />
+              </button>
+            </div>
+            
+            {/* Modal Body with Premium Table */}
+            <div style={{ padding: '2rem', overflowY: 'auto' }} className="custom-scrollbar">
+              <div style={{ background: 'white', borderRadius: '16px', boxShadow: '0 4px 6px -1px rgba(0,0,0,0.05), 0 2px 4px -1px rgba(0,0,0,0.03)', border: '1px solid #E2E8F0', overflow: 'hidden' }}>
+                <table style={{ width: '100%', borderCollapse: 'collapse', textAlign: 'left' }}>
+                  <thead style={{ background: '#F8FAFC', borderBottom: '2px solid #E2E8F0' }}>
+                    <tr>
+                      <th style={{ padding: '1rem 1.5rem', color: '#64748B', fontWeight: 800, fontSize: '0.75rem', textTransform: 'uppercase', letterSpacing: '0.05em' }}>Colaborador</th>
+                      <th style={{ padding: '1rem 1.5rem', color: '#64748B', fontWeight: 800, fontSize: '0.75rem', textTransform: 'uppercase', letterSpacing: '0.05em' }}>Cargo & Área</th>
+                      <th style={{ padding: '1rem 1.5rem', color: '#64748B', fontWeight: 800, fontSize: '0.75rem', textTransform: 'uppercase', letterSpacing: '0.05em', textAlign: 'center' }}>Causa Raiz</th>
+                      <th style={{ padding: '1rem 1.5rem', color: '#64748B', fontWeight: 800, fontSize: '0.75rem', textTransform: 'uppercase', letterSpacing: '0.05em', textAlign: 'right' }}>Afastamento</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {filteredAccidents.filter(a => a.year === drillDownYear && (a.month - 1) === monthDetailsModal.monthIndex).map((a, idx) => (
+                      <tr key={idx} style={{ borderBottom: '1px solid #F1F5F9', transition: 'background 0.2s', cursor: 'default' }} onMouseOver={e => e.currentTarget.style.background = '#F8FAFC'} onMouseOut={e => e.currentTarget.style.background = 'white'}>
+                        <td style={{ padding: '1.25rem 1.5rem' }}>
+                          <div style={{ display: 'flex', alignItems: 'center', gap: '1rem' }}>
+                            <div style={{ width: '42px', height: '42px', borderRadius: '12px', background: 'linear-gradient(135deg, #EFF6FF 0%, #DBEAFE 100%)', color: '#1D4ED8', display: 'flex', alignItems: 'center', justifyContent: 'center', fontWeight: 900, fontSize: '1.1rem', border: '1px solid #BFDBFE' }}>
+                              {a.employee.split(' ').map(n => n[0]).slice(0,2).join('')}
+                            </div>
+                            <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
+                              <span style={{ fontWeight: 800, color: '#0F172A', fontSize: '0.95rem' }}>{a.employee}</span>
+                              {a.investigationLink && (
+                                <a href={a.investigationLink} target="_blank" rel="noopener noreferrer" style={{ display: 'inline-flex', alignItems: 'center', gap: '4px', fontSize: '0.7rem', color: '#2563EB', fontWeight: 800, textDecoration: 'none', background: '#EFF6FF', padding: '4px 8px', borderRadius: '6px', border: '1px solid #BFDBFE', width: 'fit-content', transition: 'background 0.2s' }} onMouseOver={e => e.currentTarget.style.background = '#DBEAFE'} onMouseOut={e => e.currentTarget.style.background = '#EFF6FF'}>
+                                  <ExternalLink size={12} strokeWidth={3} /> Investigação
+                                </a>
+                              )}
+                            </div>
+                          </div>
+                        </td>
+                        <td style={{ padding: '1.25rem 1.5rem' }}>
+                          <div style={{ fontWeight: 700, color: '#334155', fontSize: '0.9rem' }}>{a.role}</div>
+                          <div style={{ fontSize: '0.8rem', color: '#64748B', marginTop: '4px', display: 'flex', alignItems: 'center', gap: '4px', fontWeight: 500 }}>
+                            <Layers size={14} color="#94A3B8" /> {a.area}
+                          </div>
+                        </td>
+                        <td style={{ padding: '1.25rem 1.5rem', textAlign: 'center' }}>
+                          <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', gap: '6px' }}>
+                            <span style={{ display: 'inline-flex', alignItems: 'center', gap: '6px', padding: '6px 12px', borderRadius: '999px', background: a.unsafeAct ? '#FEF2F2' : '#F0FDF4', color: a.unsafeAct ? '#991B1B' : '#166534', fontWeight: 800, fontSize: '0.75rem', border: `1px solid ${a.unsafeAct ? '#FECACA' : '#BBF7D0'}` }}>
+                              {a.unsafeAct ? <AlertCircle size={14} /> : <ShieldCheck size={14} />}
+                              {a.unsafeAct ? 'Ato Inseguro' : 'Condição Insegura'}
+                            </span>
+                            <div style={{ color: '#475569', fontSize: '0.8rem', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.05em' }}>{a.type}</div>
+                          </div>
+                        </td>
+                        <td style={{ padding: '1.25rem 1.5rem', textAlign: 'right' }}>
+                          {a.lostDays > 0 ? (
+                            <div style={{ display: 'inline-flex', flexDirection: 'column', alignItems: 'flex-end' }}>
+                              <span style={{ color: '#EF4444', fontWeight: 900, fontSize: '1.15rem', display: 'flex', alignItems: 'center', gap: '6px' }}>
+                                <TrendingUp size={18} /> {a.lostDays} dias
+                              </span>
+                              <span style={{ fontSize: '0.7rem', color: '#94A3B8', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.05em', marginTop: '2px' }}>afastado</span>
+                            </div>
+                          ) : (
+                            <span style={{ display: 'inline-block', padding: '8px 12px', background: '#F8FAFC', color: '#94A3B8', borderRadius: '8px', fontWeight: 700, fontSize: '0.8rem', border: '1px solid #E2E8F0' }}>
+                              Sem Afastamento
+                            </span>
+                          )}
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+            </div>
+          </div>
+        </div>
       )}
       
       {filteredAccidents.length > 0 && (
