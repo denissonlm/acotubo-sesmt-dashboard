@@ -7,6 +7,7 @@ import { Medal, ShieldAlert, ShieldCheck, CalendarDays, TrendingUp, Trophy } fro
 import type { Accident, GroupSafetyRecord } from '../types';
 import { calculateSafetyRecords, calculateSafetyRanking } from '../utils/dataLoader';
 import { motion } from 'framer-motion';
+import { ExpandableChart } from './ExpandableChart';
 
 interface SafetyManagementProps {
   accidents: Accident[];
@@ -243,23 +244,27 @@ export const SafetyManagement: React.FC<SafetyManagementProps> = ({ accidents, g
           <div style={{ background: '#F8FAFC', borderRadius: '12px', padding: '1.5rem 1rem 1rem 0', border: '1px solid #E2E8F0', height: '100%', minHeight: '350px', display: 'flex', flexDirection: 'column' }}>
             <h3 style={{ fontSize: '0.85rem', fontWeight: 800, color: '#1E293B', marginBottom: '1rem', textAlign: 'center', textTransform: 'uppercase', letterSpacing: '0.05em' }}>Desempenho Geral</h3>
             <div style={{ flex: 1, minHeight: Math.max(300, ranking.length * 35) }}>
-              <ResponsiveContainer width="100%" height="100%">
-                <BarChart data={ranking} layout="vertical" margin={{ top: 0, right: 20, left: 0, bottom: 0 }}>
-                  <CartesianGrid strokeDasharray="3 3" horizontal={false} stroke="#E2E8F0" />
-                  <XAxis type="number" hide />
-                  <YAxis dataKey="name" type="category" width={80} tick={{ fontSize: 9, fontWeight: 700, fill: '#64748B' }} axisLine={false} tickLine={false} />
-                  <RechartsTooltip 
-                    cursor={{ fill: '#F1F5F9' }} 
-                    contentStyle={{ borderRadius: '8px', border: 'none', boxShadow: '0 4px 6px -1px rgb(0 0 0 / 0.1)', fontSize: '0.8rem', fontWeight: 700 }}
-                    formatter={(value: any) => [`${value} dias`, 'Dias sem acidentes']}
-                  />
-                  <Bar dataKey="days" radius={[0, 4, 4, 0]} barSize={20}>
-                    {ranking.map((entry, index) => (
-                      <Cell key={`cell-${index}`} fill={entry.neverHad ? '#10B981' : (entry.days > 90 ? '#3B82F6' : '#EF4444')} />
-                    ))}
-                  </Bar>
-                </BarChart>
-              </ResponsiveContainer>
+              <ExpandableChart title="Desempenho Geral">
+                {(isMaximized) => (
+                  <ResponsiveContainer width="100%" height={isMaximized ? '100%' : '100%'}>
+                    <BarChart data={ranking} layout="vertical" margin={{ top: 0, right: isMaximized ? 50 : 20, left: 0, bottom: 0 }}>
+                      <CartesianGrid strokeDasharray="3 3" horizontal={false} stroke="#E2E8F0" />
+                      <XAxis type="number" hide />
+                      <YAxis dataKey="name" type="category" width={isMaximized ? 120 : 80} tick={{ fontSize: isMaximized ? 12 : 9, fontWeight: 700, fill: '#64748B' }} axisLine={false} tickLine={false} />
+                      <RechartsTooltip 
+                        cursor={{ fill: '#F1F5F9' }} 
+                        contentStyle={{ borderRadius: '8px', border: 'none', boxShadow: '0 4px 6px -1px rgb(0 0 0 / 0.1)', fontSize: '0.8rem', fontWeight: 700 }}
+                        formatter={(value: any) => [`${value} dias`, 'Dias sem acidentes']}
+                      />
+                      <Bar dataKey="days" radius={[0, 4, 4, 0]} barSize={isMaximized ? 40 : 20} label={isMaximized ? { position: 'right', fill: '#0F172A', fontSize: 12, fontWeight: 800 } : false}>
+                        {ranking.map((entry, index) => (
+                          <Cell key={`cell-${index}`} fill={entry.neverHad ? '#10B981' : (entry.days > 90 ? '#3B82F6' : '#EF4444')} />
+                        ))}
+                      </Bar>
+                    </BarChart>
+                  </ResponsiveContainer>
+                )}
+              </ExpandableChart>
             </div>
           </div>
         </div>
@@ -272,49 +277,54 @@ export const SafetyManagement: React.FC<SafetyManagementProps> = ({ accidents, g
           <p style={{ fontSize: '0.8rem', color: '#64748B', marginTop: '0.25rem' }}>Histórico de dias trabalhados com segurança entre cada acidente</p>
         </div>
         <div style={{ overflowX: 'auto', paddingBottom: '1rem' }} className="custom-scrollbar">
-          <div style={{ width: lineChartWidth, height: 300 }}>
-            <ResponsiveContainer width="100%" height="100%">
-              <LineChart data={chartData} margin={{ top: 20, right: 30, left: 0, bottom: 20 }}>
-                <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#F1F5F9" />
-                <XAxis 
-                  dataKey="id" 
-                  axisLine={false} 
-                  tickLine={false} 
-                  tickFormatter={(val) => chartData[val]?.date || ''}
-                  tick={{ fontSize: 10, fill: '#64748B' }} 
-                  dy={10}
-                />
-                <YAxis axisLine={false} tickLine={false} tick={{ fontSize: 10, fill: '#64748B' }} />
-                <RechartsTooltip content={({ active, payload }) => {
-                  if (active && payload && payload.length) {
-                    const data = payload[0].payload;
-                    return (
-                      <div style={{ background: 'white', padding: '10px 14px', borderRadius: '12px', boxShadow: '0 4px 12px rgba(0,0,0,0.1)', border: '1px solid #E2E8F0', fontSize: '0.8rem' }}>
-                        <p style={{ fontWeight: 800, color: '#0F172A', marginBottom: '4px', margin: 0 }}>{data.date}</p>
-                        <p style={{ margin: '0 0 4px 0', color: '#64748B' }}><span style={{ fontWeight: 700, color: '#0F172A' }}>Espaçamento:</span> {data.days} dias</p>
-                        {data.employee && (
-                          <div style={{ marginTop: '8px', paddingTop: '8px', borderTop: '1px solid #F1F5F9' }}>
-                            <p style={{ margin: '0 0 2px 0', fontWeight: 800, color: '#1E293B' }}>{data.employee}</p>
-                            <p style={{ margin: 0, color: '#64748B', fontSize: '0.7rem' }}>{data.role}</p>
+          <ExpandableChart title="Espaçamento entre Ocorrências">
+            {(isMaximized) => (
+              <div style={{ width: isMaximized ? '100%' : lineChartWidth, height: isMaximized ? '100%' : 300, minWidth: isMaximized ? '100%' : undefined }}>
+                <ResponsiveContainer width="100%" height="100%">
+                  <LineChart data={chartData} margin={{ top: isMaximized ? 40 : 20, right: 30, left: 0, bottom: 20 }}>
+                    <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#F1F5F9" />
+                    <XAxis 
+                      dataKey="id" 
+                      axisLine={false} 
+                      tickLine={false} 
+                      tickFormatter={(val) => chartData[val]?.date || ''}
+                      tick={{ fontSize: isMaximized ? 12 : 10, fill: '#64748B' }} 
+                      dy={10}
+                    />
+                    <YAxis axisLine={false} tickLine={false} tick={{ fontSize: isMaximized ? 12 : 10, fill: '#64748B' }} />
+                    <RechartsTooltip content={({ active, payload }) => {
+                      if (active && payload && payload.length) {
+                        const data = payload[0].payload;
+                        return (
+                          <div style={{ background: 'white', padding: '10px 14px', borderRadius: '12px', boxShadow: '0 4px 12px rgba(0,0,0,0.1)', border: '1px solid #E2E8F0', fontSize: '0.8rem' }}>
+                            <p style={{ fontWeight: 800, color: '#0F172A', marginBottom: '4px', margin: 0 }}>{data.date}</p>
+                            <p style={{ margin: '0 0 4px 0', color: '#64748B' }}><span style={{ fontWeight: 700, color: '#0F172A' }}>Espaçamento:</span> {data.days} dias</p>
+                            {data.employee && (
+                              <div style={{ marginTop: '8px', paddingTop: '8px', borderTop: '1px solid #F1F5F9' }}>
+                                <p style={{ margin: '0 0 2px 0', fontWeight: 800, color: '#1E293B' }}>{data.employee}</p>
+                                <p style={{ margin: 0, color: '#64748B', fontSize: '0.7rem' }}>{data.role}</p>
+                              </div>
+                            )}
                           </div>
-                        )}
-                      </div>
-                    );
-                  }
-                  return null;
-                }} />
-                <ReferenceLine y={records.historicalRecord} stroke="#B91C1C" strokeDasharray="5 5" label={{ position: 'right', value: 'Recorde', fill: '#B91C1C', fontSize: 10, fontWeight: 900 }} />
-                <Line 
-                  type="monotone" 
-                  dataKey="days" 
-                  stroke="#0F172A" 
-                  strokeWidth={4} 
-                  dot={{ fill: '#B91C1C', strokeWidth: 2, r: 4, stroke: '#FFF' }}
-                  activeDot={{ r: 6, strokeWidth: 0 }}
-                />
-              </LineChart>
-            </ResponsiveContainer>
-          </div>
+                        );
+                      }
+                      return null;
+                    }} />
+                    <ReferenceLine y={records.historicalRecord} stroke="#B91C1C" strokeDasharray="5 5" label={{ position: 'right', value: 'Recorde', fill: '#B91C1C', fontSize: 10, fontWeight: 900 }} />
+                    <Line 
+                      type="monotone" 
+                      dataKey="days" 
+                      stroke="#0F172A" 
+                      strokeWidth={isMaximized ? 6 : 4} 
+                      dot={{ fill: '#B91C1C', strokeWidth: 2, r: isMaximized ? 6 : 4, stroke: '#FFF' }}
+                      activeDot={{ r: isMaximized ? 8 : 6, strokeWidth: 0 }}
+                      label={isMaximized ? { position: 'top', fill: '#0F172A', fontSize: 14, fontWeight: 800, dy: -10 } : false}
+                    />
+                  </LineChart>
+                </ResponsiveContainer>
+              </div>
+            )}
+          </ExpandableChart>
         </div>
       </div>
     </motion.div>
