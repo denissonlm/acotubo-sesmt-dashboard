@@ -2,7 +2,10 @@ import React, { useMemo, useState } from 'react';
 import { 
   BarChart, Bar, XAxis, YAxis, Tooltip, Legend, ResponsiveContainer
 } from 'recharts';
-import { AlertCircle, TrendingUp, Calendar, Printer, ShieldCheck, Layers, Upload, Monitor, X, ExternalLink } from 'lucide-react';
+import { 
+  AlertCircle, TrendingUp, Calendar, Printer, ShieldCheck, Layers, Upload, Monitor, X, ExternalLink,
+  Search, Filter, ArrowUpDown, ArrowUp, ArrowDown, RotateCcw, Clock, FileSpreadsheet
+} from 'lucide-react';
 import type { Accident } from '../types';
 import { calculateStats, generateInsights, generateTemporalInsights } from '../utils/dataLoader';
 import { motion } from 'framer-motion';
@@ -87,6 +90,33 @@ export const Dashboard: React.FC<DashboardProps> = ({
   const [areaDropdownOpen, setAreaDropdownOpen] = useState(false);
   const [drillDownYear, setDrillDownYear] = useState<number | null>(null);
   const [monthDetailsModal, setMonthDetailsModal] = useState<{ monthIndex: number } | null>(null);
+  const [isBreakdownModalOpen, setIsBreakdownModalOpen] = useState(false);
+
+  // Modal Sorting & Filtering states
+  const [modalSortKey, setModalSortKey] = useState<'date' | 'employee' | 'role' | 'area' | 'unsafeAct' | 'type' | 'lostDays'>('date');
+  const [modalSortDirection, setModalSortDirection] = useState<'asc' | 'desc'>('asc');
+  const [modalSearchText, setModalSearchText] = useState('');
+  const [modalFilterCause, setModalFilterCause] = useState<'ALL' | 'UNSAFE_ACT' | 'UNSAFE_COND'>('ALL');
+  const [modalFilterType, setModalFilterType] = useState<'ALL' | string>('ALL');
+  const [modalFilterLostDays, setModalFilterLostDays] = useState<'ALL' | 'WITH_LOST_DAYS' | 'NO_LOST_DAYS'>('ALL');
+
+  const handleModalSort = (key: 'date' | 'employee' | 'role' | 'area' | 'unsafeAct' | 'type' | 'lostDays') => {
+    if (modalSortKey === key) {
+      setModalSortDirection(prev => prev === 'asc' ? 'desc' : 'asc');
+    } else {
+      setModalSortKey(key);
+      setModalSortDirection('asc');
+    }
+  };
+
+  const resetModalFilters = () => {
+    setModalSearchText('');
+    setModalFilterCause('ALL');
+    setModalFilterType('ALL');
+    setModalFilterLostDays('ALL');
+    setModalSortKey('date');
+    setModalSortDirection('asc');
+  };
 
   const sortedSelectedYears = useMemo(() => {
     return [...selectedYears].sort((a, b) => a - b);
@@ -153,6 +183,73 @@ export const Dashboard: React.FC<DashboardProps> = ({
   const uniqueDivisions = useMemo(() => Array.from(new Set(accidents.map(a => a.division))).sort(), [accidents]);
   const uniqueManagers = useMemo(() => Array.from(new Set(accidents.map(a => a.manager))).sort(), [accidents]);
   const uniqueAreas = useMemo(() => Array.from(new Set(accidents.map(a => a.area))).sort(), [accidents]);
+
+  const baseMonthAccidents = useMemo(() => {
+    if (!monthDetailsModal || !drillDownYear) return [];
+    return filteredAccidents.filter(a => a.year === drillDownYear && (a.month - 1) === monthDetailsModal.monthIndex);
+  }, [filteredAccidents, drillDownYear, monthDetailsModal]);
+
+  const modalAvailableTypes = useMemo(() => {
+    return Array.from(new Set(baseMonthAccidents.map(a => a.type).filter(Boolean))).sort();
+  }, [baseMonthAccidents]);
+
+  const modalProcessedAccidents = useMemo(() => {
+    let list = [...baseMonthAccidents];
+
+    if (modalSearchText.trim()) {
+      const q = modalSearchText.toLowerCase();
+      list = list.filter(a => 
+        (a.employee && a.employee.toLowerCase().includes(q)) ||
+        (a.role && a.role.toLowerCase().includes(q)) ||
+        (a.area && a.area.toLowerCase().includes(q)) ||
+        (a.type && a.type.toLowerCase().includes(q))
+      );
+    }
+
+    if (modalFilterCause !== 'ALL') {
+      list = list.filter(a => modalFilterCause === 'UNSAFE_ACT' ? a.unsafeAct : !a.unsafeAct);
+    }
+
+    if (modalFilterType !== 'ALL') {
+      list = list.filter(a => a.type === modalFilterType);
+    }
+
+    if (modalFilterLostDays === 'WITH_LOST_DAYS') {
+      list = list.filter(a => a.lostDays > 0);
+    } else if (modalFilterLostDays === 'NO_LOST_DAYS') {
+      list = list.filter(a => a.lostDays === 0);
+    }
+
+    list.sort((a, b) => {
+      let valA: any = a[modalSortKey as keyof Accident];
+      let valB: any = b[modalSortKey as keyof Accident];
+
+      if (modalSortKey === 'date') {
+        valA = a.date ? new Date(a.date).getTime() : 0;
+        valB = b.date ? new Date(b.date).getTime() : 0;
+      } else if (modalSortKey === 'unsafeAct') {
+        valA = a.unsafeAct ? 1 : 0;
+        valB = b.unsafeAct ? 1 : 0;
+      } else if (typeof valA === 'string') {
+        return modalSortDirection === 'asc' 
+          ? valA.localeCompare(valB || '') 
+          : (valB || '').localeCompare(valA);
+      }
+
+      if (valA < valB) return modalSortDirection === 'asc' ? -1 : 1;
+      if (valA > valB) return modalSortDirection === 'asc' ? 1 : -1;
+      return 0;
+    });
+
+    return list;
+  }, [baseMonthAccidents, modalSearchText, modalFilterCause, modalFilterType, modalFilterLostDays, modalSortKey, modalSortDirection]);
+
+  const formatDateBR = (dateVal: any) => {
+    if (!dateVal) return '-';
+    const d = new Date(dateVal);
+    if (isNaN(d.getTime())) return String(dateVal);
+    return d.toLocaleDateString('pt-BR', { day: '2-digit', month: '2-digit', year: 'numeric', timeZone: 'UTC' });
+  };
 
   const chartData = useMemo(() => {
     return Array.from({ length: 12 }, (_, i) => {
@@ -224,6 +321,39 @@ export const Dashboard: React.FC<DashboardProps> = ({
         </div>
 
         <div className="action-buttons">
+          <button 
+            onClick={() => setIsBreakdownModalOpen(true)}
+            className="btn-action detail" 
+            title="Detalhamento Geral de Ocorrências (Base Completa)"
+            style={{
+              position: 'relative',
+              background: 'linear-gradient(135deg, #1E293B 0%, #0F172A 100%)',
+              border: '1px solid rgba(59, 130, 246, 0.4)',
+              color: '#60A5FA',
+              boxShadow: '0 4px 12px rgba(37, 99, 235, 0.25)',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              cursor: 'pointer',
+              transition: 'all 0.25s cubic-bezier(0.4, 0, 0.2, 1)'
+            }}
+            onMouseOver={e => {
+              e.currentTarget.style.transform = 'translateY(-2px) scale(1.08)';
+              e.currentTarget.style.boxShadow = '0 6px 20px rgba(37, 99, 235, 0.6)';
+              e.currentTarget.style.borderColor = '#60A5FA';
+              e.currentTarget.style.color = '#FFFFFF';
+              e.currentTarget.style.background = 'linear-gradient(135deg, #2563EB 0%, #1D4ED8 100%)';
+            }}
+            onMouseOut={e => {
+              e.currentTarget.style.transform = 'translateY(0) scale(1)';
+              e.currentTarget.style.boxShadow = '0 4px 12px rgba(37, 99, 235, 0.25)';
+              e.currentTarget.style.borderColor = 'rgba(59, 130, 246, 0.4)';
+              e.currentTarget.style.color = '#60A5FA';
+              e.currentTarget.style.background = 'linear-gradient(135deg, #1E293B 0%, #0F172A 100%)';
+            }}
+          >
+            <FileSpreadsheet size={22} />
+          </button>
           <button 
             onClick={onReset} 
             className="btn-action reset" 
@@ -410,7 +540,7 @@ export const Dashboard: React.FC<DashboardProps> = ({
                         height: isMaximized ? '100%' : '100%' 
                       }}>
                         <ResponsiveContainer width="100%" height="100%">
-                          <BarChart data={chartData} margin={{ top: 25, right: 30, left: 0, bottom: 0 }}>
+                          <BarChart data={chartData} margin={{ top: 25, right: 30, left: 0, bottom: 0 }} style={{ outline: 'none' }}>
                             <XAxis dataKey="month" axisLine={false} tickLine={false} tick={{fontSize: 12, fill: '#64748B'}} />
                             <YAxis axisLine={false} tickLine={false} tick={{fontSize: 12, fill: '#64748B'}} domain={[0, 'dataMax + 2']} />
                             <Tooltip 
@@ -429,16 +559,16 @@ export const Dashboard: React.FC<DashboardProps> = ({
                                   radius={[4, 4, 0, 0]} 
                                   barSize={(drillDownYear ? 1 : selectedYears.length) > 3 ? 12 : (isMaximized ? 40 : 20)}
                                   label={{ position: 'top', fill: '#64748B', fontSize: isMaximized ? 14 : 10, fontWeight: 700 }}
-                                  onClick={(entry, index) => {
+                                  onClick={(entry: any, index: number) => {
                                     if (!drillDownYear) {
                                       setDrillDownYear(year);
                                     } else {
-                                      const monthStr = (entry as any)?.payload?.month || (entry as any)?.month;
+                                      const monthStr = entry?.payload?.month || entry?.month;
                                       const actualIndex = monthStr ? MONTH_NAMES.indexOf(monthStr) : -1;
                                       setMonthDetailsModal({ monthIndex: actualIndex !== -1 ? actualIndex : index });
                                     }
                                   }}
-                                  style={{ cursor: 'pointer' }}
+                                  style={{ cursor: 'pointer', outline: 'none' }}
                                 />
                               );
                             })}
@@ -508,7 +638,11 @@ export const Dashboard: React.FC<DashboardProps> = ({
               onGroupByChange={onSafetyGroupByChange}
             />
           ) : (
-            <Breakdown accidents={filteredAccidents} />
+            <Breakdown 
+              accidents={filteredAccidents} 
+              isOpen={isBreakdownModalOpen} 
+              onClose={() => setIsBreakdownModalOpen(false)} 
+            />
           )}
         </main>
 
@@ -596,98 +730,349 @@ export const Dashboard: React.FC<DashboardProps> = ({
       )}
 
       {monthDetailsModal && drillDownYear && (
-        <div style={{ position: 'fixed', top: 0, left: 0, width: '100vw', height: '100vh', background: 'rgba(15, 23, 42, 0.75)', backdropFilter: 'blur(4px)', zIndex: 999999, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '1rem' }}>
-          <div style={{ background: '#F8FAFC', borderRadius: '20px', width: '100%', maxWidth: '900px', maxHeight: '90vh', display: 'flex', flexDirection: 'column', boxShadow: '0 25px 50px -12px rgba(0, 0, 0, 0.5)', overflow: 'hidden', border: '1px solid rgba(255,255,255,0.1)' }}>
+        <div 
+          style={{ position: 'fixed', top: 0, left: 0, width: '100vw', height: '100vh', background: 'rgba(15, 23, 42, 0.75)', backdropFilter: 'blur(6px)', zIndex: 999999, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '1rem' }}
+          onClick={(e) => {
+            if (e.target === e.currentTarget) setMonthDetailsModal(null);
+          }}
+        >
+          <div style={{ background: '#F8FAFC', borderRadius: '20px', width: '100%', maxWidth: '1050px', maxHeight: '92vh', display: 'flex', flexDirection: 'column', boxShadow: '0 25px 50px -12px rgba(0, 0, 0, 0.5)', overflow: 'hidden', border: '1px solid rgba(255,255,255,0.15)' }}>
             
             {/* Modal Header */}
-            <div style={{ padding: '1.5rem 2rem', borderBottom: '1px solid #E2E8F0', display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', background: 'white' }}>
+            <div style={{ padding: '1.25rem 1.75rem', borderBottom: '1px solid #E2E8F0', display: 'flex', justifyContent: 'space-between', alignItems: 'center', background: 'white' }}>
               <div>
-                <h2 style={{ margin: 0, fontWeight: 900, color: 'var(--text)', fontSize: '1.4rem', display: 'flex', alignItems: 'center', gap: '0.5rem', letterSpacing: '-0.02em' }}>
-                  <Calendar color="var(--primary)" size={28} />
+                <h2 style={{ margin: 0, fontWeight: 900, color: 'var(--text)', fontSize: '1.35rem', display: 'flex', alignItems: 'center', gap: '0.6rem', letterSpacing: '-0.02em' }}>
+                  <Calendar color="var(--primary)" size={26} />
                   Ocorrências em {MONTH_NAMES[monthDetailsModal.monthIndex]} de {drillDownYear}
                 </h2>
-                <p style={{ margin: '0.25rem 0 0 0', fontSize: '0.9rem', color: '#64748B', fontWeight: 500, display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+                <p style={{ margin: '0.2rem 0 0 0', fontSize: '0.85rem', color: '#64748B', fontWeight: 500, display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
                   <span style={{ display: 'inline-block', width: '8px', height: '8px', borderRadius: '50%', background: 'var(--primary)' }}></span>
-                  Exibindo o registro detalhado de todas as vítimas e causas raízes deste mês.
+                  {modalProcessedAccidents.length} de {baseMonthAccidents.length} {baseMonthAccidents.length === 1 ? 'ocorrência' : 'ocorrências'} {baseMonthAccidents.length !== modalProcessedAccidents.length ? '(filtradas)' : 'registradas'}.
                 </p>
               </div>
               <button 
                 onClick={() => setMonthDetailsModal(null)}
-                style={{ background: '#F1F5F9', border: 'none', padding: '0.5rem', borderRadius: '12px', cursor: 'pointer', color: '#64748B', display: 'flex', alignItems: 'center', justifyContent: 'center', transition: 'background 0.2s' }}
+                style={{ background: '#F1F5F9', border: 'none', padding: '0.5rem', borderRadius: '12px', cursor: 'pointer', color: '#64748B', display: 'flex', alignItems: 'center', justifyContent: 'center', transition: 'all 0.2s' }}
                 onMouseOver={(e) => e.currentTarget.style.background = '#E2E8F0'}
                 onMouseOut={(e) => e.currentTarget.style.background = '#F1F5F9'}
+                title="Fechar janela"
               >
-                <X size={24} />
+                <X size={22} />
               </button>
             </div>
+
+            {/* Quick Filters Toolbar */}
+            <div style={{ padding: '0.75rem 1.5rem', background: '#F8FAFC', borderBottom: '1px solid #E2E8F0', display: 'flex', gap: '0.6rem', alignItems: 'center', flexWrap: 'wrap' }}>
+              {/* Text Search */}
+              <div style={{ position: 'relative', flex: '1 1 200px', minWidth: '180px' }}>
+                <Search size={15} color="#94A3B8" style={{ position: 'absolute', left: '10px', top: '50%', transform: 'translateY(-50%)' }} />
+                <input 
+                  type="text" 
+                  placeholder="Buscar colaborador, cargo, área..." 
+                  value={modalSearchText}
+                  onChange={(e) => setModalSearchText(e.target.value)}
+                  style={{
+                    width: '100%',
+                    padding: '0.45rem 0.75rem 0.45rem 2rem',
+                    borderRadius: '8px',
+                    border: '1px solid #CBD5E1',
+                    fontSize: '0.8rem',
+                    outline: 'none',
+                    background: 'white'
+                  }}
+                />
+              </div>
+
+              {/* Cause Filter */}
+              <div style={{ display: 'flex', alignItems: 'center', gap: '4px' }}>
+                <Filter size={13} color="#64748B" />
+                <select 
+                  value={modalFilterCause}
+                  onChange={(e) => setModalFilterCause(e.target.value as any)}
+                  style={{
+                    padding: '0.45rem 0.6rem',
+                    borderRadius: '8px',
+                    border: '1px solid #CBD5E1',
+                    fontSize: '0.78rem',
+                    fontWeight: 600,
+                    background: 'white',
+                    color: '#334155'
+                  }}
+                >
+                  <option value="ALL">Todas as Causas</option>
+                  <option value="UNSAFE_ACT">Ato Inseguro</option>
+                  <option value="UNSAFE_COND">Condição Insegura</option>
+                </select>
+              </div>
+
+              {/* Type Filter */}
+              {modalAvailableTypes.length > 1 && (
+                <select 
+                  value={modalFilterType}
+                  onChange={(e) => setModalFilterType(e.target.value)}
+                  style={{
+                    padding: '0.45rem 0.6rem',
+                    borderRadius: '8px',
+                    border: '1px solid #CBD5E1',
+                    fontSize: '0.78rem',
+                    fontWeight: 600,
+                    background: 'white',
+                    color: '#334155'
+                  }}
+                >
+                  <option value="ALL">Todos os Tipos</option>
+                  {modalAvailableTypes.map(t => (
+                    <option key={t} value={t}>{t}</option>
+                  ))}
+                </select>
+              )}
+
+              {/* Lost Days Filter */}
+              <select 
+                value={modalFilterLostDays}
+                onChange={(e) => setModalFilterLostDays(e.target.value as any)}
+                style={{
+                  padding: '0.45rem 0.6rem',
+                  borderRadius: '8px',
+                  border: '1px solid #CBD5E1',
+                  fontSize: '0.78rem',
+                  fontWeight: 600,
+                  background: 'white',
+                  color: '#334155'
+                }}
+              >
+                <option value="ALL">Com e Sem Afast.</option>
+                <option value="WITH_LOST_DAYS">Com Afastamento</option>
+                <option value="NO_LOST_DAYS">Sem Afastamento</option>
+              </select>
+
+              {/* Reset button if filtered */}
+              {(modalSearchText || modalFilterCause !== 'ALL' || modalFilterType !== 'ALL' || modalFilterLostDays !== 'ALL') && (
+                <button
+                  onClick={resetModalFilters}
+                  style={{
+                    display: 'flex',
+                    alignItems: 'center',
+                    gap: '4px',
+                    padding: '0.45rem 0.75rem',
+                    background: '#FEE2E2',
+                    border: '1px solid #FECACA',
+                    color: '#991B1B',
+                    borderRadius: '8px',
+                    fontSize: '0.75rem',
+                    fontWeight: 700,
+                    cursor: 'pointer'
+                  }}
+                >
+                  <RotateCcw size={12} /> Limpar
+                </button>
+              )}
+            </div>
             
-            {/* Modal Body with Premium Table */}
-            <div style={{ padding: '2rem', overflowY: 'auto' }} className="custom-scrollbar">
-              <div style={{ background: 'white', borderRadius: '16px', boxShadow: '0 4px 6px -1px rgba(0,0,0,0.05), 0 2px 4px -1px rgba(0,0,0,0.03)', border: '1px solid #E2E8F0', overflow: 'hidden' }}>
+            {/* Modal Body with Filterable & Sortable Table */}
+            <div style={{ padding: '1.25rem 1.75rem', overflowY: 'auto' }} className="custom-scrollbar">
+              <div style={{ background: 'white', borderRadius: '16px', boxShadow: '0 4px 6px -1px rgba(0,0,0,0.05)', border: '1px solid #E2E8F0', overflow: 'hidden' }}>
                 <table style={{ width: '100%', borderCollapse: 'collapse', textAlign: 'left' }}>
                   <thead style={{ background: '#F8FAFC', borderBottom: '2px solid #E2E8F0' }}>
                     <tr>
-                      <th style={{ padding: '1rem 1.5rem', color: '#64748B', fontWeight: 800, fontSize: '0.75rem', textTransform: 'uppercase', letterSpacing: '0.05em' }}>Colaborador</th>
-                      <th style={{ padding: '1rem 1.5rem', color: '#64748B', fontWeight: 800, fontSize: '0.75rem', textTransform: 'uppercase', letterSpacing: '0.05em' }}>Cargo & Área</th>
-                      <th style={{ padding: '1rem 1.5rem', color: '#64748B', fontWeight: 800, fontSize: '0.75rem', textTransform: 'uppercase', letterSpacing: '0.05em', textAlign: 'center' }}>Causa Raiz</th>
-                      <th style={{ padding: '1rem 1.5rem', color: '#64748B', fontWeight: 800, fontSize: '0.75rem', textTransform: 'uppercase', letterSpacing: '0.05em', textAlign: 'right' }}>Afastamento</th>
+                      {/* Data Column */}
+                      <th 
+                        onClick={() => handleModalSort('date')}
+                        style={{ padding: '0.85rem 1.25rem', color: '#64748B', fontWeight: 800, fontSize: '0.75rem', textTransform: 'uppercase', letterSpacing: '0.05em', cursor: 'pointer', userSelect: 'none' }}
+                        title="Clique para ordenar por Data"
+                      >
+                        <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
+                          <span>Data</span>
+                          {modalSortKey === 'date' ? (
+                            modalSortDirection === 'asc' ? <ArrowUp size={13} color="var(--primary)" /> : <ArrowDown size={13} color="var(--primary)" />
+                          ) : (
+                            <ArrowUpDown size={12} color="#94A3B8" />
+                          )}
+                        </div>
+                      </th>
+
+                      {/* Colaborador Column */}
+                      <th 
+                        onClick={() => handleModalSort('employee')}
+                        style={{ padding: '0.85rem 1.25rem', color: '#64748B', fontWeight: 800, fontSize: '0.75rem', textTransform: 'uppercase', letterSpacing: '0.05em', cursor: 'pointer', userSelect: 'none' }}
+                        title="Clique para ordenar por Colaborador"
+                      >
+                        <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
+                          <span>Colaborador</span>
+                          {modalSortKey === 'employee' ? (
+                            modalSortDirection === 'asc' ? <ArrowUp size={13} color="var(--primary)" /> : <ArrowDown size={13} color="var(--primary)" />
+                          ) : (
+                            <ArrowUpDown size={12} color="#94A3B8" />
+                          )}
+                        </div>
+                      </th>
+
+                      {/* Cargo & Área Column */}
+                      <th 
+                        onClick={() => handleModalSort('role')}
+                        style={{ padding: '0.85rem 1.25rem', color: '#64748B', fontWeight: 800, fontSize: '0.75rem', textTransform: 'uppercase', letterSpacing: '0.05em', cursor: 'pointer', userSelect: 'none' }}
+                        title="Clique para ordenar por Cargo"
+                      >
+                        <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
+                          <span>Cargo & Área</span>
+                          {modalSortKey === 'role' ? (
+                            modalSortDirection === 'asc' ? <ArrowUp size={13} color="var(--primary)" /> : <ArrowDown size={13} color="var(--primary)" />
+                          ) : (
+                            <ArrowUpDown size={12} color="#94A3B8" />
+                          )}
+                        </div>
+                      </th>
+
+                      {/* Causa Raiz Column */}
+                      <th 
+                        onClick={() => handleModalSort('unsafeAct')}
+                        style={{ padding: '0.85rem 1.25rem', color: '#64748B', fontWeight: 800, fontSize: '0.75rem', textTransform: 'uppercase', letterSpacing: '0.05em', textAlign: 'center', cursor: 'pointer', userSelect: 'none' }}
+                        title="Clique para ordenar por Causa Raiz"
+                      >
+                        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '6px' }}>
+                          <span>Causa Raiz & Tipo</span>
+                          {modalSortKey === 'unsafeAct' ? (
+                            modalSortDirection === 'asc' ? <ArrowUp size={13} color="var(--primary)" /> : <ArrowDown size={13} color="var(--primary)" />
+                          ) : (
+                            <ArrowUpDown size={12} color="#94A3B8" />
+                          )}
+                        </div>
+                      </th>
+
+                      {/* Afastamento Column */}
+                      <th 
+                        onClick={() => handleModalSort('lostDays')}
+                        style={{ padding: '0.85rem 1.25rem', color: '#64748B', fontWeight: 800, fontSize: '0.75rem', textTransform: 'uppercase', letterSpacing: '0.05em', textAlign: 'right', cursor: 'pointer', userSelect: 'none' }}
+                        title="Clique para ordenar por Dias de Afastamento"
+                      >
+                        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'flex-end', gap: '6px' }}>
+                          <span>Afastamento</span>
+                          {modalSortKey === 'lostDays' ? (
+                            modalSortDirection === 'asc' ? <ArrowUp size={13} color="var(--primary)" /> : <ArrowDown size={13} color="var(--primary)" />
+                          ) : (
+                            <ArrowUpDown size={12} color="#94A3B8" />
+                          )}
+                        </div>
+                      </th>
                     </tr>
                   </thead>
                   <tbody>
-                    {filteredAccidents.filter(a => a.year === drillDownYear && (a.month - 1) === monthDetailsModal.monthIndex).map((a, idx) => (
-                      <tr key={idx} style={{ borderBottom: '1px solid #F1F5F9', transition: 'background 0.2s', cursor: 'default' }} onMouseOver={e => e.currentTarget.style.background = '#F8FAFC'} onMouseOut={e => e.currentTarget.style.background = 'white'}>
-                        <td style={{ padding: '1.25rem 1.5rem' }}>
-                          <div style={{ display: 'flex', alignItems: 'center', gap: '1rem' }}>
-                            <div style={{ width: '42px', height: '42px', borderRadius: '12px', background: 'linear-gradient(135deg, #EFF6FF 0%, #DBEAFE 100%)', color: '#1D4ED8', display: 'flex', alignItems: 'center', justifyContent: 'center', fontWeight: 900, fontSize: '1.1rem', border: '1px solid #BFDBFE' }}>
-                              {a.employee.split(' ').map(n => n[0]).slice(0,2).join('')}
-                            </div>
-                            <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
-                              <span style={{ fontWeight: 800, color: '#0F172A', fontSize: '0.95rem' }}>{a.employee}</span>
-                              {a.investigationLink && (
-                                <a href={a.investigationLink} target="_blank" rel="noopener noreferrer" style={{ display: 'inline-flex', alignItems: 'center', gap: '4px', fontSize: '0.7rem', color: '#2563EB', fontWeight: 800, textDecoration: 'none', background: '#EFF6FF', padding: '4px 8px', borderRadius: '6px', border: '1px solid #BFDBFE', width: 'fit-content', transition: 'background 0.2s' }} onMouseOver={e => e.currentTarget.style.background = '#DBEAFE'} onMouseOut={e => e.currentTarget.style.background = '#EFF6FF'}>
-                                  <ExternalLink size={12} strokeWidth={3} /> Investigação
-                                </a>
-                              )}
-                            </div>
-                          </div>
-                        </td>
-                        <td style={{ padding: '1.25rem 1.5rem' }}>
-                          <div style={{ fontWeight: 700, color: '#334155', fontSize: '0.9rem' }}>{a.role}</div>
-                          <div style={{ fontSize: '0.8rem', color: '#64748B', marginTop: '4px', display: 'flex', alignItems: 'center', gap: '4px', fontWeight: 500 }}>
-                            <Layers size={14} color="#94A3B8" /> {a.area}
-                          </div>
-                        </td>
-                        <td style={{ padding: '1.25rem 1.5rem', textAlign: 'center' }}>
-                          <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', gap: '6px' }}>
-                            <span style={{ display: 'inline-flex', alignItems: 'center', gap: '6px', padding: '6px 12px', borderRadius: '999px', background: a.unsafeAct ? '#FEF2F2' : '#F0FDF4', color: a.unsafeAct ? '#991B1B' : '#166534', fontWeight: 800, fontSize: '0.75rem', border: `1px solid ${a.unsafeAct ? '#FECACA' : '#BBF7D0'}` }}>
-                              {a.unsafeAct ? <AlertCircle size={14} /> : <ShieldCheck size={14} />}
-                              {a.unsafeAct ? 'Ato Inseguro' : 'Condição Insegura'}
-                            </span>
-                            <div style={{ color: '#475569', fontSize: '0.8rem', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.05em' }}>{a.type}</div>
-                          </div>
-                        </td>
-                        <td style={{ padding: '1.25rem 1.5rem', textAlign: 'right' }}>
-                          {a.lostDays > 0 ? (
-                            <div style={{ display: 'inline-flex', flexDirection: 'column', alignItems: 'flex-end' }}>
-                              <span style={{ color: '#EF4444', fontWeight: 900, fontSize: '1.15rem', display: 'flex', alignItems: 'center', gap: '6px' }}>
-                                <TrendingUp size={18} /> {a.lostDays} dias
-                              </span>
-                              <span style={{ fontSize: '0.7rem', color: '#94A3B8', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.05em', marginTop: '2px' }}>afastado</span>
-                            </div>
-                          ) : (
-                            <span style={{ display: 'inline-block', padding: '8px 12px', background: '#F8FAFC', color: '#94A3B8', borderRadius: '8px', fontWeight: 700, fontSize: '0.8rem', border: '1px solid #E2E8F0' }}>
-                              Sem Afastamento
-                            </span>
-                          )}
+                    {modalProcessedAccidents.length === 0 ? (
+                      <tr>
+                        <td colSpan={5} style={{ padding: '3rem 1.5rem', textAlign: 'center', color: '#94A3B8' }}>
+                          <AlertCircle size={36} style={{ margin: '0 auto 0.5rem auto', opacity: 0.5 }} />
+                          <div style={{ fontWeight: 700, fontSize: '0.95rem', color: '#64748B' }}>Nenhuma ocorrência encontrada</div>
+                          <div style={{ fontSize: '0.8rem', marginTop: '4px' }}>Tente ajustar os termos da busca ou os filtros aplicados.</div>
+                          <button
+                            onClick={resetModalFilters}
+                            style={{
+                              marginTop: '1rem',
+                              padding: '0.4rem 1rem',
+                              background: '#F1F5F9',
+                              border: '1px solid #CBD5E1',
+                              borderRadius: '8px',
+                              fontSize: '0.78rem',
+                              fontWeight: 700,
+                              cursor: 'pointer',
+                              color: '#475569'
+                            }}
+                          >
+                            Redefinir Filtros
+                          </button>
                         </td>
                       </tr>
-                    ))}
+                    ) : (
+                      modalProcessedAccidents.map((a, idx) => (
+                        <tr 
+                          key={idx} 
+                          style={{ borderBottom: '1px solid #F1F5F9', transition: 'background 0.2s', cursor: 'default' }} 
+                          onMouseOver={e => e.currentTarget.style.background = '#F8FAFC'} 
+                          onMouseOut={e => e.currentTarget.style.background = 'white'}
+                        >
+                          {/* Data */}
+                          <td style={{ padding: '1rem 1.25rem', whiteSpace: 'nowrap' }}>
+                            <div style={{ display: 'flex', flexDirection: 'column', gap: '3px' }}>
+                              <span style={{ fontWeight: 800, color: '#1E293B', fontSize: '0.85rem' }}>
+                                {formatDateBR(a.date)}
+                              </span>
+                              {a.time && (
+                                <span style={{ fontSize: '0.72rem', color: '#64748B', display: 'flex', alignItems: 'center', gap: '3px', fontWeight: 600 }}>
+                                  <Clock size={11} color="#94A3B8" /> {a.time} {a.period ? `(${a.period})` : ''}
+                                </span>
+                              )}
+                            </div>
+                          </td>
+
+                          {/* Colaborador */}
+                          <td style={{ padding: '1rem 1.25rem' }}>
+                            <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
+                              <div style={{ width: '38px', height: '38px', borderRadius: '10px', background: 'linear-gradient(135deg, #EFF6FF 0%, #DBEAFE 100%)', color: '#1D4ED8', display: 'flex', alignItems: 'center', justifyContent: 'center', fontWeight: 900, fontSize: '0.95rem', border: '1px solid #BFDBFE', flexShrink: 0 }}>
+                                {a.employee.split(' ').map(n => n[0]).slice(0,2).join('')}
+                              </div>
+                              <div style={{ display: 'flex', flexDirection: 'column', gap: '3px' }}>
+                                <span style={{ fontWeight: 800, color: '#0F172A', fontSize: '0.9rem' }}>{a.employee}</span>
+                                {a.investigationLink && (
+                                  <a href={a.investigationLink} target="_blank" rel="noopener noreferrer" style={{ display: 'inline-flex', alignItems: 'center', gap: '4px', fontSize: '0.68rem', color: '#2563EB', fontWeight: 800, textDecoration: 'none', background: '#EFF6FF', padding: '2px 6px', borderRadius: '4px', border: '1px solid #BFDBFE', width: 'fit-content', transition: 'background 0.2s' }} onMouseOver={e => e.currentTarget.style.background = '#DBEAFE'} onMouseOut={e => e.currentTarget.style.background = '#EFF6FF'}>
+                                    <ExternalLink size={11} strokeWidth={3} /> Investigação
+                                  </a>
+                                )}
+                              </div>
+                            </div>
+                          </td>
+
+                          {/* Cargo & Área */}
+                          <td style={{ padding: '1rem 1.25rem' }}>
+                            <div style={{ fontWeight: 700, color: '#334155', fontSize: '0.85rem' }}>{a.role}</div>
+                            <div style={{ fontSize: '0.78rem', color: '#64748B', marginTop: '2px', display: 'flex', alignItems: 'center', gap: '4px', fontWeight: 500 }}>
+                              <Layers size={13} color="#94A3B8" /> {a.area}
+                            </div>
+                          </td>
+
+                          {/* Causa Raiz */}
+                          <td style={{ padding: '1rem 1.25rem', textAlign: 'center' }}>
+                            <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', gap: '4px' }}>
+                              <span style={{ display: 'inline-flex', alignItems: 'center', gap: '5px', padding: '4px 10px', borderRadius: '999px', background: a.unsafeAct ? '#FEF2F2' : '#F0FDF4', color: a.unsafeAct ? '#991B1B' : '#166534', fontWeight: 800, fontSize: '0.72rem', border: `1px solid ${a.unsafeAct ? '#FECACA' : '#BBF7D0'}` }}>
+                                {a.unsafeAct ? <AlertCircle size={13} /> : <ShieldCheck size={13} />}
+                                {a.unsafeAct ? 'Ato Inseguro' : 'Condição Insegura'}
+                              </span>
+                              <div style={{ color: '#475569', fontSize: '0.75rem', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.04em', textAlign: 'center' }}>
+                                {a.type}
+                              </div>
+                            </div>
+                          </td>
+
+                          {/* Afastamento */}
+                          <td style={{ padding: '1rem 1.25rem', textAlign: 'right' }}>
+                            {a.lostDays > 0 ? (
+                              <div style={{ display: 'inline-flex', flexDirection: 'column', alignItems: 'flex-end' }}>
+                                <span style={{ color: '#EF4444', fontWeight: 900, fontSize: '1.05rem', display: 'flex', alignItems: 'center', gap: '4px' }}>
+                                  <TrendingUp size={16} /> {a.lostDays} dias
+                                </span>
+                                <span style={{ fontSize: '0.68rem', color: '#94A3B8', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.05em' }}>afastado</span>
+                              </div>
+                            ) : (
+                              <span style={{ display: 'inline-block', padding: '6px 10px', background: '#F8FAFC', color: '#94A3B8', borderRadius: '8px', fontWeight: 700, fontSize: '0.75rem', border: '1px solid #E2E8F0' }}>
+                                Sem Afastamento
+                              </span>
+                            )}
+                          </td>
+                        </tr>
+                      ))
+                    )}
                   </tbody>
                 </table>
               </div>
             </div>
           </div>
         </div>
+      )}
+
+      {activeTab !== 'breakdown' && isBreakdownModalOpen && (
+        <Breakdown 
+          accidents={filteredAccidents} 
+          isOpen={isBreakdownModalOpen} 
+          onClose={() => setIsBreakdownModalOpen(false)} 
+        />
       )}
       
       {filteredAccidents.length > 0 && (

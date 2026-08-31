@@ -6,7 +6,7 @@ import { viteSingleFile } from 'vite-plugin-singlefile'
 export default defineConfig({
   plugins: [react(), viteSingleFile()],
   server: {
-    port: 5180,
+    port: 5173,
     strictPort: true,
   }
 })

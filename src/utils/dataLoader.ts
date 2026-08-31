@@ -1,13 +1,32 @@
 import * as XLSX from 'xlsx';
 import type { Accident, YearStats, MonthlyStats, Insight, GroupSafetyRecord } from '../types';
+import { DEFAULT_EXCEL_BASE64 } from '../constants';
 
 export const loadAccidentData = async (filePath: string): Promise<Accident[]> => {
   try {
     const response = await fetch(filePath);
-    const arrayBuffer = await response.arrayBuffer();
-    return parseAccidentData(arrayBuffer);
+    if (response.ok) {
+      const contentType = response.headers.get('content-type') || '';
+      if (!contentType.includes('text/html')) {
+        const arrayBuffer = await response.arrayBuffer();
+        const res = parseAccidentData(arrayBuffer);
+        if (res && res.length > 0) return res;
+      }
+    }
   } catch (error) {
-    console.error('Error loading accident data:', error);
+    console.warn('Could not fetch data.xlsx, falling back to embedded dataset:', error);
+  }
+
+  // Fallback to embedded base64 data
+  try {
+    const binaryString = atob(DEFAULT_EXCEL_BASE64);
+    const bytes = new Uint8Array(binaryString.length);
+    for (let i = 0; i < binaryString.length; i++) {
+      bytes[i] = binaryString.charCodeAt(i);
+    }
+    return parseAccidentData(bytes.buffer);
+  } catch (fallbackError) {
+    console.error('Error loading fallback accident data:', fallbackError);
     return [];
   }
 };

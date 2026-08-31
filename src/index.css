@@ -36,6 +36,27 @@
   box-sizing: border-box;
 }
 
+*:focus,
+*:focus-visible {
+  outline: none !important;
+}
+
+svg,
+svg *,
+.recharts-wrapper,
+.recharts-wrapper *,
+.recharts-surface,
+.recharts-responsive-container,
+.recharts-cartesian-axis,
+.recharts-bar,
+.recharts-bar-rectangles,
+.recharts-rectangle {
+  outline: none !important;
+  box-shadow: none !important;
+  -webkit-tap-highlight-color: transparent !important;
+  -webkit-focus-ring-color: transparent !important;
+}
+
 body {
   font-family: 'Inter', -apple-system, sans-serif;
   background-color: var(--bg);

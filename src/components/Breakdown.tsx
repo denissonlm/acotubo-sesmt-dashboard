@@ -3,13 +3,21 @@ import { Reorder } from 'framer-motion';
 import { 
   Users, AlertCircle, ShieldCheck, HardHat, 
   GraduationCap, ExternalLink, Activity, Clock, Settings, X, Search,
-  Maximize2, Minimize2, GripVertical, Layers
+  GripVertical, Layers, FileSpreadsheet,
+  ArrowUpDown, ArrowUp, ArrowDown, RotateCcw
 } from 'lucide-react';
 import type { Accident } from '../types';
 
 interface BreakdownProps {
   accidents: Accident[];
+  isOpen?: boolean;
+  onClose?: () => void;
 }
+
+const MONTH_NAMES = [
+  'Janeiro', 'Fevereiro', 'Março', 'Abril', 'Maio', 'Junho',
+  'Julho', 'Agosto', 'Setembro', 'Outubro', 'Novembro', 'Dezembro'
+];
 
 const ALL_COLUMNS = [
   { id: 'id', label: 'ID' },
@@ -35,7 +43,14 @@ const ALL_COLUMNS = [
   { id: 'link', label: 'LINK' }
 ];
 
-export const Breakdown: React.FC<BreakdownProps> = ({ accidents }) => {
+export const Breakdown: React.FC<BreakdownProps> = ({ accidents, isOpen, onClose }) => {
+  const [internalOpen, setInternalOpen] = useState(false);
+  const isMaximized = isOpen !== undefined ? isOpen : internalOpen;
+  const setIsMaximized = (val: boolean) => {
+    if (onClose && !val) onClose();
+    setInternalOpen(val);
+  };
+
   const [visibleColumns, setVisibleColumns] = useState<string[]>(() => {
     const saved = localStorage.getItem('breakdown_visible_columns');
     return saved ? JSON.parse(saved) : ALL_COLUMNS.map(c => c.id);
@@ -45,10 +60,21 @@ export const Breakdown: React.FC<BreakdownProps> = ({ accidents }) => {
     return saved ? JSON.parse(saved) : ALL_COLUMNS.map(c => c.id);
   });
   const [isConfigOpen, setIsConfigOpen] = useState(false);
-  const [isMaximized, setIsMaximized] = useState(false);
   const [tableWidth, setTableWidth] = useState(0);
   const [searchQuery, setSearchQuery] = useState('');
-  const [groupBy, setGroupBy] = useState<'none' | 'division' | 'area' | 'year' | 'role'>('none');
+  const [groupBy, setGroupBy] = useState<'none' | 'month_year' | 'year' | 'division' | 'area' | 'role' | 'type' | 'unsafeAct'>(() => {
+    return (localStorage.getItem('breakdown_group_by') as any) || 'none';
+  });
+  const [sortCol, setSortCol] = useState<string>(() => {
+    return localStorage.getItem('breakdown_sort_col') || 'date';
+  });
+  const [sortDir, setSortDir] = useState<'asc' | 'desc'>(() => {
+    return (localStorage.getItem('breakdown_sort_dir') as 'asc' | 'desc') || 'desc';
+  });
+  const [columnFilters, setColumnFilters] = useState<Record<string, string>>(() => {
+    const saved = localStorage.getItem('breakdown_column_filters');
+    return saved ? JSON.parse(saved) : {};
+  });
 
   useEffect(() => {
     localStorage.setItem('breakdown_visible_columns', JSON.stringify(visibleColumns));
@@ -58,19 +84,146 @@ export const Breakdown: React.FC<BreakdownProps> = ({ accidents }) => {
     localStorage.setItem('breakdown_column_order', JSON.stringify(columnOrder));
   }, [columnOrder]);
 
+  useEffect(() => {
+    localStorage.setItem('breakdown_group_by', groupBy);
+  }, [groupBy]);
+
+  useEffect(() => {
+    localStorage.setItem('breakdown_sort_col', sortCol);
+    localStorage.setItem('breakdown_sort_dir', sortDir);
+  }, [sortCol, sortDir]);
+
+  useEffect(() => {
+    localStorage.setItem('breakdown_column_filters', JSON.stringify(columnFilters));
+  }, [columnFilters]);
+
+  useEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (e.key === 'Escape') {
+        setIsMaximized(false);
+        setIsConfigOpen(false);
+      }
+    };
+    window.addEventListener('keydown', handleKeyDown);
+    return () => window.removeEventListener('keydown', handleKeyDown);
+  }, []);
+
+  const handleSort = (colId: string) => {
+    if (sortCol === colId) {
+      setSortDir(prev => prev === 'asc' ? 'desc' : 'asc');
+    } else {
+      setSortCol(colId);
+      setSortDir('asc');
+    }
+  };
+
+  const handleColumnFilterChange = (colId: string, value: string) => {
+    setColumnFilters(prev => {
+      const updated = { ...prev };
+      if (!value) {
+        delete updated[colId];
+      } else {
+        updated[colId] = value;
+      }
+      return updated;
+    });
+  };
+
+  const clearAllFilters = () => {
+    setSearchQuery('');
+    setColumnFilters({});
+  };
+
+  const hasActiveFilters = searchQuery.trim() !== '' || Object.keys(columnFilters).length > 0;
+
   const filteredTableData = useMemo(() => {
-    if (!searchQuery) return accidents;
-    const q = searchQuery.toLowerCase();
-    return accidents.filter(a => 
-      a.employee.toLowerCase().includes(q) ||
-      a.re.toLowerCase().includes(q) ||
-      a.division.toLowerCase().includes(q) ||
-      a.area.toLowerCase().includes(q) ||
-      a.type.toLowerCase().includes(q) ||
-      a.manager.toLowerCase().includes(q) ||
-      (a.partAffected && a.partAffected.toLowerCase().includes(q))
-    );
-  }, [accidents, searchQuery]);
+    let list = [...accidents];
+
+    // Global Search
+    if (searchQuery.trim()) {
+      const q = searchQuery.toLowerCase();
+      list = list.filter(a => 
+        (a.employee && a.employee.toLowerCase().includes(q)) ||
+        (a.re && a.re.toLowerCase().includes(q)) ||
+        (a.division && a.division.toLowerCase().includes(q)) ||
+        (a.area && a.area.toLowerCase().includes(q)) ||
+        (a.type && a.type.toLowerCase().includes(q)) ||
+        (a.role && a.role.toLowerCase().includes(q)) ||
+        (a.manager && a.manager.toLowerCase().includes(q)) ||
+        (a.partAffected && a.partAffected.toLowerCase().includes(q))
+      );
+    }
+
+    // Column-specific Filters
+    Object.entries(columnFilters).forEach(([colId, filterVal]) => {
+      if (!filterVal) return;
+      const fVal = filterVal.toLowerCase().trim();
+      list = list.filter(a => {
+        switch (colId) {
+          case 'id': return String(a.id).toLowerCase().includes(fVal);
+          case 'date': return a.date ? a.date.toLocaleDateString('pt-BR').includes(fVal) : false;
+          case 'time': return a.time ? a.time.toLowerCase().includes(fVal) : false;
+          case 'period': return a.period ? a.period.toLowerCase().includes(fVal) : false;
+          case 'dayOfWeek': return ['dom', 'seg', 'ter', 'qua', 'qui', 'sex', 'sáb'][a.dayOfWeek]?.includes(fVal);
+          case 're': return a.re ? a.re.toLowerCase().includes(fVal) : false;
+          case 'employee': return a.employee ? a.employee.toLowerCase().includes(fVal) : false;
+          case 'role': return a.role ? a.role.toLowerCase().includes(fVal) : false;
+          case 'division': return a.division ? a.division.toLowerCase().includes(fVal) : false;
+          case 'area': return a.area ? a.area.toLowerCase().includes(fVal) : false;
+          case 'manager': return a.manager ? a.manager.toLowerCase().includes(fVal) : false;
+          case 'type': return a.type ? a.type.toLowerCase().includes(fVal) : false;
+          case 'partAffected': return a.partAffected ? a.partAffected.toLowerCase().includes(fVal) : false;
+          case 'experience': return `${Math.floor(a.experienceYears)}a ${Math.floor(a.experienceMonths)}m`.toLowerCase().includes(fVal);
+          case 'lostDays': return String(a.lostDays).includes(fVal);
+          case 'unsafeAct': return (a.unsafeAct ? 'sim' : 'não').includes(fVal);
+          case 'machineDeficiency': return (a.machineDeficiency ? 'sim' : 'não').includes(fVal);
+          case 'functionDeviation': return (a.functionDeviation ? 'sim' : 'não').includes(fVal);
+          case 'hadTraining': return (a.hadTraining ? 'sim' : 'não').includes(fVal);
+          case 'usedEPI': return (a.usedEPI ? 'sim' : 'não').includes(fVal);
+          default: return true;
+        }
+      });
+    });
+
+    // Sorting
+    list.sort((a, b) => {
+      let valA: any;
+      let valB: any;
+
+      switch (sortCol) {
+        case 'id': valA = a.id; valB = b.id; break;
+        case 'date': valA = a.date ? a.date.getTime() : 0; valB = b.date ? b.date.getTime() : 0; break;
+        case 'time': valA = a.time || ''; valB = b.time || ''; break;
+        case 'period': valA = a.period || ''; valB = b.period || ''; break;
+        case 'dayOfWeek': valA = a.dayOfWeek; valB = b.dayOfWeek; break;
+        case 're': valA = a.re || ''; valB = b.re || ''; break;
+        case 'employee': valA = a.employee || ''; valB = b.employee || ''; break;
+        case 'role': valA = a.role || ''; valB = b.role || ''; break;
+        case 'division': valA = a.division || ''; valB = b.division || ''; break;
+        case 'area': valA = a.area || ''; valB = b.area || ''; break;
+        case 'manager': valA = a.manager || ''; valB = b.manager || ''; break;
+        case 'type': valA = a.type || ''; valB = b.type || ''; break;
+        case 'partAffected': valA = a.partAffected || ''; valB = b.partAffected || ''; break;
+        case 'experience': valA = a.experienceYears * 12 + a.experienceMonths; valB = b.experienceYears * 12 + b.experienceMonths; break;
+        case 'lostDays': valA = a.lostDays; valB = b.lostDays; break;
+        case 'unsafeAct': valA = a.unsafeAct ? 1 : 0; valB = b.unsafeAct ? 1 : 0; break;
+        case 'machineDeficiency': valA = a.machineDeficiency ? 1 : 0; valB = b.machineDeficiency ? 1 : 0; break;
+        case 'functionDeviation': valA = a.functionDeviation ? 1 : 0; valB = b.functionDeviation ? 1 : 0; break;
+        case 'hadTraining': valA = a.hadTraining ? 1 : 0; valB = b.hadTraining ? 1 : 0; break;
+        case 'usedEPI': valA = a.usedEPI ? 1 : 0; valB = b.usedEPI ? 1 : 0; break;
+        default: valA = a.date ? a.date.getTime() : 0; valB = b.date ? b.date.getTime() : 0; break;
+      }
+
+      if (typeof valA === 'string') {
+        return sortDir === 'asc' ? valA.localeCompare(valB) : valB.localeCompare(valA);
+      }
+      if (valA < valB) return sortDir === 'asc' ? -1 : 1;
+      if (valA > valB) return sortDir === 'asc' ? 1 : -1;
+      return 0;
+    });
+
+    return list;
+  }, [accidents, searchQuery, columnFilters, sortCol, sortDir]);
 
   const topScrollRef = useRef<HTMLDivElement>(null);
   const bottomScrollRef = useRef<HTMLDivElement>(null);
@@ -78,12 +231,11 @@ export const Breakdown: React.FC<BreakdownProps> = ({ accidents }) => {
 
   useEffect(() => {
     if (tableRef.current) {
-      // Small timeout to ensure DOM has updated before measuring width
       setTimeout(() => {
         if (tableRef.current) setTableWidth(tableRef.current.scrollWidth);
       }, 50);
     }
-  }, [visibleColumns, accidents]);
+  }, [visibleColumns, accidents, isMaximized]);
 
   const handleTopScroll = () => {
     if (bottomScrollRef.current && topScrollRef.current) {
@@ -106,7 +258,7 @@ export const Breakdown: React.FC<BreakdownProps> = ({ accidents }) => {
   const renderCell = (colId: string, a: Accident) => {
     switch (colId) {
       case 'id': return a.id;
-      case 'date': return <span style={{ fontWeight: 700 }}>{a.date.toLocaleDateString('pt-BR')}</span>;
+      case 'date': return <span style={{ fontWeight: 700 }}>{a.date ? a.date.toLocaleDateString('pt-BR') : '-'}</span>;
       case 'time': return a.time;
       case 'period': return a.period;
       case 'dayOfWeek': return ['Dom', 'Seg', 'Ter', 'Qua', 'Qui', 'Sex', 'Sáb'][a.dayOfWeek];
@@ -145,26 +297,65 @@ export const Breakdown: React.FC<BreakdownProps> = ({ accidents }) => {
   
   const groupedData = useMemo(() => {
     if (groupBy === 'none') return null;
-    const groups: Record<string, Accident[]> = {};
-    const sorted = [...filteredTableData].sort((a, b) => b.date.getTime() - a.date.getTime());
+    const groups: Record<string, { label: string, sortKey: number | string, items: Accident[] }> = {};
     
-    sorted.forEach(acc => {
+    filteredTableData.forEach(acc => {
       let key = '';
-      if (groupBy === 'year') key = String(acc.year);
-      else if (groupBy === 'division') key = acc.division;
-      else if (groupBy === 'area') key = acc.area;
-      else if (groupBy === 'role') key = acc.role;
-      
-      if (!groups[key]) groups[key] = [];
-      groups[key].push(acc);
+      let label = '';
+      let sortKey: number | string = '';
+
+      if (groupBy === 'month_year') {
+        const y = acc.year;
+        const m = acc.month; // 1 to 12
+        key = `${y}-${String(m).padStart(2, '0')}`;
+        label = `${MONTH_NAMES[m - 1] || 'Mês ' + m} de ${y}`;
+        sortKey = y * 100 + m; // Chronological key e.g. 202602 > 202601 > 202512
+      } else if (groupBy === 'year') {
+        key = String(acc.year);
+        label = `Ano ${acc.year}`;
+        sortKey = acc.year;
+      } else if (groupBy === 'division') {
+        key = acc.division;
+        label = `Unidade: ${acc.division}`;
+        sortKey = acc.division;
+      } else if (groupBy === 'area') {
+        key = acc.area;
+        label = `Área: ${acc.area}`;
+        sortKey = acc.area;
+      } else if (groupBy === 'role') {
+        key = acc.role;
+        label = `Cargo: ${acc.role}`;
+        sortKey = acc.role;
+      } else if (groupBy === 'type') {
+        key = acc.type;
+        label = `Tipo: ${acc.type}`;
+        sortKey = acc.type;
+      } else if (groupBy === 'unsafeAct') {
+        key = acc.unsafeAct ? 'ATO_INSEGURO' : 'CONDICAO_INSEGURA';
+        label = acc.unsafeAct ? 'Causa: Ato Inseguro' : 'Causa: Condição Insegura';
+        sortKey = acc.unsafeAct ? 1 : 0;
+      }
+
+      if (!groups[key]) {
+        groups[key] = { label, sortKey, items: [] };
+      }
+      groups[key].items.push(acc);
     });
-    
-    // Sort keys (e.g., years descending, others alphabetical)
-    return Object.fromEntries(
-      Object.entries(groups).sort(([a], [b]) => 
-        groupBy === 'year' ? Number(b) - Number(a) : a.localeCompare(b)
-      )
-    );
+
+    // Sort groups
+    const sortedEntries = Object.entries(groups).sort(([, a], [, b]) => {
+      if (typeof a.sortKey === 'number' && typeof b.sortKey === 'number') {
+        return b.sortKey - a.sortKey; // Chronological descending (newest first)
+      }
+      return String(a.label).localeCompare(String(b.label));
+    });
+
+    const result: Record<string, Accident[]> = {};
+    sortedEntries.forEach(([, grp]) => {
+      result[grp.label] = grp.items;
+    });
+
+    return result;
   }, [filteredTableData, groupBy]);
 
   const stats = useMemo(() => {
@@ -295,243 +486,480 @@ export const Breakdown: React.FC<BreakdownProps> = ({ accidents }) => {
 
       </div>
 
-      {/* Detailed Table */}
-      {/* Detailed Table */}
-      <div 
-        className="panel-premium" 
-        style={{ 
-          position: isMaximized ? 'fixed' : 'relative',
-          top: isMaximized ? 0 : 'auto',
-          left: isMaximized ? 0 : 'auto',
-          width: isMaximized ? '100vw' : 'auto',
-          height: isMaximized ? '100vh' : 'auto',
-          zIndex: isMaximized ? 1000 : 1,
-          borderRadius: isMaximized ? 0 : '24px',
+      {/* Floating Action Button - Modern round icon button with effects */}
+      <button
+        onClick={() => setIsMaximized(true)}
+        className="no-print fab-detalhamento"
+        style={{
+          position: 'fixed',
+          bottom: '2rem',
+          right: '2rem',
+          width: '52px',
+          height: '52px',
+          borderRadius: '50%',
           display: 'flex',
-          flexDirection: 'column',
-          padding: isMaximized ? '2rem' : '1.5rem'
+          alignItems: 'center',
+          justifyContent: 'center',
+          background: 'linear-gradient(135deg, #1E293B 0%, #0F172A 100%)',
+          color: '#60A5FA',
+          border: '1.5px solid rgba(59, 130, 246, 0.45)',
+          cursor: 'pointer',
+          boxShadow: '0 10px 25px -4px rgba(15, 23, 42, 0.5), 0 0 15px rgba(37, 99, 235, 0.3)',
+          zIndex: 999,
+          transition: 'all 0.3s cubic-bezier(0.34, 1.56, 0.64, 1)'
         }}
+        onMouseOver={e => {
+          e.currentTarget.style.transform = 'scale(1.12) translateY(-3px)';
+          e.currentTarget.style.boxShadow = '0 15px 30px -4px rgba(37, 99, 235, 0.6), 0 0 25px rgba(37, 99, 235, 0.6)';
+          e.currentTarget.style.color = '#FFFFFF';
+          e.currentTarget.style.background = 'linear-gradient(135deg, #2563EB 0%, #1D4ED8 100%)';
+          e.currentTarget.style.borderColor = '#93C5FD';
+        }}
+        onMouseOut={e => {
+          e.currentTarget.style.transform = 'scale(1) translateY(0)';
+          e.currentTarget.style.boxShadow = '0 10px 25px -4px rgba(15, 23, 42, 0.5), 0 0 15px rgba(37, 99, 235, 0.3)';
+          e.currentTarget.style.color = '#60A5FA';
+          e.currentTarget.style.background = 'linear-gradient(135deg, #1E293B 0%, #0F172A 100%)';
+          e.currentTarget.style.borderColor = 'rgba(59, 130, 246, 0.45)';
+        }}
+        title="Detalhamento Geral de Ocorrências (Base Completa)"
       >
-        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1.5rem', flexWrap: 'wrap', gap: '1rem' }}>
-          <h3 style={{ fontSize: '1rem', fontWeight: 900, margin: 0 }}>Detalhamento Geral de Ocorrências</h3>
-            <div style={{ display: 'flex', gap: '0.75rem', alignItems: 'center' }}>
-            <div style={{ position: 'relative' }}>
-              <Search size={14} color="#94A3B8" style={{ position: 'absolute', left: '10px', top: '50%', transform: 'translateY(-50%)' }} />
-              <input 
-                type="text" 
-                placeholder="Pesquisar..." 
-                value={searchQuery}
-                onChange={e => setSearchQuery(e.target.value)}
-                style={{ 
-                  padding: '0.5rem 1rem 0.5rem 2.2rem', 
-                  border: '1px solid #E2E8F0', 
-                  borderRadius: '8px', 
-                  fontSize: '0.75rem',
-                  outline: 'none',
-                  width: '200px',
-                  fontWeight: 600,
-                  color: 'var(--text)'
-                }} 
-              />
-            </div>
-            
-            <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', background: '#F8FAFC', padding: '2px 0.5rem', borderRadius: '8px', border: '1px solid #E2E8F0' }}>
-              <Layers size={14} color="#64748B" />
-              <select 
-                value={groupBy}
-                onChange={(e) => setGroupBy(e.target.value as any)}
-                style={{ 
-                  background: 'none', 
-                  border: 'none', 
-                  fontSize: '0.75rem', 
-                  fontWeight: 700, 
-                  color: '#475569', 
-                  outline: 'none',
-                  cursor: 'pointer',
-                  padding: '0.4rem 0'
-                }}
-              >
-                <option value="none">Sem Agrupamento</option>
-                <option value="division">Agrupar por Unidade</option>
-                <option value="area">Agrupar por Área</option>
-                <option value="year">Agrupar por Ano</option>
-                <option value="role">Agrupar por Cargo</option>
-              </select>
-            </div>
+        <FileSpreadsheet size={24} />
+        <span style={{
+          position: 'absolute',
+          top: '-4px',
+          right: '-4px',
+          background: 'linear-gradient(135deg, #EF4444 0%, #DC2626 100%)',
+          color: 'white',
+          fontSize: '0.65rem',
+          fontWeight: 900,
+          padding: '2px 6px',
+          borderRadius: '999px',
+          border: '2px solid #0F172A',
+          boxShadow: '0 2px 5px rgba(0,0,0,0.3)'
+        }}>
+          {filteredTableData.length}
+        </span>
+      </button>
 
-            <button 
-              onClick={() => setIsMaximized(!isMaximized)}
-              style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', padding: '0.5rem 1rem', background: '#F1F5F9', border: 'none', borderRadius: '8px', color: '#475569', fontWeight: 800, cursor: 'pointer', fontSize: '0.75rem' }}
-              title={isMaximized ? "Minimizar" : "Maximizar"}
-            >
-              {isMaximized ? <Minimize2 size={16} /> : <Maximize2 size={16} />}
-              {isMaximized ? "Minimizar" : "Maximizar"}
-            </button>
-            <button 
-              onClick={() => setIsConfigOpen(!isConfigOpen)}
-              style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', padding: '0.5rem 1rem', background: '#F1F5F9', border: 'none', borderRadius: '8px', color: '#475569', fontWeight: 800, cursor: 'pointer', fontSize: '0.75rem' }}
-            >
-              <Settings size={16} /> Configurar Colunas
-            </button>
-          </div>
-        </div>
+      {/* Maximized Fullscreen Modal */}
+      {isMaximized && (
+        <div 
+          style={{ 
+            position: 'fixed',
+            top: 0,
+            left: 0,
+            width: '100vw',
+            height: '100vh',
+            background: 'rgba(15, 23, 42, 0.8)',
+            backdropFilter: 'blur(8px)',
+            zIndex: 999999,
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            padding: '1.5rem'
+          }}
+          onClick={(e) => {
+            if (e.target === e.currentTarget) setIsMaximized(false);
+          }}
+        >
+          <div 
+            className="panel-premium custom-scrollbar" 
+            style={{ 
+              width: '100%',
+              maxWidth: '1700px',
+              height: '94vh',
+              background: 'white',
+              borderRadius: '24px',
+              display: 'flex',
+              flexDirection: 'column',
+              padding: '1.5rem 1.75rem',
+              boxShadow: '0 25px 50px -12px rgba(0, 0, 0, 0.5)',
+              overflow: 'hidden',
+              position: 'relative'
+            }}
+          >
+            {/* Modal Header */}
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1rem', flexWrap: 'wrap', gap: '0.75rem', borderBottom: '1px solid #E2E8F0', paddingBottom: '0.85rem' }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
+                <div style={{ width: '38px', height: '38px', borderRadius: '12px', background: 'linear-gradient(135deg, #FEE2E2 0%, #FECACA 100%)', color: 'var(--primary)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                  <FileSpreadsheet size={20} />
+                </div>
+                <div>
+                  <h3 style={{ fontSize: '1.15rem', fontWeight: 900, margin: 0, color: 'var(--text)', display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+                    Detalhamento Geral de Ocorrências
+                  </h3>
+                  <p style={{ margin: '0.15rem 0 0', fontSize: '0.8rem', color: '#64748B', fontWeight: 500 }}>
+                    Exibindo {filteredTableData.length} de {accidents.length} ocorrências {hasActiveFilters ? '(filtradas)' : ''}
+                  </p>
+                </div>
+              </div>
 
-        {isConfigOpen && (
-          <div style={{ 
-            position: 'absolute', 
-            top: '4.5rem', 
-            right: '1.5rem', 
-            background: 'white', 
-            border: '1px solid #E2E8F0', 
-            borderRadius: '12px', 
-            padding: '1.5rem', 
-            boxShadow: '0 20px 50px rgba(0,0,0,0.15)', 
-            zIndex: 1100, 
-            width: '320px' 
-          }}>
-            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1rem' }}>
-              <h4 style={{ margin: 0, fontSize: '0.85rem', fontWeight: 800 }}>Ordem e Visibilidade</h4>
-              <button onClick={() => setIsConfigOpen(false)} style={{ background: 'none', border: 'none', cursor: 'pointer', color: '#64748B' }}><X size={16} /></button>
-            </div>
-            <Reorder.Group 
-              axis="y" 
-              values={columnOrder} 
-              onReorder={setColumnOrder}
-              style={{ display: 'flex', flexDirection: 'column', gap: '0.25rem', maxHeight: '400px', overflowY: 'auto', paddingRight: '0.5rem', listStyle: 'none', padding: 0 }}
-            >
-              {columnOrder.map((colId) => {
-                const col = ALL_COLUMNS.find(c => c.id === colId);
-                if (!col) return null;
-                return (
-                  <Reorder.Item 
-                    key={colId} 
-                    value={colId}
+              <div style={{ display: 'flex', gap: '0.6rem', alignItems: 'center', flexWrap: 'wrap' }}>
+                {/* Global Search */}
+                <div style={{ position: 'relative' }}>
+                  <Search size={14} color="#94A3B8" style={{ position: 'absolute', left: '10px', top: '50%', transform: 'translateY(-50%)' }} />
+                  <input 
+                    type="text" 
+                    placeholder="Pesquisar..." 
+                    value={searchQuery}
+                    onChange={e => setSearchQuery(e.target.value)}
                     style={{ 
-                      display: 'flex', 
-                      alignItems: 'center', 
-                      gap: '0.5rem', 
-                      padding: '0.4rem 0.5rem',
-                      background: '#F8FAFC',
-                      borderRadius: '8px',
-                      border: '1px solid #F1F5F9',
-                      cursor: 'grab'
-                    }}
-                    whileDrag={{ 
-                      scale: 1.02, 
-                      boxShadow: '0 5px 15px rgba(0,0,0,0.1)',
-                      zIndex: 1200,
-                      cursor: 'grabbing'
+                      padding: '0.45rem 0.75rem 0.45rem 2rem', 
+                      border: '1px solid #CBD5E1', 
+                      borderRadius: '8px', 
+                      fontSize: '0.8rem',
+                      outline: 'none',
+                      width: '200px',
+                      fontWeight: 600,
+                      color: 'var(--text)',
+                      background: '#F8FAFC'
+                    }} 
+                  />
+                </div>
+                
+                {/* Group By with Chronological Month/Year option */}
+                <div style={{ display: 'flex', alignItems: 'center', gap: '0.4rem', background: '#F8FAFC', padding: '2px 0.6rem', borderRadius: '8px', border: '1px solid #CBD5E1' }}>
+                  <Layers size={14} color="#64748B" />
+                  <select 
+                    value={groupBy}
+                    onChange={(e) => setGroupBy(e.target.value as any)}
+                    style={{ 
+                      background: 'none', 
+                      border: 'none', 
+                      fontSize: '0.8rem', 
+                      fontWeight: 700, 
+                      color: '#334155', 
+                      outline: 'none',
+                      cursor: 'pointer',
+                      padding: '0.4rem 0'
                     }}
                   >
-                    <div style={{ color: '#94A3B8', display: 'flex', alignItems: 'center' }}>
-                      <GripVertical size={14} />
-                    </div>
-                    <input 
-                      type="checkbox" 
-                      checked={visibleColumns.includes(colId)} 
-                      onChange={() => toggleColumn(colId)}
-                      onClick={(e) => e.stopPropagation()}
-                      style={{ cursor: 'pointer' }}
-                    />
-                    <span style={{ flex: 1, fontSize: '0.75rem', fontWeight: 600, color: visibleColumns.includes(colId) ? '#0F172A' : '#94A3B8', userSelect: 'none' }}>
-                      {col.label}
-                    </span>
-                  </Reorder.Item>
-                );
-              })}
-            </Reorder.Group>
-          </div>
-        )}
+                    <option value="none">Sem Agrupamento</option>
+                    <option value="month_year">Agrupar por Mês/Ano (Cronológico)</option>
+                    <option value="year">Agrupar por Ano</option>
+                    <option value="division">Agrupar por Unidade</option>
+                    <option value="area">Agrupar por Área</option>
+                    <option value="role">Agrupar por Cargo</option>
+                    <option value="type">Agrupar por Tipo</option>
+                    <option value="unsafeAct">Agrupar por Causa Raiz</option>
+                  </select>
+                </div>
 
-        {/* Top Scrollbar */}
-        <div 
-          ref={topScrollRef} 
-          onScroll={handleTopScroll} 
-          style={{ overflowX: 'auto', marginBottom: '0.25rem' }}
-          className="custom-scrollbar"
-        >
-          <div style={{ width: tableWidth > 0 ? tableWidth : '100%', height: '1px' }}></div>
-        </div>
+                {/* Reset Filters button */}
+                {hasActiveFilters && (
+                  <button
+                    onClick={clearAllFilters}
+                    style={{
+                      display: 'flex',
+                      alignItems: 'center',
+                      gap: '4px',
+                      padding: '0.45rem 0.75rem',
+                      background: '#FEE2E2',
+                      border: '1px solid #FECACA',
+                      color: '#991B1B',
+                      borderRadius: '8px',
+                      fontSize: '0.78rem',
+                      fontWeight: 700,
+                      cursor: 'pointer'
+                    }}
+                    title="Limpar todos os filtros"
+                  >
+                    <RotateCcw size={12} /> Limpar Filtros
+                  </button>
+                )}
 
-        <div 
-          ref={bottomScrollRef} 
-          onScroll={handleBottomScroll} 
-          style={{ overflow: 'auto', flex: 1, paddingBottom: '1rem' }}
-          className="custom-scrollbar"
-        >
-          <table ref={tableRef} style={{ width: '100%', borderCollapse: 'collapse', fontSize: '0.75rem', whiteSpace: 'nowrap' }}>
-            <thead>
-              <tr style={{ textAlign: 'left' }}>
-                {columnOrder.map(colId => {
-                  const col = ALL_COLUMNS.find(c => c.id === colId);
-                  if (!col || !visibleColumns.includes(colId)) return null;
-                  return (
-                    <th key={colId} style={{ 
-                      padding: '0.75rem', 
-                      position: 'sticky', 
-                      top: 0, 
-                      background: '#F8FAFC', 
-                      zIndex: 10, 
-                      borderBottom: '2px solid #E2E8F0',
-                      boxShadow: '0 2px 4px rgba(0,0,0,0.05)'
-                    }}>
-                      {col.label}
-                    </th>
-                  );
-                })}
-              </tr>
-            </thead>
-            <tbody>
-              {groupedData ? (
-                Object.entries(groupedData).map(([groupName, items]) => (
-                  <React.Fragment key={groupName}>
-                    <tr style={{ background: '#F1F5F9' }}>
-                      <td 
-                        colSpan={visibleColumns.length} 
+                {/* Configure Columns Button */}
+                <button 
+                  onClick={() => setIsConfigOpen(!isConfigOpen)}
+                  style={{ display: 'flex', alignItems: 'center', gap: '0.4rem', padding: '0.45rem 0.8rem', background: isConfigOpen ? '#E2E8F0' : '#F1F5F9', border: '1px solid #CBD5E1', borderRadius: '8px', color: '#334155', fontWeight: 800, cursor: 'pointer', fontSize: '0.8rem' }}
+                >
+                  <Settings size={14} /> Colunas
+                </button>
+
+                {/* Close Button */}
+                <button 
+                  onClick={() => setIsMaximized(false)}
+                  style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', width: '36px', height: '36px', background: '#F1F5F9', border: 'none', borderRadius: '10px', color: '#64748B', cursor: 'pointer', transition: 'background 0.2s' }}
+                  onMouseOver={e => e.currentTarget.style.background = '#E2E8F0'}
+                  onMouseOut={e => e.currentTarget.style.background = '#F1F5F9'}
+                  title="Fechar (Esc)"
+                >
+                  <X size={20} />
+                </button>
+              </div>
+            </div>
+
+            {/* Column Config Dropdown Popup */}
+            {isConfigOpen && (
+              <div style={{ 
+                position: 'absolute', 
+                top: '5.2rem', 
+                right: '2rem', 
+                background: 'white', 
+                border: '1px solid #E2E8F0', 
+                borderRadius: '16px', 
+                padding: '1.25rem', 
+                boxShadow: '0 20px 50px rgba(0,0,0,0.2)', 
+                zIndex: 1100, 
+                width: '320px' 
+              }}>
+                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '0.75rem' }}>
+                  <h4 style={{ margin: 0, fontSize: '0.85rem', fontWeight: 800 }}>Ordem e Visibilidade</h4>
+                  <button onClick={() => setIsConfigOpen(false)} style={{ background: 'none', border: 'none', cursor: 'pointer', color: '#64748B' }}><X size={16} /></button>
+                </div>
+                <Reorder.Group 
+                  axis="y" 
+                  values={columnOrder} 
+                  onReorder={setColumnOrder}
+                  style={{ display: 'flex', flexDirection: 'column', gap: '0.25rem', maxHeight: '350px', overflowY: 'auto', paddingRight: '0.5rem', listStyle: 'none', padding: 0 }}
+                >
+                  {columnOrder.map((colId) => {
+                    const col = ALL_COLUMNS.find(c => c.id === colId);
+                    if (!col) return null;
+                    return (
+                      <Reorder.Item 
+                        key={colId} 
+                        value={colId}
                         style={{ 
-                          padding: '0.5rem 1rem', 
-                          fontWeight: 900, 
-                          color: '#475569', 
-                          fontSize: '0.7rem', 
-                          textTransform: 'uppercase',
-                          letterSpacing: '0.05em'
+                          display: 'flex', 
+                          alignItems: 'center', 
+                          gap: '0.5rem', 
+                          padding: '0.4rem 0.5rem',
+                          background: '#F8FAFC',
+                          borderRadius: '8px',
+                          border: '1px solid #F1F5F9',
+                          cursor: 'grab'
+                        }}
+                        whileDrag={{ 
+                          scale: 1.02, 
+                          boxShadow: '0 5px 15px rgba(0,0,0,0.1)',
+                          zIndex: 1200,
+                          cursor: 'grabbing'
                         }}
                       >
-                        {groupName} — {items.length} {items.length === 1 ? 'Ocorrência' : 'Ocorrências'}
+                        <div style={{ color: '#94A3B8', display: 'flex', alignItems: 'center' }}>
+                          <GripVertical size={14} />
+                        </div>
+                        <input 
+                          type="checkbox" 
+                          checked={visibleColumns.includes(colId)} 
+                          onChange={() => toggleColumn(colId)}
+                          onClick={(e) => e.stopPropagation()}
+                          style={{ cursor: 'pointer' }}
+                        />
+                        <span style={{ flex: 1, fontSize: '0.75rem', fontWeight: 600, color: visibleColumns.includes(colId) ? '#0F172A' : '#94A3B8', userSelect: 'none' }}>
+                          {col.label}
+                        </span>
+                      </Reorder.Item>
+                    );
+                  })}
+                </Reorder.Group>
+              </div>
+            )}
+
+            {/* Top Scrollbar */}
+            <div 
+              ref={topScrollRef} 
+              onScroll={handleTopScroll} 
+              style={{ overflowX: 'auto', marginBottom: '0.25rem' }}
+              className="custom-scrollbar"
+            >
+              <div style={{ width: tableWidth > 0 ? tableWidth : '100%', height: '1px' }}></div>
+            </div>
+
+            {/* Main Table Scroll Area */}
+            <div 
+              ref={bottomScrollRef} 
+              onScroll={handleBottomScroll} 
+              style={{ overflow: 'auto', flex: 1, paddingBottom: '1rem', border: '1px solid #E2E8F0', borderRadius: '12px' }}
+              className="custom-scrollbar"
+            >
+              <table ref={tableRef} style={{ width: '100%', borderCollapse: 'collapse', fontSize: '0.75rem', whiteSpace: 'nowrap' }}>
+                <thead>
+                  {/* Row 1: Header titles + Sort buttons */}
+                  <tr style={{ textAlign: 'left' }}>
+                    {columnOrder.map(colId => {
+                      const col = ALL_COLUMNS.find(c => c.id === colId);
+                      if (!col || !visibleColumns.includes(colId)) return null;
+                      return (
+                        <th 
+                          key={colId} 
+                          onClick={() => handleSort(colId)}
+                          style={{ 
+                            padding: '0.65rem 0.85rem', 
+                            position: 'sticky', 
+                            top: 0, 
+                            background: '#F8FAFC', 
+                            zIndex: 10, 
+                            borderBottom: '1px solid #E2E8F0',
+                            fontWeight: 800,
+                            color: sortCol === colId ? 'var(--primary)' : '#475569',
+                            textTransform: 'uppercase',
+                            letterSpacing: '0.04em',
+                            cursor: 'pointer',
+                            userSelect: 'none'
+                          }}
+                          title={`Clique para ordenar por ${col.label}`}
+                        >
+                          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: '6px' }}>
+                            <span>{col.label}</span>
+                            {sortCol === colId ? (
+                              sortDir === 'asc' ? <ArrowUp size={13} color="var(--primary)" /> : <ArrowDown size={13} color="var(--primary)" />
+                            ) : (
+                              <ArrowUpDown size={11} color="#94A3B8" />
+                            )}
+                          </div>
+                        </th>
+                      );
+                    })}
+                  </tr>
+
+                  {/* Row 2: Per-column Filter Input Row */}
+                  <tr style={{ textAlign: 'left', background: '#F1F5F9' }}>
+                    {columnOrder.map(colId => {
+                      const col = ALL_COLUMNS.find(c => c.id === colId);
+                      if (!col || !visibleColumns.includes(colId)) return null;
+                      return (
+                        <th 
+                          key={`filter-${colId}`}
+                          style={{ 
+                            padding: '0.35rem 0.5rem', 
+                            position: 'sticky', 
+                            top: '36px', 
+                            background: '#F1F5F9', 
+                            zIndex: 10, 
+                            borderBottom: '2px solid #CBD5E1'
+                          }}
+                        >
+                          <div style={{ position: 'relative', display: 'flex', alignItems: 'center' }}>
+                            <input
+                              type="text"
+                              placeholder="Filtrar..."
+                              value={columnFilters[colId] || ''}
+                              onChange={(e) => handleColumnFilterChange(colId, e.target.value)}
+                              onClick={(e) => e.stopPropagation()}
+                              style={{
+                                width: '100%',
+                                minWidth: '70px',
+                                padding: '0.25rem 0.5rem',
+                                paddingRight: columnFilters[colId] ? '18px' : '0.5rem',
+                                border: columnFilters[colId] ? '1px solid var(--primary)' : '1px solid #CBD5E1',
+                                borderRadius: '4px',
+                                fontSize: '0.7rem',
+                                outline: 'none',
+                                background: 'white',
+                                color: '#1E293B',
+                                fontWeight: 500
+                              }}
+                            />
+                            {columnFilters[colId] && (
+                              <button
+                                onClick={(e) => {
+                                  e.stopPropagation();
+                                  handleColumnFilterChange(colId, '');
+                                }}
+                                style={{
+                                  position: 'absolute',
+                                  right: '4px',
+                                  background: 'none',
+                                  border: 'none',
+                                  cursor: 'pointer',
+                                  padding: 0,
+                                  display: 'flex',
+                                  alignItems: 'center',
+                                  color: '#94A3B8'
+                                }}
+                              >
+                                <X size={10} />
+                              </button>
+                            )}
+                          </div>
+                        </th>
+                      );
+                    })}
+                  </tr>
+                </thead>
+                <tbody>
+                  {filteredTableData.length === 0 ? (
+                    <tr>
+                      <td colSpan={visibleColumns.length} style={{ padding: '3rem 1.5rem', textAlign: 'center', color: '#94A3B8' }}>
+                        <AlertCircle size={36} style={{ margin: '0 auto 0.5rem auto', opacity: 0.5 }} />
+                        <div style={{ fontWeight: 700, fontSize: '0.95rem', color: '#64748B' }}>Nenhuma ocorrência encontrada</div>
+                        <div style={{ fontSize: '0.8rem', marginTop: '4px' }}>Tente ajustar ou limpar os filtros aplicados nas colunas.</div>
+                        <button
+                          onClick={clearAllFilters}
+                          style={{
+                            marginTop: '1rem',
+                            padding: '0.4rem 1rem',
+                            background: '#F1F5F9',
+                            border: '1px solid #CBD5E1',
+                            borderRadius: '8px',
+                            fontSize: '0.78rem',
+                            fontWeight: 700,
+                            cursor: 'pointer',
+                            color: '#475569'
+                          }}
+                        >
+                          Redefinir Filtros
+                        </button>
                       </td>
                     </tr>
-                    {items.map((a, idx) => (
-                      <tr key={`${groupName}-${idx}`} style={{ borderBottom: '1px solid #F1F5F9', transition: 'background 0.2s' }}>
+                  ) : groupedData ? (
+                    Object.entries(groupedData).map(([groupName, items]) => (
+                      <React.Fragment key={groupName}>
+                        <tr style={{ background: '#F1F5F9' }}>
+                          <td 
+                            colSpan={visibleColumns.length} 
+                            style={{ 
+                              padding: '0.6rem 1rem', 
+                              fontWeight: 900, 
+                              color: '#334155', 
+                              fontSize: '0.75rem', 
+                              textTransform: 'uppercase',
+                              letterSpacing: '0.05em'
+                            }}
+                          >
+                            <span style={{ display: 'inline-flex', alignItems: 'center', gap: '6px' }}>
+                              <span style={{ display: 'inline-block', width: '8px', height: '8px', borderRadius: '50%', background: 'var(--primary)' }}></span>
+                              {groupName} — {items.length} {items.length === 1 ? 'Ocorrência' : 'Ocorrências'}
+                            </span>
+                          </td>
+                        </tr>
+                        {items.map((a, idx) => (
+                          <tr key={`${groupName}-${idx}`} style={{ borderBottom: '1px solid #F1F5F9', transition: 'background 0.2s' }} onMouseOver={e => e.currentTarget.style.background = '#F8FAFC'} onMouseOut={e => e.currentTarget.style.background = 'white'}>
+                            {columnOrder.map(colId => {
+                              if (!visibleColumns.includes(colId)) return null;
+                              return (
+                                <td key={colId} style={{ padding: '0.65rem 0.85rem' }}>
+                                  {renderCell(colId, a)}
+                                </td>
+                              );
+                            })}
+                          </tr>
+                        ))}
+                      </React.Fragment>
+                    ))
+                  ) : (
+                    filteredTableData.map((a, idx) => (
+                      <tr key={idx} style={{ borderBottom: '1px solid #F1F5F9', transition: 'background 0.2s' }} onMouseOver={e => e.currentTarget.style.background = '#F8FAFC'} onMouseOut={e => e.currentTarget.style.background = 'white'}>
                         {columnOrder.map(colId => {
                           if (!visibleColumns.includes(colId)) return null;
                           return (
-                            <td key={colId} style={{ padding: '0.75rem' }}>
+                            <td key={colId} style={{ padding: '0.65rem 0.85rem' }}>
                               {renderCell(colId, a)}
                             </td>
                           );
                         })}
                       </tr>
-                    ))}
-                  </React.Fragment>
-                ))
-              ) : (
-                filteredTableData.slice().sort((a,b) => b.date.getTime() - a.date.getTime()).map((a, idx) => (
-                  <tr key={idx} style={{ borderBottom: '1px solid #F1F5F9', transition: 'background 0.2s' }}>
-                    {columnOrder.map(colId => {
-                      if (!visibleColumns.includes(colId)) return null;
-                      return (
-                        <td key={colId} style={{ padding: '0.75rem' }}>
-                          {renderCell(colId, a)}
-                        </td>
-                      );
-                    })}
-                  </tr>
-                ))
-              )}
-            </tbody>
-          </table>
+                    ))
+                  )}
+                </tbody>
+              </table>
+            </div>
+          </div>
         </div>
-      </div>
+      )}
 
     </div>
   );
