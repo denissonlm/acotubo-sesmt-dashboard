@@ -172,6 +172,24 @@ export const LandscapePrintView: React.FC<LandscapePrintViewProps> = ({
     return generateFrequencySeverityStory(freqOverview, primaryYear);
   }, [freqOverview, primaryYear]);
 
+  const monthlyFreqRates12 = useMemo(() => {
+    const map = new Map(freqOverview.monthlyRecords.map(m => [m.month, m]));
+    return MONTH_NAMES.map((name, i) => {
+      const monthNum = i + 1;
+      const rec = map.get(monthNum);
+      return {
+        month: monthNum,
+        monthName: name,
+        frequencyRate: rec ? rec.frequencyRate : 0,
+        severityRate: rec ? rec.severityRate : 0,
+        accidents: rec ? rec.accidents : 0,
+        lostDays: rec ? rec.lostDays : 0,
+        hht: rec ? rec.hht : 0,
+        hasData: Boolean(rec && rec.hht > 0)
+      };
+    });
+  }, [freqOverview.monthlyRecords]);
+
   const getOITStatusColor = (status: string): string => {
     switch (status) {
       case 'MUITO BOA': return '#10B981';
@@ -808,136 +826,297 @@ export const LandscapePrintView: React.FC<LandscapePrintViewProps> = ({
           {/* Top Row: 4 KPI Cards */}
           <div style={{ display: 'flex', gap: '0.75rem' }}>
             {/* Card 1: Frequência */}
-            <div className="panel-premium" style={{ flex: 1, display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '0.45rem 1rem', borderLeft: '4px solid #0284C7', background: '#FFF' }}>
-              <div>
-                <div style={{ display: 'flex', alignItems: 'center', gap: '0.4rem' }}>
-                  <span style={{ color: '#64748B', fontWeight: 800, fontSize: '0.75rem', textTransform: 'uppercase' }}>Frequência (F)</span>
-                  <span style={{ fontSize: '0.62rem', fontWeight: 900, padding: '1px 6px', borderRadius: '4px', background: getOITStatusBg(freqOverview.overallFrequencyStatus), color: getOITStatusColor(freqOverview.overallFrequencyStatus) }}>
-                    {freqOverview.overallFrequencyStatus}
-                  </span>
-                </div>
-                <div style={{ fontSize: '0.58rem', fontWeight: 800, color: '#94A3B8', textTransform: 'uppercase', marginTop: '1px' }}>
-                  N: {freqOverview.totalAccidents} acd • Meta: F ≤ 20
-                </div>
+            <div className="panel-premium" style={{ 
+              flex: 1, 
+              display: 'flex', 
+              flexDirection: 'column', 
+              justifyContent: 'space-between', 
+              padding: '0.5rem 0.85rem', 
+              borderLeft: '4px solid #0284C7', 
+              background: '#FFF', 
+              borderRadius: '8px', 
+              minWidth: 0 
+            }}>
+              <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', width: '100%', marginBottom: '0.2rem' }}>
+                <span style={{ color: '#475569', fontWeight: 800, fontSize: '0.72rem', textTransform: 'uppercase', letterSpacing: '0.3px', whiteSpace: 'nowrap' }}>
+                  Frequência
+                </span>
+                <span style={{ fontSize: '0.6rem', fontWeight: 900, padding: '2px 7px', borderRadius: '4px', background: getOITStatusBg(freqOverview.overallFrequencyStatus), color: getOITStatusColor(freqOverview.overallFrequencyStatus), whiteSpace: 'nowrap' }}>
+                  {freqOverview.overallFrequencyStatus}
+                </span>
               </div>
-              <div style={{ fontSize: '1.75rem', fontWeight: 900, color: '#0F172A', lineHeight: 1 }}>
-                {freqOverview.overallFrequencyRate.toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+              <div style={{ display: 'flex', alignItems: 'baseline', justifyContent: 'space-between', width: '100%' }}>
+                <div style={{ fontSize: '1.65rem', fontWeight: 900, color: '#0F172A', lineHeight: 1, whiteSpace: 'nowrap' }}>
+                  {freqOverview.overallFrequencyRate.toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+                </div>
+                <div style={{ fontSize: '0.58rem', fontWeight: 800, color: '#94A3B8', textTransform: 'uppercase', whiteSpace: 'nowrap' }}>
+                  N: {freqOverview.totalAccidents} acd • Meta ≤ 20
+                </div>
               </div>
             </div>
 
             {/* Card 2: Gravidade */}
-            <div className="panel-premium" style={{ flex: 1, display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '0.45rem 1rem', borderLeft: '4px solid #F59E0B', background: '#FFF' }}>
-              <div>
-                <div style={{ display: 'flex', alignItems: 'center', gap: '0.4rem' }}>
-                  <span style={{ color: '#64748B', fontWeight: 800, fontSize: '0.75rem', textTransform: 'uppercase' }}>Gravidade (G)</span>
-                  <span style={{ fontSize: '0.62rem', fontWeight: 900, padding: '1px 6px', borderRadius: '4px', background: getOITStatusBg(freqOverview.overallSeverityStatus), color: getOITStatusColor(freqOverview.overallSeverityStatus) }}>
-                    {freqOverview.overallSeverityStatus}
-                  </span>
-                </div>
-                <div style={{ fontSize: '0.58rem', fontWeight: 800, color: '#94A3B8', textTransform: 'uppercase', marginTop: '1px' }}>
-                  T: {freqOverview.totalLostDays} dias • Meta: G ≤ 500
-                </div>
+            <div className="panel-premium" style={{ 
+              flex: 1, 
+              display: 'flex', 
+              flexDirection: 'column', 
+              justifyContent: 'space-between', 
+              padding: '0.5rem 0.85rem', 
+              borderLeft: '4px solid #F59E0B', 
+              background: '#FFF', 
+              borderRadius: '8px', 
+              minWidth: 0 
+            }}>
+              <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', width: '100%', marginBottom: '0.2rem' }}>
+                <span style={{ color: '#475569', fontWeight: 800, fontSize: '0.72rem', textTransform: 'uppercase', letterSpacing: '0.3px', whiteSpace: 'nowrap' }}>
+                  Gravidade
+                </span>
+                <span style={{ fontSize: '0.6rem', fontWeight: 900, padding: '2px 7px', borderRadius: '4px', background: getOITStatusBg(freqOverview.overallSeverityStatus), color: getOITStatusColor(freqOverview.overallSeverityStatus), whiteSpace: 'nowrap' }}>
+                  {freqOverview.overallSeverityStatus}
+                </span>
               </div>
-              <div style={{ fontSize: '1.75rem', fontWeight: 900, color: '#0F172A', lineHeight: 1 }}>
-                {freqOverview.overallSeverityRate.toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+              <div style={{ display: 'flex', alignItems: 'baseline', justifyContent: 'space-between', width: '100%' }}>
+                <div style={{ fontSize: '1.65rem', fontWeight: 900, color: '#0F172A', lineHeight: 1, whiteSpace: 'nowrap' }}>
+                  {freqOverview.overallSeverityRate.toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+                </div>
+                <div style={{ fontSize: '0.58rem', fontWeight: 800, color: '#94A3B8', textTransform: 'uppercase', whiteSpace: 'nowrap' }}>
+                  T: {freqOverview.totalLostDays} dias • Meta ≤ 500
+                </div>
               </div>
             </div>
 
             {/* Card 3: Horas Trabalhadas */}
-            <div className="panel-premium" style={{ flex: 1, background: 'linear-gradient(135deg, #0F172A 0%, #1E293B 100%)', border: 'none', color: 'white', display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '0.45rem 1rem' }}>
-              <div>
-                <div style={{ fontSize: '0.75rem', fontWeight: 900, color: '#38BDF8', display: 'flex', alignItems: 'center', gap: '3px' }}>
+            <div className="panel-premium" style={{ 
+              flex: 1, 
+              display: 'flex', 
+              flexDirection: 'column', 
+              justifyContent: 'space-between', 
+              padding: '0.5rem 0.85rem', 
+              background: 'linear-gradient(135deg, #0F172A 0%, #1E293B 100%)', 
+              border: 'none', 
+              color: 'white', 
+              borderRadius: '8px', 
+              minWidth: 0 
+            }}>
+              <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', width: '100%', marginBottom: '0.2rem' }}>
+                <div style={{ fontSize: '0.72rem', fontWeight: 800, color: '#38BDF8', display: 'flex', alignItems: 'center', gap: '4px', whiteSpace: 'nowrap', textTransform: 'uppercase', letterSpacing: '0.3px' }}>
                   <Clock size={12} color="#38BDF8" /> <span>Horas Trabalhadas</span>
                 </div>
-                <div style={{ fontSize: '0.58rem', fontWeight: 800, color: '#94A3B8', textTransform: 'uppercase', marginTop: '1px' }}>campo HH efetivo</div>
+                <span style={{ fontSize: '0.56rem', fontWeight: 800, padding: '1px 5px', borderRadius: '4px', background: 'rgba(56, 189, 248, 0.18)', color: '#38BDF8', whiteSpace: 'nowrap' }}>
+                  HH EFETIVO
+                </span>
               </div>
-              <div style={{ fontSize: '1.45rem', fontWeight: 900, color: '#FFFFFF', lineHeight: 1 }}>
-                {freqOverview.totalHHT.toLocaleString('pt-BR', { maximumFractionDigits: 0 })} h
+              <div style={{ display: 'flex', alignItems: 'baseline', justifyContent: 'space-between', width: '100%' }}>
+                <div style={{ fontSize: '1.45rem', fontWeight: 900, color: '#FFFFFF', lineHeight: 1, whiteSpace: 'nowrap' }}>
+                  {freqOverview.totalHHT.toLocaleString('pt-BR', { maximumFractionDigits: 0 })} <span style={{ fontSize: '0.75rem', fontWeight: 700, color: '#94A3B8' }}>h</span>
+                </div>
+                <div style={{ fontSize: '0.58rem', fontWeight: 800, color: '#94A3B8', textTransform: 'uppercase', whiteSpace: 'nowrap' }}>
+                  exposição ao risco
+                </div>
               </div>
             </div>
 
             {/* Card 4: Média Afastamento */}
-            <div className="panel-premium" style={{ flex: 1, display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '0.45rem 1rem', background: '#FFF' }}>
-              <div>
-                <div style={{ fontSize: '0.75rem', fontWeight: 900, color: '#10B981', display: 'flex', alignItems: 'center', gap: '3px' }}>
+            <div className="panel-premium" style={{ 
+              flex: 1, 
+              display: 'flex', 
+              flexDirection: 'column', 
+              justifyContent: 'space-between', 
+              padding: '0.5rem 0.85rem', 
+              borderLeft: '4px solid #10B981', 
+              background: '#FFF', 
+              borderRadius: '8px', 
+              minWidth: 0 
+            }}>
+              <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', width: '100%', marginBottom: '0.2rem' }}>
+                <div style={{ fontSize: '0.72rem', fontWeight: 800, color: '#059669', display: 'flex', alignItems: 'center', gap: '4px', whiteSpace: 'nowrap', textTransform: 'uppercase', letterSpacing: '0.3px' }}>
                   <TrendingUp size={12} color="#10B981" /> <span>Média Afastamento</span>
                 </div>
-                <div style={{ fontSize: '0.58rem', fontWeight: 800, color: '#94A3B8', textTransform: 'uppercase', marginTop: '1px' }}>severidade média</div>
+                <span style={{ fontSize: '0.56rem', fontWeight: 800, padding: '1px 5px', borderRadius: '4px', background: '#ECFDF5', color: '#059669', whiteSpace: 'nowrap' }}>
+                  SEVERIDADE
+                </span>
               </div>
-              <div style={{ fontSize: '1.75rem', fontWeight: 900, color: '#0F172A', lineHeight: 1 }}>
-                {freqOverview.totalAccidents > 0 ? (freqOverview.totalLostDays / freqOverview.totalAccidents).toLocaleString('pt-BR', { minimumFractionDigits: 1, maximumFractionDigits: 1 }) : '0,0'}
-                <span style={{ fontSize: '0.7rem', fontWeight: 800, color: '#64748B', marginLeft: '3px' }}>d/acd</span>
+              <div style={{ display: 'flex', alignItems: 'baseline', justifyContent: 'space-between', width: '100%' }}>
+                <div style={{ fontSize: '1.65rem', fontWeight: 900, color: '#0F172A', lineHeight: 1, whiteSpace: 'nowrap' }}>
+                  {freqOverview.totalAccidents > 0 ? (freqOverview.totalLostDays / freqOverview.totalAccidents).toLocaleString('pt-BR', { minimumFractionDigits: 1, maximumFractionDigits: 1 }) : '0,0'}
+                  <span style={{ fontSize: '0.65rem', fontWeight: 800, color: '#64748B', marginLeft: '3px' }}>d/acd</span>
+                </div>
+                <div style={{ fontSize: '0.58rem', fontWeight: 800, color: '#94A3B8', textTransform: 'uppercase', whiteSpace: 'nowrap' }}>
+                  {freqOverview.monthlyRecords.length} meses apurados
+                </div>
               </div>
             </div>
           </div>
 
-          {/* Main Area: 2 Side-by-Side Charts (F and G) + Ranking Box */}
-          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: '0.75rem', flex: 1, minHeight: 0 }}>
-            {/* Chart 1: Evolução Frequência */}
-            <div className="panel-premium" style={{ display: 'flex', flexDirection: 'column', padding: '0.75rem' }}>
-              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '0.25rem' }}>
-                <h3 style={{ fontSize: '0.8rem', fontWeight: 900, margin: 0, color: '#0F172A' }}>Frequência Mensal (F)</h3>
-                <span style={{ fontSize: '0.62rem', fontWeight: 800, color: '#0284C7' }}>F = (N × 10⁶) / HHT</span>
+          {/* Main Area: 2 Columns -> Left: Stacked Charts (F & G) | Right: Unit Ranking */}
+          <div style={{ display: 'grid', gridTemplateColumns: '2.05fr 1fr', gap: '0.75rem', flex: 1, minHeight: 0 }}>
+            {/* Left Column: Stacked Charts (Frequência em cima, Gravidade embaixo - Jan a Dez) */}
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '0.65rem', minHeight: 0, height: '100%' }}>
+              
+              {/* Gráfico Superior: Frequência Mensal (F) */}
+              <div className="panel-premium" style={{ flex: 1, display: 'flex', flexDirection: 'column', padding: '0.65rem 0.85rem', minHeight: 0 }}>
+                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '0.2rem' }}>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '0.45rem' }}>
+                    <div style={{ width: '8px', height: '8px', borderRadius: '50%', background: '#0284C7' }}></div>
+                    <h3 style={{ fontSize: '0.78rem', fontWeight: 900, margin: 0, color: '#0F172A', textTransform: 'uppercase', letterSpacing: '0.3px', whiteSpace: 'nowrap' }}>
+                      Evolução Mensal da Taxa de Frequência (F)
+                    </h3>
+                    <span style={{ fontSize: '0.6rem', color: '#64748B', fontWeight: 600, whiteSpace: 'nowrap' }}>
+                      • Acidentados por milhão de HH (Jan a Dez)
+                    </span>
+                  </div>
+                  <span style={{ fontSize: '0.62rem', fontWeight: 800, color: '#0284C7', background: '#F0F9FF', padding: '2px 8px', borderRadius: '4px', border: '1px solid #BAE6FD', whiteSpace: 'nowrap' }}>
+                    F = (N × 10⁶) / HHT
+                  </span>
+                </div>
+                <div style={{ flex: 1, minHeight: 0 }}>
+                  <ResponsiveContainer width="100%" height="100%">
+                    <BarChart data={monthlyFreqRates12} margin={{ top: 14, right: 10, left: -25, bottom: 0 }}>
+                      <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#F1F5F9" />
+                      <XAxis dataKey="monthName" axisLine={false} tickLine={false} tick={{ fontSize: 8, fontWeight: 700, fill: '#64748B' }} />
+                      <YAxis axisLine={false} tickLine={false} tick={{ fontSize: 8, fill: '#64748B' }} />
+                      <Tooltip 
+                        cursor={{ fill: '#F8FAFC' }}
+                        contentStyle={{ backgroundColor: '#FFFFFF', borderRadius: '8px', border: '1px solid #E2E8F0', fontSize: '0.72rem', boxShadow: '0 4px 12px rgba(0,0,0,0.08)' }} 
+                        formatter={(val: any) => [`${Number(val).toFixed(2)}`, 'Frequência (F)']}
+                        labelFormatter={(lbl: any) => `Mês: ${lbl}`}
+                      />
+                      <Bar 
+                        dataKey="frequencyRate" 
+                        fill="#0284C7" 
+                        radius={[3, 3, 0, 0]} 
+                        barSize={18} 
+                        label={{ 
+                          position: 'top', 
+                          fill: '#0284C7', 
+                          fontSize: 8, 
+                          fontWeight: 800, 
+                          formatter: (v: any) => Number(v) > 0 ? Number(v).toFixed(1) : '' 
+                        }} 
+                      />
+                    </BarChart>
+                  </ResponsiveContainer>
+                </div>
               </div>
-              <p style={{ fontSize: '0.58rem', color: '#64748B', margin: '0 0 0.4rem 0' }}>Taxa de acidentados por milhão de horas trabalhadas</p>
-              <div style={{ flex: 1, minHeight: 0 }}>
-                <ResponsiveContainer width="100%" height="100%">
-                  <BarChart data={freqOverview.monthlyRecords} margin={{ top: 15, right: 10, left: -25, bottom: 0 }}>
-                    <XAxis dataKey="monthName" axisLine={false} tickLine={false} tick={{ fontSize: 8, fontWeight: 700, fill: '#64748B' }} />
-                    <YAxis axisLine={false} tickLine={false} tick={{ fontSize: 8, fill: '#64748B' }} />
-                    <Tooltip 
-                      contentStyle={{ backgroundColor: '#FFFFFF', borderRadius: '8px', border: '1px solid #E2E8F0', fontSize: '0.75rem' }} 
-                      formatter={(val: any) => [`${Number(val).toFixed(2)}`, 'Frequência']}
-                    />
-                    <Bar dataKey="frequencyRate" fill="#0284C7" radius={[3, 3, 0, 0]} barSize={16} label={{ position: 'top', fill: '#0284C7', fontSize: 8, fontWeight: 800, formatter: (v: any) => Number(v) > 0 ? Number(v).toFixed(1) : '' }} />
-                  </BarChart>
-                </ResponsiveContainer>
+
+              {/* Gráfico Inferior: Gravidade Mensal (G) */}
+              <div className="panel-premium" style={{ flex: 1, display: 'flex', flexDirection: 'column', padding: '0.65rem 0.85rem', minHeight: 0 }}>
+                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '0.2rem' }}>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '0.45rem' }}>
+                    <div style={{ width: '8px', height: '8px', borderRadius: '50%', background: '#F59E0B' }}></div>
+                    <h3 style={{ fontSize: '0.78rem', fontWeight: 900, margin: 0, color: '#0F172A', textTransform: 'uppercase', letterSpacing: '0.3px', whiteSpace: 'nowrap' }}>
+                      Evolução Mensal da Taxa de Gravidade (G)
+                    </h3>
+                    <span style={{ fontSize: '0.6rem', color: '#64748B', fontWeight: 600, whiteSpace: 'nowrap' }}>
+                      • Dias perdidos por milhão de HH (Jan a Dez)
+                    </span>
+                  </div>
+                  <span style={{ fontSize: '0.62rem', fontWeight: 800, color: '#D97706', background: '#FFFBEB', padding: '2px 8px', borderRadius: '4px', border: '1px solid #FDE68A', whiteSpace: 'nowrap' }}>
+                    G = (T × 10⁶) / HHT
+                  </span>
+                </div>
+                <div style={{ flex: 1, minHeight: 0 }}>
+                  <ResponsiveContainer width="100%" height="100%">
+                    <BarChart data={monthlyFreqRates12} margin={{ top: 14, right: 10, left: -25, bottom: 0 }}>
+                      <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#F1F5F9" />
+                      <XAxis dataKey="monthName" axisLine={false} tickLine={false} tick={{ fontSize: 8, fontWeight: 700, fill: '#64748B' }} />
+                      <YAxis axisLine={false} tickLine={false} tick={{ fontSize: 8, fill: '#64748B' }} />
+                      <Tooltip 
+                        cursor={{ fill: '#F8FAFC' }}
+                        contentStyle={{ backgroundColor: '#FFFFFF', borderRadius: '8px', border: '1px solid #E2E8F0', fontSize: '0.72rem', boxShadow: '0 4px 12px rgba(0,0,0,0.08)' }} 
+                        formatter={(val: any) => [`${Number(val).toFixed(0)}`, 'Gravidade (G)']}
+                        labelFormatter={(lbl: any) => `Mês: ${lbl}`}
+                      />
+                      <Bar 
+                        dataKey="severityRate" 
+                        fill="#F59E0B" 
+                        radius={[3, 3, 0, 0]} 
+                        barSize={18} 
+                        label={{ 
+                          position: 'top', 
+                          fill: '#D97706', 
+                          fontSize: 8, 
+                          fontWeight: 800, 
+                          formatter: (v: any) => Number(v) > 0 ? Number(v).toFixed(0) : '' 
+                        }} 
+                      />
+                    </BarChart>
+                  </ResponsiveContainer>
+                </div>
               </div>
             </div>
 
-            {/* Chart 2: Evolução Gravidade */}
-            <div className="panel-premium" style={{ display: 'flex', flexDirection: 'column', padding: '0.75rem' }}>
-              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '0.25rem' }}>
-                <h3 style={{ fontSize: '0.8rem', fontWeight: 900, margin: 0, color: '#0F172A' }}>Gravidade Mensal (G)</h3>
-                <span style={{ fontSize: '0.62rem', fontWeight: 800, color: '#F59E0B' }}>G = (T × 10⁶) / HHT</span>
+            {/* Right Column: Ranking Crítico por Unidade */}
+            <div className="panel-premium" style={{ display: 'flex', flexDirection: 'column', padding: '0.75rem 0.85rem', minHeight: 0, height: '100%' }}>
+              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '0.15rem' }}>
+                <h3 style={{ fontSize: '0.78rem', fontWeight: 900, margin: 0, color: '#0F172A', textTransform: 'uppercase', letterSpacing: '0.3px', whiteSpace: 'nowrap' }}>
+                  Ranking por Unidade
+                </h3>
+                <span style={{ fontSize: '0.58rem', fontWeight: 800, color: '#475569', background: '#F1F5F9', padding: '2px 6px', borderRadius: '4px', whiteSpace: 'nowrap' }}>
+                  {freqOverview.unitRecords.filter(u => u.accidents > 0).length} C/ OCORRÊNCIA
+                </span>
               </div>
-              <p style={{ fontSize: '0.58rem', color: '#64748B', margin: '0 0 0.4rem 0' }}>Taxa de dias perdidos por milhão de horas trabalhadas</p>
-              <div style={{ flex: 1, minHeight: 0 }}>
-                <ResponsiveContainer width="100%" height="100%">
-                  <BarChart data={freqOverview.monthlyRecords} margin={{ top: 15, right: 10, left: -25, bottom: 0 }}>
-                    <XAxis dataKey="monthName" axisLine={false} tickLine={false} tick={{ fontSize: 8, fontWeight: 700, fill: '#64748B' }} />
-                    <YAxis axisLine={false} tickLine={false} tick={{ fontSize: 8, fill: '#64748B' }} />
-                    <Tooltip 
-                      contentStyle={{ backgroundColor: '#FFFFFF', borderRadius: '8px', border: '1px solid #E2E8F0', fontSize: '0.75rem' }} 
-                      formatter={(val: any) => [`${Number(val).toFixed(2)}`, 'Gravidade']}
-                    />
-                    <Bar dataKey="severityRate" fill="#F59E0B" radius={[3, 3, 0, 0]} barSize={16} label={{ position: 'top', fill: '#F59E0B', fontSize: 8, fontWeight: 800, formatter: (v: any) => Number(v) > 0 ? Number(v).toFixed(0) : '' }} />
-                  </BarChart>
-                </ResponsiveContainer>
-              </div>
-            </div>
+              <p style={{ fontSize: '0.58rem', color: '#64748B', margin: '0 0 0.5rem 0' }}>
+                Classificação por severidade e taxa no período
+              </p>
 
-            {/* Ranking de Unidades Críticas */}
-            <div className="panel-premium" style={{ display: 'flex', flexDirection: 'column', padding: '0.75rem' }}>
-              <h3 style={{ fontSize: '0.8rem', fontWeight: 900, margin: '0 0 0.25rem 0', color: '#0F172A' }}>Ranking Crítico por Unidade</h3>
-              <p style={{ fontSize: '0.58rem', color: '#64748B', margin: '0 0 0.4rem 0' }}>Unidades com maior incidência no período</p>
-              <div style={{ display: 'flex', flexDirection: 'column', gap: '0.3rem', flex: 1, overflow: 'hidden' }}>
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '0.35rem', flex: 1, overflow: 'hidden' }}>
                 {[...freqOverview.unitRecords]
                   .sort((a, b) => b.frequencyRate - a.frequencyRate || b.severityRate - a.severityRate)
-                  .slice(0, 5)
+                  .slice(0, 6)
                   .map((u, idx) => (
-                    <div key={u.unitName} style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '0.3rem 0.5rem', background: '#F8FAFC', borderRadius: '6px', border: '1px solid #E2E8F0', fontSize: '0.62rem' }}>
-                      <div style={{ display: 'flex', alignItems: 'center', gap: '0.4rem', minWidth: 0 }}>
-                        <span style={{ width: '16px', height: '16px', borderRadius: '50%', background: idx < 2 && u.accidents > 0 ? '#B91C1C' : '#CBD5E1', color: idx < 2 && u.accidents > 0 ? 'white' : '#475569', display: 'flex', alignItems: 'center', justifyContent: 'center', fontWeight: 900, fontSize: '0.6rem', flexShrink: 0 }}>
-                          {idx + 1}
-                        </span>
-                        <span style={{ overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', fontWeight: 800, color: '#0F172A' }}>
-                          {u.unitName}
-                        </span>
+                    <div 
+                      key={u.unitName} 
+                      style={{ 
+                        display: 'flex', 
+                        flexDirection: 'column', 
+                        padding: '0.35rem 0.55rem', 
+                        background: idx < 2 && u.accidents > 0 ? '#FEF2F2' : '#F8FAFC', 
+                        borderRadius: '6px', 
+                        border: idx < 2 && u.accidents > 0 ? '1px solid #FECACA' : '1px solid #E2E8F0',
+                        fontSize: '0.62rem'
+                      }}
+                    >
+                      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '2px' }}>
+                        <div style={{ display: 'flex', alignItems: 'center', gap: '0.4rem', minWidth: 0 }}>
+                          <span style={{ 
+                            width: '17px', 
+                            height: '17px', 
+                            borderRadius: '50%', 
+                            background: idx < 2 && u.accidents > 0 ? '#B91C1C' : '#475569', 
+                            color: 'white', 
+                            display: 'flex', 
+                            alignItems: 'center', 
+                            justifyContent: 'center', 
+                            fontWeight: 900, 
+                            fontSize: '0.6rem', 
+                            flexShrink: 0 
+                          }}>
+                            {idx + 1}
+                          </span>
+                          <span style={{ overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', fontWeight: 800, color: '#0F172A', fontSize: '0.65rem' }}>
+                            {u.unitName}
+                          </span>
+                        </div>
+                        <div style={{ display: 'flex', alignItems: 'center', gap: '0.3rem', flexShrink: 0, fontWeight: 800 }}>
+                          <span style={{ color: '#64748B', fontSize: '0.58rem', whiteSpace: 'nowrap' }}>
+                            {u.accidents} acd • {u.lostDays} d
+                          </span>
+                        </div>
                       </div>
-                      <div style={{ display: 'flex', alignItems: 'center', gap: '0.4rem', flexShrink: 0, fontWeight: 900 }}>
-                        <span style={{ color: '#0284C7' }}>F: {u.frequencyRate.toFixed(1)}</span>
-                        <span style={{ color: '#F59E0B' }}>G: {u.severityRate.toFixed(0)}</span>
+                      
+                      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginTop: '1px' }}>
+                        <div style={{ display: 'flex', gap: '0.35rem', alignItems: 'center' }}>
+                          <span style={{ fontSize: '0.56rem', fontWeight: 800, color: '#0284C7', background: '#F0F9FF', padding: '1px 5px', borderRadius: '3px', border: '1px solid #BAE6FD', whiteSpace: 'nowrap' }}>
+                            F: {u.frequencyRate.toLocaleString('pt-BR', { minimumFractionDigits: 1, maximumFractionDigits: 1 })}
+                          </span>
+                          <span style={{ fontSize: '0.56rem', fontWeight: 800, color: '#D97706', background: '#FFFBEB', padding: '1px 5px', borderRadius: '3px', border: '1px solid #FDE68A', whiteSpace: 'nowrap' }}>
+                            G: {u.severityRate.toLocaleString('pt-BR', { maximumFractionDigits: 0 })}
+                          </span>
+                        </div>
+                        <span style={{ fontSize: '0.55rem', fontWeight: 800, color: getOITStatusColor(u.frequencyStatus), whiteSpace: 'nowrap' }}>
+                          {u.frequencyStatus}
+                        </span>
                       </div>
                     </div>
                   ))}

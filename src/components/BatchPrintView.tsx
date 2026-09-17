@@ -401,8 +401,8 @@ const ReportPage: React.FC<{ accidents: Accident[], years: number[], unit: strin
             {/* Card Frequência */}
             <div style={{ background: '#F8FAFC', border: '1px solid #E2E8F0', padding: '0.85rem', borderRadius: '12px' }}>
               <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '0.35rem' }}>
-                <span style={{ fontSize: '0.65rem', fontWeight: 800, color: '#64748B', textTransform: 'uppercase' }}>Frequência</span>
-                <span style={{ fontSize: '0.62rem', fontWeight: 900, padding: '1px 6px', borderRadius: '4px', background: getOITStatusBg(freqOverview.overallFrequencyStatus), color: getOITStatusColor(freqOverview.overallFrequencyStatus) }}>
+                <span style={{ fontSize: '0.65rem', fontWeight: 800, color: '#64748B', textTransform: 'uppercase', whiteSpace: 'nowrap' }}>Frequência</span>
+                <span style={{ fontSize: '0.62rem', fontWeight: 900, padding: '1px 6px', borderRadius: '4px', background: getOITStatusBg(freqOverview.overallFrequencyStatus), color: getOITStatusColor(freqOverview.overallFrequencyStatus), whiteSpace: 'nowrap' }}>
                   {freqOverview.overallFrequencyStatus}
                 </span>
               </div>
@@ -418,8 +418,8 @@ const ReportPage: React.FC<{ accidents: Accident[], years: number[], unit: strin
             {/* Card Gravidade */}
             <div style={{ background: '#F8FAFC', border: '1px solid #E2E8F0', padding: '0.85rem', borderRadius: '12px' }}>
               <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '0.35rem' }}>
-                <span style={{ fontSize: '0.65rem', fontWeight: 800, color: '#64748B', textTransform: 'uppercase' }}>Gravidade</span>
-                <span style={{ fontSize: '0.62rem', fontWeight: 900, padding: '1px 6px', borderRadius: '4px', background: getOITStatusBg(freqOverview.overallSeverityStatus), color: getOITStatusColor(freqOverview.overallSeverityStatus) }}>
+                <span style={{ fontSize: '0.65rem', fontWeight: 800, color: '#64748B', textTransform: 'uppercase', whiteSpace: 'nowrap' }}>Gravidade</span>
+                <span style={{ fontSize: '0.62rem', fontWeight: 900, padding: '1px 6px', borderRadius: '4px', background: getOITStatusBg(freqOverview.overallSeverityStatus), color: getOITStatusColor(freqOverview.overallSeverityStatus), whiteSpace: 'nowrap' }}>
                   {freqOverview.overallSeverityStatus}
                 </span>
               </div>
@@ -434,7 +434,7 @@ const ReportPage: React.FC<{ accidents: Accident[], years: number[], unit: strin
 
             {/* Card Horas Trabalhadas */}
             <div style={{ background: '#0F172A', padding: '0.85rem', borderRadius: '12px', color: 'white' }}>
-              <div style={{ fontSize: '0.65rem', fontWeight: 800, opacity: 0.7, textTransform: 'uppercase', marginBottom: '0.35rem' }}>Horas Trabalhadas</div>
+              <div style={{ fontSize: '0.65rem', fontWeight: 800, opacity: 0.7, textTransform: 'uppercase', marginBottom: '0.35rem', whiteSpace: 'nowrap' }}>Horas Trabalhadas</div>
               <div style={{ fontSize: '1.3rem', fontWeight: 900, lineHeight: 1.1 }}>
                 {freqOverview.totalHHT.toLocaleString('pt-BR', { maximumFractionDigits: 0 })} h
               </div>
@@ -445,7 +445,7 @@ const ReportPage: React.FC<{ accidents: Accident[], years: number[], unit: strin
 
             {/* Card Severidade Média */}
             <div style={{ background: '#F8FAFC', border: '1px solid #E2E8F0', padding: '0.85rem', borderRadius: '12px' }}>
-              <div style={{ fontSize: '0.65rem', fontWeight: 800, color: '#64748B', textTransform: 'uppercase', marginBottom: '0.35rem' }}>Média Afastamento</div>
+              <div style={{ fontSize: '0.65rem', fontWeight: 800, color: '#64748B', textTransform: 'uppercase', marginBottom: '0.35rem', whiteSpace: 'nowrap' }}>Média Afastamento</div>
               <div style={{ fontSize: '1.75rem', fontWeight: 900, color: '#0F172A', lineHeight: 1 }}>
                 {freqOverview.totalAccidents > 0 ? (freqOverview.totalLostDays / freqOverview.totalAccidents).toLocaleString('pt-BR', { minimumFractionDigits: 1, maximumFractionDigits: 1 }) : '0,0'}
                 <span style={{ fontSize: '0.7rem', fontWeight: 700, color: '#64748B', marginLeft: '3px' }}>d/acd</span>
