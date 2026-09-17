@@ -1,8 +1,15 @@
 import React from 'react';
-import { Printer, ArrowLeft, Clock, ShieldCheck, FileText, Target } from 'lucide-react';
+import { Printer, ArrowLeft, Clock, ShieldCheck, FileText, Target, Gauge } from 'lucide-react';
 import type { Accident } from '../types';
-import { calculateStats, generateInsights, calculateTemporalStats, generateTemporalInsights, calculateSafetyRecords, calculateSafetyRanking } from '../utils/dataLoader';
+import { calculateStats, generateInsights, calculateTemporalStats, generateTemporalInsights, calculateSafetyRecords } from '../utils/dataLoader';
 import { LOGO_BASE64 } from '../constants';
+import { 
+  processFrequencyAndSeverity, 
+  generateFrequencySeverityStory, 
+  loadHHTStore,
+  matchAccidentToSourceUnit,
+  SOURCE_UNITS
+} from '../utils/frequencySeverityLoader';
 
 interface BatchPrintViewProps {
   accidents: Accident[];
@@ -11,17 +18,68 @@ interface BatchPrintViewProps {
     unit: string;
     area: string;
   }[];
-  safetyGroupBy: 'area' | 'division';
   onBack: () => void;
 }
 
 const MONTH_NAMES = ['Jan', 'Fev', 'Mar', 'Abr', 'Mai', 'Jun', 'Jul', 'Ago', 'Set', 'Out', 'Nov', 'Dez'];
 
-const ReportPage: React.FC<{ accidents: Accident[], years: number[], unit: string, area: string, safetyGroupBy: 'area' | 'division', pageNum: number }> = ({ accidents, years, unit, area, safetyGroupBy, pageNum }) => {
+const getOITStatusColor = (status: string): string => {
+  switch (status) {
+    case 'MUITO BOA': return '#10B981';
+    case 'BOA': return '#0284C7';
+    case 'REGULAR': return '#F59E0B';
+    case 'RUIM': return '#F97316';
+    case 'PÉSSIMA': return '#EF4444';
+    default: return '#64748B';
+  }
+};
+
+const getOITStatusBg = (status: string): string => {
+  switch (status) {
+    case 'MUITO BOA': return '#ECFDF5';
+    case 'BOA': return '#F0F9FF';
+    case 'REGULAR': return '#FFFBEB';
+    case 'RUIM': return '#FFF7ED';
+    case 'PÉSSIMA': return '#FEF2F2';
+    default: return '#F1F5F9';
+  }
+};
+
+const ReportPage: React.FC<{ accidents: Accident[], years: number[], unit: string, area: string, pageNum: number }> = ({ accidents, years, unit, area, pageNum }) => {
   const stats = calculateStats(accidents, years);
   const monthlyInsights = generateInsights(accidents, years);
   const temporalInsights = generateTemporalInsights(accidents);
   const temporalStats = calculateTemporalStats(accidents);
+
+  const hhtStore = React.useMemo(() => loadHHTStore(), []);
+
+  const primaryYear = React.useMemo(() => {
+    const storeYears = Object.keys(hhtStore).map(Number);
+    const matched = years.filter(y => storeYears.includes(y));
+    if (matched.length > 0) return Math.max(...matched);
+    if (storeYears.length > 0) return Math.max(...storeYears);
+    return 2026;
+  }, [hhtStore, years]);
+
+  const availableMonths = React.useMemo(() => {
+    const yearObj = hhtStore[primaryYear] || {};
+    const months = Object.keys(yearObj).map(Number).sort((a, b) => a - b);
+    return months.length > 0 ? months : [1, 2, 3, 4, 5, 6, 7, 8];
+  }, [hhtStore, primaryYear]);
+
+  const unitForRates = React.useMemo(() => {
+    if (unit === 'ALL') return 'ALL';
+    if (SOURCE_UNITS.includes(unit)) return unit;
+    return matchAccidentToSourceUnit(unit, area) || 'ALL';
+  }, [unit, area]);
+
+  const freqOverview = React.useMemo(() => {
+    return processFrequencyAndSeverity(accidents, primaryYear, availableMonths, unitForRates, hhtStore);
+  }, [accidents, primaryYear, availableMonths, unitForRates, hhtStore]);
+
+  const freqStory = React.useMemo(() => {
+    return generateFrequencySeverityStory(freqOverview, primaryYear);
+  }, [freqOverview, primaryYear]);
 
   const getHeatmapColor = (count: number) => {
     if (count === 0) return '#F1F5F9';
@@ -255,66 +313,236 @@ const ReportPage: React.FC<{ accidents: Accident[], years: number[], unit: strin
           <img src={LOGO_BASE64} alt="Açotubo" style={{ height: '36px' }} />
         </header>
 
-        <div style={{ display: 'flex', flexDirection: 'column', gap: '1.25rem', flex: 1, minHeight: 0 }}>
-          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: '1rem' }}>
-            <div style={{ background: '#0F172A', padding: '1.25rem', borderRadius: '12px', color: 'white' }}>
-               <div style={{ fontSize: '0.65rem', fontWeight: 800, opacity: 0.6, marginBottom: '0.25rem' }}>STATUS ATUAL</div>
-               <div style={{ fontSize: '2.5rem', fontWeight: 900, lineHeight: 1 }}>{calculateSafetyRecords(accidents).currentStreak}</div>
-               <div style={{ fontSize: '0.75rem', fontWeight: 700, color: '#10B981', marginTop: '4px' }}>Dias sem Acidentes</div>
+        <div style={{ display: 'flex', flexDirection: 'column', gap: '1.5rem' }}>
+          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1.5rem' }}>
+            <div style={{ background: '#0F172A', padding: '1.5rem', borderRadius: '16px', color: 'white' }}>
+               <div style={{ fontSize: '0.7rem', fontWeight: 800, opacity: 0.6, marginBottom: '0.5rem' }}>STATUS ATUAL</div>
+               <div style={{ fontSize: '3rem', fontWeight: 900 }}>{calculateSafetyRecords(accidents).currentStreak}</div>
+               <div style={{ fontSize: '0.8rem', fontWeight: 700, color: '#10B981' }}>Dias sem Acidentes</div>
             </div>
-            <div style={{ background: '#F8FAFC', padding: '1.25rem', border: '1px solid #E2E8F0', borderRadius: '12px' }}>
-               <div style={{ fontSize: '0.65rem', fontWeight: 800, color: '#64748B', marginBottom: '0.25rem' }}>RECORDE HISTÓRICO</div>
-               <div style={{ fontSize: '2.5rem', fontWeight: 900, color: '#0F172A', lineHeight: 1 }}>{calculateSafetyRecords(accidents).historicalRecord}</div>
-               <div style={{ fontSize: '0.75rem', fontWeight: 700, color: '#B91C1C', marginTop: '4px' }}>Melhor Marca</div>
-            </div>
-            <div style={{ background: '#F8FAFC', padding: '1.25rem', border: '1px solid #E2E8F0', borderRadius: '12px' }}>
-               <div style={{ fontSize: '0.65rem', fontWeight: 800, color: '#64748B', marginBottom: '0.25rem' }}>TOTAL OCORRÊNCIAS</div>
-               <div style={{ fontSize: '2.5rem', fontWeight: 900, color: '#0F172A', lineHeight: 1 }}>{accidents.length}</div>
-               <div style={{ fontSize: '0.75rem', fontWeight: 700, color: '#3B82F6', marginTop: '4px' }}>No Período</div>
+            <div style={{ background: '#F8FAFC', padding: '1.5rem', border: '1px solid #E2E8F0', borderRadius: '16px' }}>
+               <div style={{ fontSize: '0.7rem', fontWeight: 800, color: '#64748B', marginBottom: '0.5rem' }}>RECORDE HISTÓRICO</div>
+               <div style={{ fontSize: '3rem', fontWeight: 900, color: '#0F172A' }}>{calculateSafetyRecords(accidents).historicalRecord}</div>
+               <div style={{ fontSize: '0.8rem', fontWeight: 700, color: '#B91C1C' }}>Marca de Referência</div>
             </div>
           </div>
 
-          <div style={{ background: 'white', border: '1px solid #E2E8F0', borderRadius: '12px', flex: 1, display: 'flex', flexDirection: 'column', overflow: 'hidden' }}>
-            <div style={{ padding: '1rem', borderBottom: '1px solid #E2E8F0', background: '#F8FAFC', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-               <h3 style={{ fontSize: '0.9rem', fontWeight: 900, margin: 0, color: '#0F172A' }}>Ranking Abrangente por {safetyGroupBy === 'area' ? 'Área' : 'Divisão'}</h3>
-               <span style={{ fontSize: '0.65rem', background: '#E2E8F0', padding: '2px 8px', borderRadius: '12px', fontWeight: 800, color: '#475569' }}>Ordem: Dias Sem Acidentes</span>
-            </div>
-            
-            <div style={{ flex: 1, overflowY: 'auto', padding: '0 1rem' }}>
-              <table style={{ width: '100%', borderCollapse: 'collapse', marginTop: '0.5rem', marginBottom: '1rem' }}>
-                <thead>
-                  <tr style={{ borderBottom: '2px solid #E2E8F0' }}>
-                    <th style={{ padding: '0.5rem', fontSize: '0.65rem', textAlign: 'center', color: '#64748B', fontWeight: 800 }}>Pos.</th>
-                    <th style={{ padding: '0.5rem', fontSize: '0.65rem', textAlign: 'left', color: '#64748B', fontWeight: 800 }}>{safetyGroupBy === 'area' ? 'Área' : 'Divisão'}</th>
-                    <th style={{ padding: '0.5rem', fontSize: '0.65rem', textAlign: 'center', color: '#64748B', fontWeight: 800 }}>Dias Invicto</th>
-                    <th style={{ padding: '0.5rem', fontSize: '0.65rem', textAlign: 'center', color: '#64748B', fontWeight: 800 }}>Última Ocorrência</th>
-                    <th style={{ padding: '0.5rem', fontSize: '0.65rem', textAlign: 'center', color: '#64748B', fontWeight: 800 }}>Total de Acidentes</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {calculateSafetyRanking(accidents, safetyGroupBy).map((row, idx) => (
-                    <tr key={row.name} style={{ borderBottom: '1px solid #F1F5F9' }}>
-                      <td style={{ padding: '0.5rem', fontSize: '0.75rem', fontWeight: 900, textAlign: 'center', color: idx < 3 ? '#0F172A' : '#64748B' }}>{idx + 1}º</td>
-                      <td style={{ padding: '0.5rem', fontSize: '0.75rem', fontWeight: 800, color: '#1E293B' }}>{row.name}</td>
-                      <td style={{ padding: '0.5rem', fontSize: '0.85rem', fontWeight: 900, textAlign: 'center', color: row.neverHad ? '#10B981' : '#0F172A' }}>
-                        {row.neverHad ? `+${row.days}` : row.days}
-                      </td>
-                      <td style={{ padding: '0.5rem', fontSize: '0.7rem', color: '#64748B', textAlign: 'center', fontWeight: 700 }}>
-                        {row.neverHad ? 'Nenhum' : (row.lastDate ? row.lastDate.toLocaleDateString('pt-BR') : '-')}
-                      </td>
-                      <td style={{ padding: '0.5rem', fontSize: '0.75rem', fontWeight: 800, textAlign: 'center', color: '#64748B' }}>
-                        {row.totalAccidents}
-                      </td>
-                    </tr>
+          <div style={{ background: 'white', border: '1px solid #E2E8F0', padding: '1.5rem', borderRadius: '16px' }}>
+            <h3 style={{ fontSize: '0.85rem', fontWeight: 800, marginBottom: '1.25rem', color: '#0F172A', textAlign: 'center' }}>ESPAÇAMENTO MÉDIO ENTRE OCORRÊNCIAS</h3>
+            {(() => {
+              const records = calculateSafetyRecords(accidents);
+              const displayIntervals = records.intervals.slice(-20);
+              const maxVal = Math.max(...records.intervals.map(x => x.days), 1);
+              
+              if (displayIntervals.length === 0) {
+                return (
+                  <div style={{ height: '180px', display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#94A3B8', fontSize: '0.7rem', fontWeight: 700, background: '#F8FAFC', borderRadius: '12px' }}>
+                    Dados insuficientes para gerar histórico de records.
+                  </div>
+                );
+              }
+
+              return (
+                <div style={{ height: '180px', display: 'flex', alignItems: 'flex-end', gap: '4px', background: '#F8FAFC', padding: '10px', borderRadius: '12px' }}>
+                  {displayIntervals.map((item, i) => (
+                      <div 
+                        key={i} 
+                        style={{ 
+                          flex: 1, 
+                          background: 'linear-gradient(180deg, #10B981 0%, #059669 100%)', 
+                          height: `${Math.max(5, (item.days / maxVal) * 100)}%`, 
+                          borderRadius: '4px 4px 0 0',
+                          position: 'relative'
+                        }}
+                      >
+                        <span style={{ position: 'absolute', top: '-14px', left: 0, right: 0, textAlign: 'center', fontSize: '7px', fontWeight: 900, color: '#059669' }}>
+                          {item.days}
+                        </span>
+                      </div>
                   ))}
-                </tbody>
-              </table>
-            </div>
+                </div>
+              );
+            })()}
+            <div style={{ textAlign: 'center', fontSize: '0.6rem', color: '#64748B', marginTop: '0.75rem', fontWeight: 700 }}>Intervalos de dias sem acidentes entre cada ocorrência</div>
+          </div>
+
+          <div style={{ padding: '1rem', background: '#F0F9FF', borderRadius: '12px', border: '1px solid #BAE6FD' }}>
+             <h4 style={{ fontSize: '0.75rem', fontWeight: 900, color: '#0369A1', marginBottom: '0.25rem' }}>Compromisso com a Vida</h4>
+             <p style={{ fontSize: '0.65rem', color: '#0369A1', lineHeight: 1.4 }}>Este indicador reflete o sucesso das barreiras de prevenção implementadas na unidade. O objetivo é a superação contínua do recorde histórico.</p>
           </div>
         </div>
 
         <footer style={{ marginTop: 'auto', display: 'flex', justifyContent: 'space-between', fontSize: '0.65rem', color: '#94A3B8', fontWeight: 600 }}>
           <span>Página {pageNum + 2}</span>
+          <span>© GRUPO AÇOTUBO - DOCUMENTO OFICIAL</span>
+        </footer>
+      </div>
+
+      {/* Page 4: Indicadores Regulamentares (NBR 14280 / OIT) */}
+      <div className="a4-portrait" style={{ pageBreakAfter: 'always', display: 'flex', flexDirection: 'column' }}>
+        <header style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '1.25rem', borderBottom: '2px solid #0284C7', paddingBottom: '0.75rem' }}>
+          <div style={{ display: 'flex', gap: '1rem', alignItems: 'center' }}>
+            <div style={{ background: '#0284C7', padding: '0.75rem', borderRadius: '10px', color: 'white' }}>
+              <Gauge size={28} />
+            </div>
+            <div>
+              <h1 style={{ color: '#0F172A', fontSize: '1.4rem', fontWeight: 900, textTransform: 'uppercase', letterSpacing: '-0.02em', margin: 0 }}>Indicadores Regulamentares</h1>
+              <div style={{ fontSize: '0.75rem', color: '#64748B', fontWeight: 700 }}>
+                Taxas de Frequência (F) e Gravidade (G) • NBR 14280 / OIT • {unit !== 'ALL' ? unit : area} • {primaryYear}
+              </div>
+            </div>
+          </div>
+          <img src={LOGO_BASE64} alt="Açotubo" style={{ height: '36px' }} />
+        </header>
+
+        <div style={{ display: 'flex', flexDirection: 'column', gap: '1rem', flex: 1 }}>
+          {/* Top 4 KPI Cards */}
+          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: '0.75rem' }}>
+            {/* Card Frequência */}
+            <div style={{ background: '#F8FAFC', border: '1px solid #E2E8F0', padding: '0.85rem', borderRadius: '12px' }}>
+              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '0.35rem' }}>
+                <span style={{ fontSize: '0.65rem', fontWeight: 800, color: '#64748B', textTransform: 'uppercase' }}>Frequência</span>
+                <span style={{ fontSize: '0.62rem', fontWeight: 900, padding: '1px 6px', borderRadius: '4px', background: getOITStatusBg(freqOverview.overallFrequencyStatus), color: getOITStatusColor(freqOverview.overallFrequencyStatus) }}>
+                  {freqOverview.overallFrequencyStatus}
+                </span>
+              </div>
+              <div style={{ fontSize: '1.75rem', fontWeight: 900, color: '#0F172A', lineHeight: 1 }}>
+                {freqOverview.overallFrequencyRate.toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+              </div>
+              <div style={{ fontSize: '0.62rem', color: '#64748B', marginTop: '0.5rem', paddingTop: '0.4rem', borderTop: '1px solid #E2E8F0', display: 'flex', justifyContent: 'space-between' }}>
+                <span>N: <strong>{freqOverview.totalAccidents} acd</strong></span>
+                <span>Meta: ≤ 20</span>
+              </div>
+            </div>
+
+            {/* Card Gravidade */}
+            <div style={{ background: '#F8FAFC', border: '1px solid #E2E8F0', padding: '0.85rem', borderRadius: '12px' }}>
+              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '0.35rem' }}>
+                <span style={{ fontSize: '0.65rem', fontWeight: 800, color: '#64748B', textTransform: 'uppercase' }}>Gravidade</span>
+                <span style={{ fontSize: '0.62rem', fontWeight: 900, padding: '1px 6px', borderRadius: '4px', background: getOITStatusBg(freqOverview.overallSeverityStatus), color: getOITStatusColor(freqOverview.overallSeverityStatus) }}>
+                  {freqOverview.overallSeverityStatus}
+                </span>
+              </div>
+              <div style={{ fontSize: '1.75rem', fontWeight: 900, color: '#0F172A', lineHeight: 1 }}>
+                {freqOverview.overallSeverityRate.toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+              </div>
+              <div style={{ fontSize: '0.62rem', color: '#64748B', marginTop: '0.5rem', paddingTop: '0.4rem', borderTop: '1px solid #E2E8F0', display: 'flex', justifyContent: 'space-between' }}>
+                <span>T: <strong>{freqOverview.totalLostDays} dias</strong></span>
+                <span>Meta: ≤ 500</span>
+              </div>
+            </div>
+
+            {/* Card Horas Trabalhadas */}
+            <div style={{ background: '#0F172A', padding: '0.85rem', borderRadius: '12px', color: 'white' }}>
+              <div style={{ fontSize: '0.65rem', fontWeight: 800, opacity: 0.7, textTransform: 'uppercase', marginBottom: '0.35rem' }}>Horas Trabalhadas</div>
+              <div style={{ fontSize: '1.3rem', fontWeight: 900, lineHeight: 1.1 }}>
+                {freqOverview.totalHHT.toLocaleString('pt-BR', { maximumFractionDigits: 0 })} h
+              </div>
+              <div style={{ fontSize: '0.62rem', opacity: 0.75, marginTop: '0.65rem', paddingTop: '0.4rem', borderTop: '1px solid rgba(255,255,255,0.1)' }}>
+                Exposição efetiva (HH)
+              </div>
+            </div>
+
+            {/* Card Severidade Média */}
+            <div style={{ background: '#F8FAFC', border: '1px solid #E2E8F0', padding: '0.85rem', borderRadius: '12px' }}>
+              <div style={{ fontSize: '0.65rem', fontWeight: 800, color: '#64748B', textTransform: 'uppercase', marginBottom: '0.35rem' }}>Média Afastamento</div>
+              <div style={{ fontSize: '1.75rem', fontWeight: 900, color: '#0F172A', lineHeight: 1 }}>
+                {freqOverview.totalAccidents > 0 ? (freqOverview.totalLostDays / freqOverview.totalAccidents).toLocaleString('pt-BR', { minimumFractionDigits: 1, maximumFractionDigits: 1 }) : '0,0'}
+                <span style={{ fontSize: '0.7rem', fontWeight: 700, color: '#64748B', marginLeft: '3px' }}>d/acd</span>
+              </div>
+              <div style={{ fontSize: '0.62rem', color: '#64748B', marginTop: '0.5rem', paddingTop: '0.4rem', borderTop: '1px solid #E2E8F0' }}>
+                {freqOverview.monthlyRecords.length} meses apurados
+              </div>
+            </div>
+          </div>
+
+          {/* Parecer Técnico Box */}
+          <div style={{ background: '#F8FAFC', border: '1px solid #E2E8F0', borderLeft: '4px solid #0284C7', padding: '0.75rem 1rem', borderRadius: '10px' }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', marginBottom: '0.25rem' }}>
+              <ShieldCheck size={16} color="#0284C7" />
+              <h4 style={{ fontSize: '0.75rem', fontWeight: 900, color: '#0F172A', margin: 0 }}>
+                PARECER TÉCNICO REGULAMENTAR (NBR 14280 / OIT)
+              </h4>
+            </div>
+            <p style={{ fontSize: '0.65rem', color: '#334155', lineHeight: 1.4, margin: 0 }}>
+              {freqStory}
+            </p>
+          </div>
+
+          {/* Monthly Progression Table */}
+          <div style={{ background: 'white', border: '1px solid #E2E8F0', borderRadius: '12px', padding: '0.75rem' }}>
+            <h4 style={{ fontSize: '0.75rem', fontWeight: 900, color: '#0F172A', margin: '0 0 0.5rem 0', textTransform: 'uppercase' }}>
+              Progressão Mensal ({primaryYear})
+            </h4>
+            <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '0.65rem' }}>
+              <thead>
+                <tr style={{ background: '#F8FAFC', borderBottom: '1px solid #E2E8F0', textAlign: 'left' }}>
+                  <th style={{ padding: '4px 6px', fontWeight: 800 }}>MÊS</th>
+                  <th style={{ padding: '4px 6px', fontWeight: 800, textAlign: 'right' }}>HH TRABALHADAS</th>
+                  <th style={{ padding: '4px 6px', fontWeight: 800, textAlign: 'center' }}>ACIDENTES (N)</th>
+                  <th style={{ padding: '4px 6px', fontWeight: 800, textAlign: 'center' }}>DIAS PERDIDOS (T)</th>
+                  <th style={{ padding: '4px 6px', fontWeight: 800, textAlign: 'right' }}>FREQUÊNCIA (F)</th>
+                  <th style={{ padding: '4px 6px', fontWeight: 800, textAlign: 'right' }}>GRAVIDADE (G)</th>
+                </tr>
+              </thead>
+              <tbody>
+                {freqOverview.monthlyRecords.map((m) => (
+                  <tr key={m.month} style={{ borderBottom: '1px solid #F1F5F9' }}>
+                    <td style={{ padding: '4px 6px', fontWeight: 700 }}>{m.monthName}</td>
+                    <td style={{ padding: '4px 6px', textAlign: 'right', color: '#64748B' }}>
+                      {m.hht > 0 ? m.hht.toLocaleString('pt-BR', { maximumFractionDigits: 0 }) : '-'}
+                    </td>
+                    <td style={{ padding: '4px 6px', textAlign: 'center', fontWeight: m.accidents > 0 ? 800 : 500, color: m.accidents > 0 ? '#B91C1C' : '#64748B' }}>
+                      {m.accidents}
+                    </td>
+                    <td style={{ padding: '4px 6px', textAlign: 'center', fontWeight: m.lostDays > 0 ? 800 : 500, color: m.lostDays > 0 ? '#B91C1C' : '#64748B' }}>
+                      {m.lostDays}
+                    </td>
+                    <td style={{ padding: '4px 6px', textAlign: 'right', fontWeight: 800, color: getOITStatusColor(m.frequencyStatus) }}>
+                      {m.frequencyRate.toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+                    </td>
+                    <td style={{ padding: '4px 6px', textAlign: 'right', fontWeight: 800, color: getOITStatusColor(m.severityStatus) }}>
+                      {m.severityRate.toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+              <tfoot>
+                <tr style={{ background: '#F8FAFC', borderTop: '2px solid #E2E8F0', fontWeight: 900 }}>
+                  <td style={{ padding: '5px 6px' }}>TOTAL</td>
+                  <td style={{ padding: '5px 6px', textAlign: 'right' }}>{freqOverview.totalHHT.toLocaleString('pt-BR', { maximumFractionDigits: 0 })}</td>
+                  <td style={{ padding: '5px 6px', textAlign: 'center', color: '#B91C1C' }}>{freqOverview.totalAccidents}</td>
+                  <td style={{ padding: '5px 6px', textAlign: 'center', color: '#B91C1C' }}>{freqOverview.totalLostDays}</td>
+                  <td style={{ padding: '5px 6px', textAlign: 'right', color: getOITStatusColor(freqOverview.overallFrequencyStatus) }}>{freqOverview.overallFrequencyRate.toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</td>
+                  <td style={{ padding: '5px 6px', textAlign: 'right', color: getOITStatusColor(freqOverview.overallSeverityStatus) }}>{freqOverview.overallSeverityRate.toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</td>
+                </tr>
+              </tfoot>
+            </table>
+          </div>
+
+          {/* Fórmulas Oficiais */}
+          <div style={{ background: '#F8FAFC', border: '1px solid #E2E8F0', borderRadius: '10px', padding: '0.65rem 0.85rem' }}>
+            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '0.75rem', fontSize: '0.6rem' }}>
+              <div>
+                <strong style={{ color: '#0F172A', display: 'block', marginBottom: '1px' }}>FÓRMULAS NBR 14280:</strong>
+                <span style={{ color: '#475569', lineHeight: 1.35, display: 'block' }}>
+                  • <strong>Frequência:</strong> F = (N × 1.000.000) / HHT<br />
+                  • <strong>Gravidade:</strong> G = (T × 1.000.000) / HHT
+                </span>
+              </div>
+              <div>
+                <strong style={{ color: '#0F172A', display: 'block', marginBottom: '1px' }}>CRITÉRIOS OIT:</strong>
+                <span style={{ color: '#475569', lineHeight: 1.35, display: 'block' }}>
+                  • <strong>Frequência:</strong> ≤ 20 (M. Boa) | 20-40 (Boa) | 40-60 (Reg.) | &gt; 60 (Péssima)<br />
+                  • <strong>Gravidade:</strong> ≤ 500 (M. Boa) | 500-1000 (Boa) | 1000-2000 (Reg.) | &gt; 2000 (Péssima)
+                </span>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <footer style={{ marginTop: 'auto', display: 'flex', justifyContent: 'space-between', fontSize: '0.65rem', color: '#94A3B8', fontWeight: 600 }}>
+          <span>Página {pageNum + 3}</span>
           <span>© GRUPO AÇOTUBO - DOCUMENTO OFICIAL</span>
         </footer>
       </div>
@@ -428,7 +656,7 @@ const ReportPage: React.FC<{ accidents: Accident[], years: number[], unit: strin
             </div>
 
             <footer style={{ marginTop: '1rem', display: 'flex', justifyContent: 'space-between', fontSize: '0.65rem', color: '#94A3B8', fontWeight: 600 }}>
-              <span>Página {pageNum + 3 + pageIdx}</span>
+              <span>Página {pageNum + 4 + pageIdx}</span>
               <span>© GRUPO AÇOTUBO - DOCUMENTO OFICIAL</span>
             </footer>
           </div>
@@ -438,7 +666,7 @@ const ReportPage: React.FC<{ accidents: Accident[], years: number[], unit: strin
   );
 };
 
-export const BatchPrintView: React.FC<BatchPrintViewProps> = ({ accidents, configs, safetyGroupBy, onBack }) => {
+export const BatchPrintView: React.FC<BatchPrintViewProps> = ({ accidents, configs, onBack }) => {
   return (
     <div className="batch-print-container">
       <div className="print-controls no-print" style={{ 
@@ -542,7 +770,7 @@ export const BatchPrintView: React.FC<BatchPrintViewProps> = ({ accidents, confi
                               const f = accidents.filter(a => (c.years.includes(a.year) && (c.unit === 'ALL' || a.division === c.unit) && (c.area === 'ALL' || a.area === c.area)));
                               let bCount = 1;
                               if (f.length > 7) bCount = 1 + Math.ceil((f.length - 7) / 11);
-                              p += 4 + bCount;
+                              p += 5 + bCount;
                             }
                             return p;
                           })()}</td>
@@ -600,7 +828,7 @@ export const BatchPrintView: React.FC<BatchPrintViewProps> = ({ accidents, confi
             }
 
             const startPage = currentPageNum;
-            currentPageNum += 4 + breakdownPagesCount; // Cover + 3 fixed + breakdown pages
+            currentPageNum += 5 + breakdownPagesCount; // Cover + 4 fixed + breakdown pages
 
             return (
               <ReportPage 
@@ -609,7 +837,6 @@ export const BatchPrintView: React.FC<BatchPrintViewProps> = ({ accidents, confi
                 years={config.years} 
                 unit={config.unit} 
                 area={config.area} 
-                safetyGroupBy={safetyGroupBy}
                 pageNum={startPage} 
               />
             );

@@ -1,0 +1,698 @@
+{
+  "1": {
+    "month": 1,
+    "year": 2026,
+    "totalHoras": 199435.91805555573,
+    "units": {
+      "Açocred": {
+        "previsto": 3292.0,
+        "totalCol": 53.06666666666666,
+        "hhCol": 3238.9333333333334
+      },
+      "AÇOTUBO - Canoas": {
+        "previsto": 7194.696527777776,
+        "totalCol": 138.2,
+        "hhCol": 7056.4965277777765
+      },
+      "AÇOTUBO - Carbono": {
+        "previsto": 84723.07430555571,
+        "totalCol": 3135.9930555555557,
+        "hhCol": 81587.08125000015
+      },
+      "AÇOTUBO - Caxias do Sul": {
+        "previsto": 2672.2548611111106,
+        "totalCol": 302.71944444444443,
+        "hhCol": 2369.535416666666
+      },
+      "AÇOTUBO - Conexões": {
+        "previsto": 2662.932638888889,
+        "totalCol": 78.85,
+        "hhCol": 2584.082638888889
+      },
+      "AÇOTUBO - Curitiba": {
+        "previsto": 5661.541666666667,
+        "totalCol": 117.29930555555555,
+        "hhCol": 5544.242361111112
+      },
+      "AÇOTUBO - Inox": {
+        "previsto": 37347.95000000001,
+        "totalCol": 1027.5486111111113,
+        "hhCol": 36320.4013888889
+      },
+      "AÇOTUBO - Joinville": {
+        "previsto": 3787.265277777777,
+        "totalCol": 61.83333333333332,
+        "hhCol": 3725.4319444444436
+      },
+      "AÇOTUBO - Maringá": {
+        "previsto": 387.6416666666667,
+        "totalCol": 0.0,
+        "hhCol": 387.6416666666667
+      },
+      "AÇOTUBO - Minas Gerais": {
+        "previsto": 6283.440277777777,
+        "totalCol": 26.46666666666666,
+        "hhCol": 6256.973611111111
+      },
+      "AÇOTUBO - Piracicaba": {
+        "previsto": 527.9666666666667,
+        "totalCol": 30.2,
+        "hhCol": 497.7666666666667
+      },
+      "AÇOTUBO - Rio de Janeiro": {
+        "previsto": 3763.268055555555,
+        "totalCol": 35.666666666666664,
+        "hhCol": 3727.6013888888883
+      },
+      "AÇOTUBO - Sertãozinho": {
+        "previsto": 4754.538194444444,
+        "totalCol": 119.29999999999998,
+        "hhCol": 4635.238194444444
+      },
+      "AÇOTUBO - Soluções Integradas": {
+        "previsto": 19647.593055555564,
+        "totalCol": 673.4993055555556,
+        "hhCol": 18974.093750000007
+      },
+      "Bassi": {
+        "previsto": 3240.8756944444444,
+        "totalCol": 5.916666666666666,
+        "hhCol": 3234.959027777778
+      },
+      "Incotep": {
+        "previsto": 13488.879166666675,
+        "totalCol": 355.99930555555557,
+        "hhCol": 13132.87986111112
+      }
+    }
+  },
+  "2": {
+    "month": 2,
+    "year": 2026,
+    "totalHoras": 152799.02027777792,
+    "units": {
+      "Açocred": {
+        "previsto": 2487.5,
+        "totalCol": 32.36666666666667,
+        "hhCol": 2455.133333333333
+      },
+      "AÇOTUBO - Canoas": {
+        "previsto": 4599.6395833333345,
+        "totalCol": 43.75,
+        "hhCol": 4555.8895833333345
+      },
+      "AÇOTUBO - Carbono": {
+        "previsto": 64647.13541666676,
+        "totalCol": 2014.3798611111108,
+        "hhCol": 62632.75555555565
+      },
+      "AÇOTUBO - Caxias do Sul": {
+        "previsto": 2163.2944444444447,
+        "totalCol": 124.9486111111111,
+        "hhCol": 2038.3458333333335
+      },
+      "AÇOTUBO - Conexões": {
+        "previsto": 1981.9041666666674,
+        "totalCol": 73.66666666666666,
+        "hhCol": 1908.2375000000006
+      },
+      "AÇOTUBO - Curitiba": {
+        "previsto": 3916.809722222221,
+        "totalCol": 155.45000000000002,
+        "hhCol": 3761.359722222221
+      },
+      "AÇOTUBO - Inox": {
+        "previsto": 28300.977916666696,
+        "totalCol": 990.8152777777779,
+        "hhCol": 27310.162638888916
+      },
+      "AÇOTUBO - Joinville": {
+        "previsto": 3160.649305555555,
+        "totalCol": 42.166666666666664,
+        "hhCol": 3118.4826388888887
+      },
+      "AÇOTUBO - Maringá": {
+        "previsto": 324.64722222222224,
+        "totalCol": 0.0,
+        "hhCol": 324.64722222222224
+      },
+      "AÇOTUBO - Minas Gerais": {
+        "previsto": 4707.313194444443,
+        "totalCol": 121.26666666666667,
+        "hhCol": 4586.046527777777
+      },
+      "AÇOTUBO - Piracicaba": {
+        "previsto": 368.6444444444445,
+        "totalCol": 4.566666666666666,
+        "hhCol": 364.07777777777784
+      },
+      "AÇOTUBO - Rio de Janeiro": {
+        "previsto": 2848.8361111111117,
+        "totalCol": 54.71666666666667,
+        "hhCol": 2794.119444444445
+      },
+      "AÇOTUBO - Sertãozinho": {
+        "previsto": 3831.3423611111107,
+        "totalCol": 59.16666666666666,
+        "hhCol": 3772.175694444444
+      },
+      "AÇOTUBO - Soluções Integradas": {
+        "previsto": 15067.920833333328,
+        "totalCol": 379.73333333333335,
+        "hhCol": 14688.187499999995
+      },
+      "Bassi": {
+        "previsto": 2563.261805555556,
+        "totalCol": 26.383333333333333,
+        "hhCol": 2536.8784722222226
+      },
+      "Incotep": {
+        "previsto": 11829.143750000001,
+        "totalCol": 629.3659722222222,
+        "hhCol": 11199.77777777778
+      }
+    }
+  },
+  "3": {
+    "month": 3,
+    "year": 2026,
+    "totalHoras": 150879.71736111114,
+    "units": {
+      "Açocred": {
+        "previsto": 2258.0,
+        "totalCol": 17.2,
+        "hhCol": 2240.8
+      },
+      "AÇOTUBO - Canoas": {
+        "previsto": 4513.167361111113,
+        "totalCol": 105.8,
+        "hhCol": 4407.367361111113
+      },
+      "AÇOTUBO - Carbono": {
+        "previsto": 63550.33194444444,
+        "totalCol": 2258.265277777779,
+        "hhCol": 61292.066666666666
+      },
+      "AÇOTUBO - Caxias do Sul": {
+        "previsto": 2482.015277777778,
+        "totalCol": 52.74930555555555,
+        "hhCol": 2429.2659722222224
+      },
+      "AÇOTUBO - Conexões": {
+        "previsto": 1917.495138888889,
+        "totalCol": 197.14999999999998,
+        "hhCol": 1720.3451388888889
+      },
+      "AÇOTUBO - Curitiba": {
+        "previsto": 3862.306250000001,
+        "totalCol": 152.0,
+        "hhCol": 3710.306250000001
+      },
+      "AÇOTUBO - Inox": {
+        "previsto": 28466.886805555558,
+        "totalCol": 954.3000000000001,
+        "hhCol": 27512.58680555556
+      },
+      "AÇOTUBO - Joinville": {
+        "previsto": 2972.3222222222225,
+        "totalCol": 2.6166666666666667,
+        "hhCol": 2969.7055555555557
+      },
+      "AÇOTUBO - Maringá": {
+        "previsto": 263.98333333333335,
+        "totalCol": 0.0,
+        "hhCol": 263.98333333333335
+      },
+      "AÇOTUBO - Minas Gerais": {
+        "previsto": 4765.873611111112,
+        "totalCol": 51.199999999999996,
+        "hhCol": 4714.673611111112
+      },
+      "AÇOTUBO - Piracicaba": {
+        "previsto": 351.9777777777778,
+        "totalCol": 0.0,
+        "hhCol": 351.9777777777778
+      },
+      "AÇOTUBO - Rio de Janeiro": {
+        "previsto": 2626.0909722222223,
+        "totalCol": 21.63263888888889,
+        "hhCol": 2604.4583333333335
+      },
+      "AÇOTUBO - Sertãozinho": {
+        "previsto": 3827.952083333335,
+        "totalCol": 111.91666666666666,
+        "hhCol": 3716.0354166666684
+      },
+      "AÇOTUBO - Soluções Integradas": {
+        "previsto": 14381.150000000001,
+        "totalCol": 357.0333333333333,
+        "hhCol": 14024.116666666669
+      },
+      "Bassi": {
+        "previsto": 2542.9243055555557,
+        "totalCol": 116.86250000000001,
+        "hhCol": 2426.0618055555556
+      },
+      "Incotep": {
+        "previsto": 12097.240277777779,
+        "totalCol": 451.27986111111113,
+        "hhCol": 11645.960416666669
+      }
+    }
+  },
+  "4": {
+    "month": 4,
+    "year": 2026,
+    "totalHoras": 169242.61458333328,
+    "units": {
+      "Açocred": {
+        "previsto": 2935.5,
+        "totalCol": 10.066666666666666,
+        "hhCol": 2925.4333333333334
+      },
+      "AÇOTUBO - Canoas": {
+        "previsto": 5723.594444444446,
+        "totalCol": 302.84999999999997,
+        "hhCol": 5420.744444444445
+      },
+      "AÇOTUBO - Carbono": {
+        "previsto": 70524.40694444443,
+        "totalCol": 2647.295833333333,
+        "hhCol": 67877.1111111111
+      },
+      "AÇOTUBO - Caxias do Sul": {
+        "previsto": 2791.816666666667,
+        "totalCol": 84.98125,
+        "hhCol": 2706.8354166666672
+      },
+      "AÇOTUBO - Conexões": {
+        "previsto": 2269.05625,
+        "totalCol": 145.18333333333334,
+        "hhCol": 2123.8729166666667
+      },
+      "AÇOTUBO - Curitiba": {
+        "previsto": 4601.240972222224,
+        "totalCol": 255.93124999999998,
+        "hhCol": 4345.309722222224
+      },
+      "AÇOTUBO - Inox": {
+        "previsto": 32613.96874999997,
+        "totalCol": 1119.8486111111113,
+        "hhCol": 31494.12013888886
+      },
+      "AÇOTUBO - Joinville": {
+        "previsto": 3375.0409722222225,
+        "totalCol": 141.50000000000003,
+        "hhCol": 3233.5409722222225
+      },
+      "AÇOTUBO - Maringá": {
+        "previsto": 194.40347222222223,
+        "totalCol": 0.0,
+        "hhCol": 194.40347222222223
+      },
+      "AÇOTUBO - Minas Gerais": {
+        "previsto": 5389.468750000002,
+        "totalCol": 178.69999999999996,
+        "hhCol": 5210.768750000002
+      },
+      "AÇOTUBO - Piracicaba": {
+        "previsto": 388.80694444444447,
+        "totalCol": 0.0,
+        "hhCol": 388.80694444444447
+      },
+      "AÇOTUBO - Rio de Janeiro": {
+        "previsto": 3379.6104166666673,
+        "totalCol": 58.349999999999994,
+        "hhCol": 3321.2604166666674
+      },
+      "AÇOTUBO - Sertãozinho": {
+        "previsto": 4110.289583333334,
+        "totalCol": 67.03333333333333,
+        "hhCol": 4043.256250000001
+      },
+      "AÇOTUBO - Soluções Integradas": {
+        "previsto": 15758.974305555554,
+        "totalCol": 385.3333333333333,
+        "hhCol": 15373.64097222222
+      },
+      "Bassi": {
+        "previsto": 2394.6708333333336,
+        "totalCol": 16.18333333333333,
+        "hhCol": 2378.4875
+      },
+      "Incotep": {
+        "previsto": 12791.765277777784,
+        "totalCol": 406.71180555555554,
+        "hhCol": 12385.05347222223
+      }
+    }
+  },
+  "5": {
+    "month": 5,
+    "year": 2026,
+    "totalHoras": 155992.01458333337,
+    "units": {
+      "Açocred": {
+        "previsto": 2207.0,
+        "totalCol": 49.5,
+        "hhCol": 2157.5
+      },
+      "AÇOTUBO - Canoas": {
+        "previsto": 5482.522916666668,
+        "totalCol": 415.4868055555556,
+        "hhCol": 5067.036111111112
+      },
+      "AÇOTUBO - Carbono": {
+        "previsto": 64495.62361111112,
+        "totalCol": 2724.2048611111113,
+        "hhCol": 61771.41875000001
+      },
+      "AÇOTUBO - Caxias do Sul": {
+        "previsto": 2543.844444444445,
+        "totalCol": 195.70625,
+        "hhCol": 2348.1381944444447
+      },
+      "AÇOTUBO - Conexões": {
+        "previsto": 2137.9354166666667,
+        "totalCol": 26.85,
+        "hhCol": 2111.085416666667
+      },
+      "AÇOTUBO - Curitiba": {
+        "previsto": 4091.7909722222234,
+        "totalCol": 193.78333333333333,
+        "hhCol": 3898.00763888889
+      },
+      "AÇOTUBO - Inox": {
+        "previsto": 30089.390972222234,
+        "totalCol": 908.1986111111111,
+        "hhCol": 29181.192361111123
+      },
+      "AÇOTUBO - Joinville": {
+        "previsto": 3167.8138888888893,
+        "totalCol": 132.84930555555556,
+        "hhCol": 3034.964583333334
+      },
+      "AÇOTUBO - Maringá": {
+        "previsto": 175.9888888888889,
+        "totalCol": 0.0,
+        "hhCol": 175.9888888888889
+      },
+      "AÇOTUBO - Minas Gerais": {
+        "previsto": 5267.683333333334,
+        "totalCol": 183.2833333333333,
+        "hhCol": 5084.4000000000015
+      },
+      "AÇOTUBO - Piracicaba": {
+        "previsto": 395.39722222222224,
+        "totalCol": 79.08333333333333,
+        "hhCol": 316.3138888888889
+      },
+      "AÇOTUBO - Rio de Janeiro": {
+        "previsto": 3130.970833333333,
+        "totalCol": 1.35,
+        "hhCol": 3129.620833333333
+      },
+      "AÇOTUBO - Sertãozinho": {
+        "previsto": 3827.934722222223,
+        "totalCol": 47.48333333333333,
+        "hhCol": 3780.45138888889
+      },
+      "AÇOTUBO - Soluções Integradas": {
+        "previsto": 14988.71527777778,
+        "totalCol": 615.3666666666666,
+        "hhCol": 14373.348611111112
+      },
+      "Bassi": {
+        "previsto": 2384.183333333334,
+        "totalCol": 44.03333333333333,
+        "hhCol": 2340.1500000000005
+      },
+      "Incotep": {
+        "previsto": 11605.218750000002,
+        "totalCol": 510.70000000000005,
+        "hhCol": 11094.518750000001
+      }
+    }
+  },
+  "6": {
+    "month": 6,
+    "year": 2026,
+    "totalHoras": 155953.05069444445,
+    "units": {
+      "Açocred": {
+        "previsto": 2730.5,
+        "totalCol": 27.633333333333333,
+        "hhCol": 2702.866666666667
+      },
+      "AÇOTUBO - Canoas": {
+        "previsto": 5315.688888888891,
+        "totalCol": 108.59930555555556,
+        "hhCol": 5207.089583333335
+      },
+      "AÇOTUBO - Carbono": {
+        "previsto": 63834.11041666667,
+        "totalCol": 2012.9326388888887,
+        "hhCol": 61821.17777777778
+      },
+      "AÇOTUBO - Caxias do Sul": {
+        "previsto": 2256.863888888889,
+        "totalCol": 11.0,
+        "hhCol": 2245.863888888889
+      },
+      "AÇOTUBO - Conexões": {
+        "previsto": 2058.9680555555556,
+        "totalCol": 211.36666666666665,
+        "hhCol": 1847.601388888889
+      },
+      "AÇOTUBO - Curitiba": {
+        "previsto": 4338.528472222223,
+        "totalCol": 133.2826388888889,
+        "hhCol": 4205.245833333334
+      },
+      "AÇOTUBO - Inox": {
+        "previsto": 29921.29097222223,
+        "totalCol": 893.6333333333334,
+        "hhCol": 29027.657638888893
+      },
+      "AÇOTUBO - Joinville": {
+        "previsto": 3202.8916666666673,
+        "totalCol": 30.45,
+        "hhCol": 3172.4416666666675
+      },
+      "AÇOTUBO - Maringá": {
+        "previsto": 175.9888888888889,
+        "totalCol": 0.0,
+        "hhCol": 175.9888888888889
+      },
+      "AÇOTUBO - Minas Gerais": {
+        "previsto": 5434.747916666667,
+        "totalCol": 19.6,
+        "hhCol": 5415.147916666667
+      },
+      "AÇOTUBO - Piracicaba": {
+        "previsto": 545.8000000000001,
+        "totalCol": 17.833333333333332,
+        "hhCol": 527.9666666666667
+      },
+      "AÇOTUBO - Rio de Janeiro": {
+        "previsto": 3335.794444444445,
+        "totalCol": 0.0,
+        "hhCol": 3335.794444444445
+      },
+      "AÇOTUBO - Sertãozinho": {
+        "previsto": 4003.861805555556,
+        "totalCol": 25.06666666666667,
+        "hhCol": 3978.7951388888896
+      },
+      "AÇOTUBO - Soluções Integradas": {
+        "previsto": 14380.25277777778,
+        "totalCol": 585.7833333333333,
+        "hhCol": 13794.469444444447
+      },
+      "Bassi": {
+        "previsto": 2595.8375000000005,
+        "totalCol": 74.23333333333332,
+        "hhCol": 2521.6041666666674
+      },
+      "Incotep": {
+        "previsto": 11821.925000000003,
+        "totalCol": 571.9326388888888,
+        "hhCol": 11249.992361111113
+      }
+    }
+  },
+  "7": {
+    "month": 7,
+    "year": 2026,
+    "totalHoras": 162405.60138888887,
+    "units": {
+      "Açocred": {
+        "previsto": 3108.0,
+        "totalCol": 74.53333333333333,
+        "hhCol": 3033.4666666666667
+      },
+      "AÇOTUBO - Canoas": {
+        "previsto": 5779.258333333332,
+        "totalCol": 95.58194444444445,
+        "hhCol": 5683.676388888888
+      },
+      "AÇOTUBO - Carbono": {
+        "previsto": 65860.16388888887,
+        "totalCol": 2166.1826388888894,
+        "hhCol": 63693.98124999998
+      },
+      "AÇOTUBO - Caxias do Sul": {
+        "previsto": 2669.5000000000005,
+        "totalCol": 89.66319444444446,
+        "hhCol": 2579.836805555556
+      },
+      "AÇOTUBO - Conexões": {
+        "previsto": 1998.1847222222225,
+        "totalCol": 84.43333333333332,
+        "hhCol": 1913.751388888889
+      },
+      "AÇOTUBO - Curitiba": {
+        "previsto": 4651.102777777777,
+        "totalCol": 158.7986111111111,
+        "hhCol": 4492.304166666666
+      },
+      "AÇOTUBO - Inox": {
+        "previsto": 30918.999999999967,
+        "totalCol": 1116.816666666667,
+        "hhCol": 29802.1833333333
+      },
+      "AÇOTUBO - Joinville": {
+        "previsto": 3347.0451388888882,
+        "totalCol": 9.850000000000001,
+        "hhCol": 3337.1951388888883
+      },
+      "AÇOTUBO - Maringá": {
+        "previsto": 193.82083333333335,
+        "totalCol": 0.0,
+        "hhCol": 193.82083333333335
+      },
+      "AÇOTUBO - Minas Gerais": {
+        "previsto": 6026.286111111111,
+        "totalCol": 53.71666666666667,
+        "hhCol": 5972.569444444444
+      },
+      "AÇOTUBO - Piracicaba": {
+        "previsto": 712.8715277777778,
+        "totalCol": 0.0,
+        "hhCol": 712.8715277777778
+      },
+      "AÇOTUBO - Rio de Janeiro": {
+        "previsto": 3858.5902777777774,
+        "totalCol": 49.2,
+        "hhCol": 3809.3902777777776
+      },
+      "AÇOTUBO - Sertãozinho": {
+        "previsto": 4313.535416666667,
+        "totalCol": 41.28333333333334,
+        "hhCol": 4272.252083333333
+      },
+      "AÇOTUBO - Soluções Integradas": {
+        "previsto": 14641.14513888889,
+        "totalCol": 396.3,
+        "hhCol": 14244.845138888892
+      },
+      "Bassi": {
+        "previsto": 2676.0798611111118,
+        "totalCol": 103.92847222222223,
+        "hhCol": 2572.1513888888894
+      },
+      "Incotep": {
+        "previsto": 11651.01736111111,
+        "totalCol": 88.23333333333333,
+        "hhCol": 11562.784027777776
+      }
+    }
+  },
+  "8": {
+    "month": 8,
+    "year": 2026,
+    "totalHoras": 164919.60347222217,
+    "units": {
+      "Açocred": {
+        "previsto": 3227.0,
+        "totalCol": 61.333333333333336,
+        "hhCol": 3165.6666666666665
+      },
+      "AÇOTUBO - Canoas": {
+        "previsto": 5763.946527777778,
+        "totalCol": 86.98333333333335,
+        "hhCol": 5676.9631944444445
+      },
+      "AÇOTUBO - Caxias do Sul": {
+        "previsto": 2644.0937500000005,
+        "totalCol": 53.264583333333334,
+        "hhCol": 2590.8291666666673
+      },
+      "AÇOTUBO - Conexões": {
+        "previsto": 1379.1944444444448,
+        "totalCol": 73.11666666666666,
+        "hhCol": 1306.0777777777782
+      },
+      "AÇOTUBO - Curitiba": {
+        "previsto": 4538.865277777779,
+        "totalCol": 307.82430555555555,
+        "hhCol": 4231.040972222223
+      },
+      "AÇOTUBO - Inox": {
+        "previsto": 31438.775694444466,
+        "totalCol": 973.1166666666668,
+        "hhCol": 30465.6590277778
+      },
+      "AÇOTUBO - Joinville": {
+        "previsto": 3267.243055555556,
+        "totalCol": 20.816666666666666,
+        "hhCol": 3246.4263888888895
+      },
+      "AÇOTUBO - Maringá": {
+        "previsto": 193.23819444444447,
+        "totalCol": 0.0,
+        "hhCol": 193.23819444444447
+      },
+      "AÇOTUBO - Matriz": {
+        "previsto": 66845.07708333322,
+        "totalCol": 2480.375694444445,
+        "hhCol": 64364.701388888774
+      },
+      "AÇOTUBO - Minas Gerais": {
+        "previsto": 5849.484722222222,
+        "totalCol": 89.61597222222223,
+        "hhCol": 5759.868750000001
+      },
+      "AÇOTUBO - Piracicaba": {
+        "previsto": 772.9527777777779,
+        "totalCol": 0.45,
+        "hhCol": 772.5027777777779
+      },
+      "AÇOTUBO - Rio de Janeiro": {
+        "previsto": 3714.0284722222236,
+        "totalCol": 55.78263888888889,
+        "hhCol": 3658.2458333333348
+      },
+      "AÇOTUBO - Sertãozinho": {
+        "previsto": 4316.3062500000015,
+        "totalCol": 64.69999999999999,
+        "hhCol": 4251.606250000002
+      },
+      "AÇOTUBO - Soluções Integradas": {
+        "previsto": 15372.583333333336,
+        "totalCol": 578.0666666666667,
+        "hhCol": 14794.516666666668
+      },
+      "Bassi": {
+        "previsto": 3039.480555555556,
+        "totalCol": 20.666666666666668,
+        "hhCol": 3018.8138888888893
+      },
+      "Incotep": {
+        "previsto": 12557.33333333333,
+        "totalCol": 185.81666666666666,
+        "hhCol": 12371.516666666663
+      }
+    }
+  }
+}

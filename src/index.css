@@ -57,6 +57,34 @@ svg *,
   -webkit-focus-ring-color: transparent !important;
 }
 
+/* Global Recharts Tooltip Readability Guarantee */
+.recharts-default-tooltip {
+  background-color: #FFFFFF !important;
+  border-radius: 10px !important;
+  border: 1px solid #E2E8F0 !important;
+  box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.12), 0 8px 10px -6px rgba(0, 0, 0, 0.1) !important;
+  padding: 10px 14px !important;
+  color: #0F172A !important;
+}
+
+.recharts-tooltip-item {
+  color: #0F172A !important;
+  font-weight: 600 !important;
+  padding: 2px 0 !important;
+}
+
+.recharts-tooltip-item-name,
+.recharts-tooltip-item-value {
+  color: #0F172A !important;
+  font-weight: 700 !important;
+}
+
+.recharts-tooltip-label {
+  color: #0F172A !important;
+  font-weight: 800 !important;
+  margin-bottom: 4px !important;
+}
+
 body {
   font-family: 'Inter', -apple-system, sans-serif;
   background-color: var(--bg);

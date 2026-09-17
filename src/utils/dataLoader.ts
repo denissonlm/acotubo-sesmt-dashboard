@@ -1,5 +1,5 @@
 import * as XLSX from 'xlsx';
-import type { Accident, YearStats, MonthlyStats, Insight, GroupSafetyRecord } from '../types';
+import type { Accident, YearStats, MonthlyStats, Insight } from '../types';
 import { DEFAULT_EXCEL_BASE64 } from '../constants';
 
 export const loadAccidentData = async (filePath: string): Promise<Accident[]> => {
@@ -129,12 +129,10 @@ export const calculateStats = (accidents: Accident[], targetYears: number[]): Re
     }
 
     const total = yearAccidents.length;
-    const totalLostDays = yearAccidents.reduce((sum, a) => sum + (a.lostDays || 0), 0);
     
     stats[year] = {
       year,
       total,
-      totalLostDays,
       monthly,
       avgPerMonth: Number((total / monthsToConsider).toFixed(1))
     };
@@ -185,50 +183,27 @@ export const generateInsights = (accidents: Accident[], targetYears: number[]): 
     const year1 = sortedYearsAsc[0];
     const year2 = sortedYearsAsc[1];
     
-    const currentYear = new Date().getFullYear();
-    let count1 = 0;
-    let count2 = 0;
-    let isProportional = false;
-    let limitMonth = 12;
-    
-    if (year2 === currentYear) {
-      const year2Accidents = accidents.filter(a => a.year === year2);
-      limitMonth = year2Accidents.length > 0 
-        ? Math.max(...year2Accidents.map(a => a.month), 1)
-        : new Date().getMonth() + 1;
-      
-      count1 = accidents.filter(a => a.year === year1 && a.month <= limitMonth).length;
-      count2 = accidents.filter(a => a.year === year2 && a.month <= limitMonth).length;
-      isProportional = true;
-    } else {
-      count1 = accidents.filter(a => a.year === year1).length;
-      count2 = accidents.filter(a => a.year === year2).length;
-    }
+    const count1 = accidents.filter(a => a.year === year1).length;
+    const count2 = accidents.filter(a => a.year === year2).length;
     
     if (count1 > 0 && count2 < count1) {
       const dropPercent = Math.round(((count1 - count2) / count1) * 100);
       insights.push({
         title: `Evolução Positiva ${year1}-${year2}`,
-        text: isProportional
-          ? `Houve uma redução substancial de ${dropPercent}% no volume de acidentes no período proporcional de janeiro a ${monthNames[limitMonth-1].toLowerCase()} (de ${count1} para ${count2} ocorrências) entre ${year1} e ${year2}, refletindo a maturação e efetividade das campanhas preventivas adotadas.`
-          : `Houve uma redução substancial de ${dropPercent}% no volume de acidentes (de ${count1} para ${count2} ocorrências) entre ${year1} e ${year2}, refletindo a maturação e efetividade das campanhas preventivas adotadas.`,
+        text: `Houve uma redução substancial de ${dropPercent}% no volume de acidentes (de ${count1} para ${count2} ocorrências) entre ${year1} e ${year2}, refletindo a maturação e efetividade das campanhas preventivas adotadas.`,
         type: 'success'
       });
     } else if (count2 > count1 && count1 > 0) {
       const incPercent = Math.round(((count2 - count1) / count1) * 100);
       insights.push({
         title: `Alerta de Crescimento ${year1}-${year2}`,
-        text: isProportional
-          ? `Houve um aumento de ${incPercent}% nas ocorrências no período proporcional de janeiro a ${monthNames[limitMonth-1].toLowerCase()} (de ${count1} para ${count2} acidentes) entre ${year1} e ${year2}, indicando a necessidade de revisão nas estratégias de contenção de riscos.`
-          : `Houve um aumento de ${incPercent}% nas ocorrências (de ${count1} para ${count2}) entre ${year1} e ${year2}, indicando a necessidade de revisão nas estratégias de contenção de riscos.`,
+        text: `Houve um aumento de ${incPercent}% nas ocorrências (de ${count1} para ${count2}) entre ${year1} e ${year2}, indicando a necessidade de revisão nas estratégias de contenção de riscos.`,
         type: 'warning'
       });
     } else if (count1 > 0) {
       insights.push({
         title: `Estabilidade ${year1}-${year2}`,
-        text: isProportional
-          ? `O número de acidentes manteve-se constante no período proporcional de janeiro a ${monthNames[limitMonth-1].toLowerCase()} entre ${year1} e ${year2}, com ${count1} ocorrências registradas em ambos.`
-          : `O número de acidentes manteve-se constante entre ${year1} e ${year2}, com ${count1} ocorrências registradas em ambos os anos.`,
+        text: `O número de acidentes manteve-se constante entre ${year1} e ${year2}, com ${count1} ocorrências registradas em ambos os anos.`,
         type: 'info'
       });
     }
@@ -453,69 +428,4 @@ export const generateSafetyInsights = (accidents: Accident[]): Insight[] => {
   }
 
   return insights;
-};
-
-export const calculateSafetyRanking = (
-  accidents: Accident[],
-  groupBy: 'area' | 'division'
-): GroupSafetyRecord[] => {
-  const uniqueGroups = Array.from(new Set(accidents.map(a => a[groupBy]))).filter(Boolean);
-  
-  const today = new Date();
-  today.setHours(0, 0, 0, 0);
-  
-  let baseDate = new Date('2024-01-01');
-  if (accidents.length > 0) {
-    const sortedAccidentsAsc = [...accidents].sort((a, b) => a.date.getTime() - b.date.getTime());
-    const earliestDate = new Date(sortedAccidentsAsc[0].date);
-    earliestDate.setHours(0, 0, 0, 0);
-    if (earliestDate < baseDate) {
-      baseDate = earliestDate;
-    }
-  }
-  baseDate.setHours(0, 0, 0, 0);
-  
-  return uniqueGroups.map(name => {
-    const groupAccidents = accidents.filter(a => a[groupBy] === name);
-    const totalAccidents = groupAccidents.length;
-    
-    if (totalAccidents === 0) {
-      const diffTime = today.getTime() - baseDate.getTime();
-      const diffDays = Math.floor(diffTime / (1000 * 60 * 60 * 24));
-      return {
-        name,
-        days: Math.max(0, diffDays - 1),
-        lastDate: null,
-        neverHad: true,
-        totalAccidents: 0
-      };
-    }
-    
-    const sorted = [...groupAccidents].sort((a, b) => b.date.getTime() - a.date.getTime());
-    const lastAccident = sorted[0];
-    const lastAccidentDate = new Date(lastAccident.date);
-    lastAccidentDate.setHours(0, 0, 0, 0);
-    
-    const diffTime = today.getTime() - lastAccidentDate.getTime();
-    const diffDays = Math.floor(diffTime / (1000 * 60 * 60 * 24));
-    
-    let days = Math.max(0, diffDays - 1);
-    if (diffDays === 0) days = 0;
-    
-    return {
-      name,
-      days,
-      lastDate: lastAccident.date,
-      neverHad: false,
-      totalAccidents
-    };
-  }).sort((a, b) => {
-    if (b.days !== a.days) {
-      return b.days - a.days;
-    }
-    if (a.totalAccidents !== b.totalAccidents) {
-      return a.totalAccidents - b.totalAccidents;
-    }
-    return a.name.localeCompare(b.name);
-  });
 };

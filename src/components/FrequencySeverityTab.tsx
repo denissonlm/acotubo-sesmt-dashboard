@@ -1,0 +1,1512 @@
+import React, { useState, useMemo, useRef, useEffect } from "react";
+import { 
+  BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer, 
+  CartesianGrid, Cell
+} from "recharts";
+import { 
+  Activity, Gauge, Clock, ShieldCheck, 
+  TrendingUp, Filter, Upload, RotateCcw, Calendar, CheckCircle2,
+  Building2, Target
+} from "lucide-react";
+import type { Accident, OITClassification } from "../types";
+import { 
+  processFrequencyAndSeverity, 
+  generateFrequencySeverityStory,
+  parseHHTSpreadsheet,
+  loadHHTStore,
+  saveHHTStoreToLocalStorage,
+  resetHHTStoreLocalStorage,
+  SOURCE_UNITS,
+  type MultiYearHHTStore
+} from "../utils/frequencySeverityLoader";
+import { motion } from "framer-motion";
+
+interface FrequencySeverityTabProps {
+  accidents: Accident[];
+  availableYears?: number[];
+}
+
+const getStatusColor = (status: OITClassification): string => {
+  switch (status) {
+    case "MUITO BOA": return "#10B981"; // Verde
+    case "BOA": return "#0284C7";       // Azul
+    case "REGULAR": return "#F59E0B";   // Âmbar
+    case "RUIM": return "#F97316";      // Laranja
+    case "PÉSSIMA": return "#EF4444";   // Vermelho
+    default: return "#64748B";
+  }
+};
+
+const getStatusBg = (status: OITClassification): string => {
+  switch (status) {
+    case "MUITO BOA": return "rgba(16, 185, 129, 0.12)";
+    case "BOA": return "rgba(2, 132, 199, 0.12)";
+    case "REGULAR": return "rgba(245, 158, 11, 0.12)";
+    case "RUIM": return "rgba(249, 115, 22, 0.12)";
+    case "PÉSSIMA": return "rgba(239, 68, 68, 0.12)";
+    default: return "rgba(100, 116, 139, 0.12)";
+  }
+};
+
+const MONTHS_MAP = [
+  { num: 1, name: "Jan" },
+  { num: 2, name: "Fev" },
+  { num: 3, name: "Mar" },
+  { num: 4, name: "Abr" },
+  { num: 5, name: "Mai" },
+  { num: 6, name: "Jun" },
+  { num: 7, name: "Jul" },
+  { num: 8, name: "Ago" },
+  { num: 9, name: "Set" },
+  { num: 10, name: "Out" },
+  { num: 11, name: "Nov" },
+  { num: 12, name: "Dez" }
+];
+
+const FrequencyCustomTooltip = ({ active, payload }: any) => {
+  if (active && payload && payload.length) {
+    const data = payload[0].payload;
+    const fFormatted = Number(data.frequencyRate).toLocaleString("pt-BR", { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+    const hhFormatted = Number(data.hht).toLocaleString("pt-BR", { maximumFractionDigits: 0 });
+    return (
+      <div style={{
+        background: "#0F172A",
+        border: "1px solid #334155",
+        borderRadius: "10px",
+        padding: "10px 14px",
+        boxShadow: "0 10px 25px -5px rgba(0, 0, 0, 0.5)",
+        color: "#FFFFFF",
+        fontSize: "0.8rem",
+        minWidth: "175px"
+      }}>
+        <div style={{ fontWeight: 800, color: "#94A3B8", marginBottom: "6px", fontSize: "0.75rem", textTransform: "uppercase", letterSpacing: "0.5px" }}>
+          Mês: {data.monthName}/{data.year}
+        </div>
+        <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "6px" }}>
+          <span style={{ color: "#F8FAFC", fontWeight: 700 }}>Frequência (F):</span>
+          <span style={{ fontWeight: 900, color: "#38BDF8", fontSize: "1.05rem" }}>{fFormatted}</span>
+        </div>
+        <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "8px" }}>
+          <span style={{ color: "#94A3B8", fontSize: "0.75rem" }}>Classificação:</span>
+          <span style={{ 
+            padding: "2px 6px", 
+            borderRadius: "4px", 
+            fontSize: "0.72rem", 
+            fontWeight: 800,
+            color: getStatusColor(data.frequencyStatus),
+            background: getStatusBg(data.frequencyStatus)
+          }}>
+            {data.frequencyStatus}
+          </span>
+        </div>
+        <div style={{ borderTop: "1px solid #334155", paddingTop: "6px", fontSize: "0.72rem", color: "#94A3B8", display: "flex", justifyContent: "space-between" }}>
+          <span>Acidentados: <strong style={{ color: "#FFFFFF" }}>{data.accidents}</strong></span>
+          <span>HH: <strong style={{ color: "#FFFFFF" }}>{hhFormatted} h</strong></span>
+        </div>
+      </div>
+    );
+  }
+  return null;
+};
+
+const SeverityCustomTooltip = ({ active, payload }: any) => {
+  if (active && payload && payload.length) {
+    const data = payload[0].payload;
+    const gFormatted = Number(data.severityRate).toLocaleString("pt-BR", { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+    const hhFormatted = Number(data.hht).toLocaleString("pt-BR", { maximumFractionDigits: 0 });
+    return (
+      <div style={{
+        background: "#0F172A",
+        border: "1px solid #334155",
+        borderRadius: "10px",
+        padding: "10px 14px",
+        boxShadow: "0 10px 25px -5px rgba(0, 0, 0, 0.5)",
+        color: "#FFFFFF",
+        fontSize: "0.8rem",
+        minWidth: "175px"
+      }}>
+        <div style={{ fontWeight: 800, color: "#94A3B8", marginBottom: "6px", fontSize: "0.75rem", textTransform: "uppercase", letterSpacing: "0.5px" }}>
+          Mês: {data.monthName}/{data.year}
+        </div>
+        <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "6px" }}>
+          <span style={{ color: "#F8FAFC", fontWeight: 700 }}>Gravidade (G):</span>
+          <span style={{ fontWeight: 900, color: "#38BDF8", fontSize: "1.05rem" }}>{gFormatted}</span>
+        </div>
+        <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "8px" }}>
+          <span style={{ color: "#94A3B8", fontSize: "0.75rem" }}>Classificação:</span>
+          <span style={{ 
+            padding: "2px 6px", 
+            borderRadius: "4px", 
+            fontSize: "0.72rem", 
+            fontWeight: 800,
+            color: getStatusColor(data.severityStatus),
+            background: getStatusBg(data.severityStatus)
+          }}>
+            {data.severityStatus}
+          </span>
+        </div>
+        <div style={{ borderTop: "1px solid #334155", paddingTop: "6px", fontSize: "0.72rem", color: "#94A3B8", display: "flex", justifyContent: "space-between" }}>
+          <span>Dias Perdidos: <strong style={{ color: "#FFFFFF" }}>{data.lostDays}</strong></span>
+          <span>HH: <strong style={{ color: "#FFFFFF" }}>{hhFormatted} h</strong></span>
+        </div>
+      </div>
+    );
+  }
+  return null;
+};
+
+const UnitFrequencyCustomTooltip = ({ active, payload }: any) => {
+  if (active && payload && payload.length) {
+    const data = payload[0].payload;
+    const fFormatted = Number(data.frequencyRate).toLocaleString("pt-BR", { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+    const hhFormatted = Number(data.hht).toLocaleString("pt-BR", { maximumFractionDigits: 0 });
+    return (
+      <div style={{
+        background: "#0F172A",
+        border: "1px solid #334155",
+        borderRadius: "10px",
+        padding: "10px 14px",
+        boxShadow: "0 10px 25px -5px rgba(0, 0, 0, 0.5)",
+        color: "#FFFFFF",
+        fontSize: "0.8rem",
+        minWidth: "210px"
+      }}>
+        <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "6px", borderBottom: "1px solid #334155", paddingBottom: "6px" }}>
+          <span style={{ fontWeight: 800, color: "#94A3B8", fontSize: "0.72rem", textTransform: "uppercase", letterSpacing: "0.5px" }}>
+            #{data.rank} no Ranking
+          </span>
+          <span style={{ 
+            padding: "2px 6px", 
+            borderRadius: "4px", 
+            fontSize: "0.7rem", 
+            fontWeight: 800,
+            color: getStatusColor(data.frequencyStatus),
+            background: getStatusBg(data.frequencyStatus)
+          }}>
+            {data.frequencyStatus}
+          </span>
+        </div>
+        <div style={{ fontWeight: 800, color: "#FFFFFF", fontSize: "0.88rem", marginBottom: "6px" }}>
+          {data.unitName}
+        </div>
+        <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "6px" }}>
+          <span style={{ color: "#F8FAFC", fontWeight: 700 }}>Frequência (F):</span>
+          <span style={{ fontWeight: 900, color: "#38BDF8", fontSize: "1.05rem" }}>{fFormatted}</span>
+        </div>
+        <div style={{ borderTop: "1px solid #334155", paddingTop: "6px", fontSize: "0.72rem", color: "#94A3B8", display: "flex", justifyContent: "space-between" }}>
+          <span>Acidentados (N): <strong style={{ color: "#FFFFFF" }}>{data.accidents}</strong></span>
+          <span>HH: <strong style={{ color: "#FFFFFF" }}>{hhFormatted} h</strong></span>
+        </div>
+      </div>
+    );
+  }
+  return null;
+};
+
+const UnitSeverityCustomTooltip = ({ active, payload }: any) => {
+  if (active && payload && payload.length) {
+    const data = payload[0].payload;
+    const gFormatted = Number(data.severityRate).toLocaleString("pt-BR", { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+    const hhFormatted = Number(data.hht).toLocaleString("pt-BR", { maximumFractionDigits: 0 });
+    return (
+      <div style={{
+        background: "#0F172A",
+        border: "1px solid #334155",
+        borderRadius: "10px",
+        padding: "10px 14px",
+        boxShadow: "0 10px 25px -5px rgba(0, 0, 0, 0.5)",
+        color: "#FFFFFF",
+        fontSize: "0.8rem",
+        minWidth: "210px"
+      }}>
+        <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "6px", borderBottom: "1px solid #334155", paddingBottom: "6px" }}>
+          <span style={{ fontWeight: 800, color: "#94A3B8", fontSize: "0.72rem", textTransform: "uppercase", letterSpacing: "0.5px" }}>
+            #{data.rank} no Ranking
+          </span>
+          <span style={{ 
+            padding: "2px 6px", 
+            borderRadius: "4px", 
+            fontSize: "0.7rem", 
+            fontWeight: 800,
+            color: getStatusColor(data.severityStatus),
+            background: getStatusBg(data.severityStatus)
+          }}>
+            {data.severityStatus}
+          </span>
+        </div>
+        <div style={{ fontWeight: 800, color: "#FFFFFF", fontSize: "0.88rem", marginBottom: "6px" }}>
+          {data.unitName}
+        </div>
+        <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "6px" }}>
+          <span style={{ color: "#F8FAFC", fontWeight: 700 }}>Gravidade (G):</span>
+          <span style={{ fontWeight: 900, color: "#38BDF8", fontSize: "1.05rem" }}>{gFormatted}</span>
+        </div>
+        <div style={{ borderTop: "1px solid #334155", paddingTop: "6px", fontSize: "0.72rem", color: "#94A3B8", display: "flex", justifyContent: "space-between" }}>
+          <span>Dias Perdidos (T): <strong style={{ color: "#FFFFFF" }}>{data.lostDays}</strong></span>
+          <span>HH: <strong style={{ color: "#FFFFFF" }}>{hhFormatted} h</strong></span>
+        </div>
+      </div>
+    );
+  }
+  return null;
+};
+
+export const FrequencySeverityTab: React.FC<FrequencySeverityTabProps> = ({ 
+  accidents, 
+  availableYears = [2024, 2025, 2026] 
+}) => {
+  // Estado da base multi-ano de HHT persistida no LocalStorage
+  const [hhtStore, setHhtStore] = useState<MultiYearHHTStore>(() => loadHHTStore());
+  const [selectedYear, setSelectedYear] = useState<number>(2026);
+  const [selectedMonths, setSelectedMonths] = useState<number[]>([1, 2, 3, 4, 5, 6, 7, 8]);
+  const [selectedUnit, setSelectedUnit] = useState<string>("ALL");
+  const [fViewMode, setFViewMode] = useState<"monthly" | "ranking">("monthly");
+  const [gViewMode, setGViewMode] = useState<"monthly" | "ranking">("monthly");
+  const [uploadFeedback, setUploadFeedback] = useState<string | null>(null);
+  const fileInputRef = useRef<HTMLInputElement>(null);
+
+  // Lista consolidada de anos disponíveis (anos dos acidentes + anos no HHTStore)
+  const allYears = useMemo(() => {
+    const yearsSet = new Set<number>(availableYears);
+    Object.keys(hhtStore).forEach(y => yearsSet.add(Number(y)));
+    return Array.from(yearsSet).sort((a, b) => b - a);
+  }, [availableYears, hhtStore]);
+
+  // Meses disponíveis para o ano selecionado
+  const availableMonthsForYear = useMemo(() => {
+    const yearData = hhtStore[selectedYear];
+    if (yearData && Object.keys(yearData).length > 0) {
+      return Object.keys(yearData).map(Number).sort((a, b) => a - b);
+    }
+    // Padrão se não houver dados específicos de HHT para aquele ano ainda
+    return [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12];
+  }, [hhtStore, selectedYear]);
+
+  // Ajustar meses selecionados ao trocar de ano
+  useEffect(() => {
+    const validMonths = availableMonthsForYear.filter(m => m <= (selectedYear === 2026 ? 8 : 12));
+    setSelectedMonths(validMonths.length > 0 ? validMonths : [1]);
+  }, [selectedYear, availableMonthsForYear]);
+
+  // Toggle de mês individual no filtro
+  const toggleMonth = (m: number) => {
+    if (selectedMonths.includes(m)) {
+      if (selectedMonths.length > 1) {
+        setSelectedMonths(selectedMonths.filter(x => x !== m));
+      }
+    } else {
+      setSelectedMonths([...selectedMonths, m].sort((a, b) => a - b));
+    }
+  };
+
+  const selectAllMonths = () => {
+    setSelectedMonths([...availableMonthsForYear]);
+  };
+
+  // Processamento com as Horas Totais (coluna Total) como divisor
+  const overview = useMemo(() => {
+    return processFrequencyAndSeverity(
+      accidents,
+      selectedYear,
+      selectedMonths,
+      selectedUnit,
+      hhtStore
+    );
+  }, [accidents, selectedYear, selectedMonths, selectedUnit, hhtStore]);
+
+  const storyText = useMemo(() => {
+    return generateFrequencySeverityStory(overview, selectedYear);
+  }, [overview, selectedYear]);
+
+  const fUnitRanking = useMemo(() => {
+    return [...overview.unitRecords]
+      .sort((a, b) => b.frequencyRate - a.frequencyRate)
+      .map((item, index) => ({
+        ...item,
+        rank: index + 1,
+        shortName: item.unitName.replace(/^AÇOTUBO\s*-\s*/i, "")
+      }));
+  }, [overview.unitRecords]);
+
+  const gUnitRanking = useMemo(() => {
+    return [...overview.unitRecords]
+      .sort((a, b) => b.severityRate - a.severityRate)
+      .map((item, index) => ({
+        ...item,
+        rank: index + 1,
+        shortName: item.unitName.replace(/^AÇOTUBO\s*-\s*/i, "")
+      }));
+  }, [overview.unitRecords]);
+
+  const fmtNumber = (n: number, decimals: number = 2) => {
+    return n.toLocaleString("pt-BR", { minimumFractionDigits: decimals, maximumFractionDigits: decimals });
+  };
+
+  // Upload múltiplo inteligente com gravação persistente no LocalStorage
+  const handleMultipleHHTUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const files = e.target.files;
+    if (!files || files.length === 0) return;
+
+    let processedCount = 0;
+    const updatedStore: MultiYearHHTStore = { ...hhtStore };
+    const uploadedInfo: string[] = [];
+
+    for (let i = 0; i < files.length; i++) {
+      const file = files[i];
+      try {
+        const buffer = await file.arrayBuffer();
+        const parsed = parseHHTSpreadsheet(buffer, file.name);
+        if (parsed) {
+          const y = parsed.year;
+          const m = parsed.month;
+          if (!updatedStore[y]) updatedStore[y] = {};
+          updatedStore[y][m] = parsed;
+          processedCount++;
+          uploadedInfo.push(`${String(m).padStart(2, "0")}/${y}`);
+        }
+      } catch (err) {
+        console.error(`Erro ao processar ${file.name}:`, err);
+      }
+    }
+
+    if (processedCount > 0) {
+      setHhtStore(updatedStore);
+      saveHHTStoreToLocalStorage(updatedStore);
+      setUploadFeedback(`${processedCount} arquivo(s) importado(s) com sucesso no LocalStorage! Meses: ${uploadedInfo.join(", ")}`);
+      setTimeout(() => setUploadFeedback(null), 6000);
+    } else {
+      alert("Nenhum arquivo pôde ser processado. Verifique o formato das planilhas.");
+    }
+
+    if (fileInputRef.current) fileInputRef.current.value = "";
+  };
+
+  const handleResetLocalStorage = () => {
+    if (confirm("Deseja restaurar as bases de HHT para os dados originais? As planilhas importadas manualmente serão limpas.")) {
+      const restored = resetHHTStoreLocalStorage();
+      setHhtStore(restored);
+      setUploadFeedback("Bases restauradas com sucesso.");
+      setTimeout(() => setUploadFeedback(null), 4000);
+    }
+  };
+
+  return (
+    <motion.div
+      initial={{ opacity: 0, y: 15 }}
+      animate={{ opacity: 1, y: 0 }}
+      transition={{ duration: 0.3 }}
+      style={{ display: "flex", flexDirection: "column", gap: "2rem" }}
+    >
+      {/* Top Filter Bar: Multi-Ano, Meses e Unidade */}
+      <div className="panel-premium" style={{ display: "flex", flexWrap: "wrap", alignItems: "center", justifyContent: "space-between", gap: "1.25rem", padding: "1.25rem 1.75rem" }}>
+        
+        {/* Esquerda: Seletor de Ano e Meses */}
+        <div style={{ display: "flex", alignItems: "center", gap: "1.5rem", flexWrap: "wrap" }}>
+          
+          {/* Seletor de Ano */}
+          <div style={{ display: "flex", alignItems: "center", gap: "0.5rem" }}>
+            <div style={{ display: "flex", alignItems: "center", gap: "0.35rem", fontWeight: 800, fontSize: "0.85rem", color: "var(--text)" }}>
+              <Calendar size={18} color="var(--primary)" />
+              <span>Exercício:</span>
+            </div>
+            <div style={{ display: "flex", gap: "0.3rem" }}>
+              {allYears.map(y => {
+                const active = y === selectedYear;
+                return (
+                  <button
+                    key={y}
+                    onClick={() => setSelectedYear(y)}
+                    style={{
+                      padding: "0.4rem 0.8rem",
+                      borderRadius: "8px",
+                      border: active ? "1.5px solid var(--primary)" : "1px solid var(--border)",
+                      background: active ? "var(--primary)" : "var(--surface)",
+                      color: active ? "white" : "var(--text)",
+                      fontWeight: 800,
+                      fontSize: "0.85rem",
+                      cursor: "pointer",
+                      boxShadow: active ? "0 2px 6px rgba(185, 28, 28, 0.25)" : "none"
+                    }}
+                  >
+                    {y}
+                  </button>
+                );
+              })}
+            </div>
+          </div>
+
+          {/* Seletor de Meses */}
+          <div style={{ display: "flex", alignItems: "center", gap: "0.5rem" }}>
+            <div style={{ display: "flex", alignItems: "center", gap: "0.35rem", fontWeight: 800, fontSize: "0.85rem", color: "var(--text-muted)" }}>
+              <Filter size={16} />
+              <span>Meses:</span>
+            </div>
+            <div style={{ display: "flex", gap: "0.25rem", flexWrap: "wrap" }}>
+              <button
+                onClick={selectAllMonths}
+                style={{
+                  padding: "0.35rem 0.65rem",
+                  borderRadius: "6px",
+                  border: "1px solid var(--border)",
+                  background: selectedMonths.length === availableMonthsForYear.length ? "var(--text)" : "var(--surface)",
+                  color: selectedMonths.length === availableMonthsForYear.length ? "white" : "var(--text-muted)",
+                  fontWeight: 700,
+                  fontSize: "0.75rem",
+                  cursor: "pointer"
+                }}
+              >
+                Todos
+              </button>
+              {availableMonthsForYear.map(mNum => {
+                const mObj = MONTHS_MAP.find(x => x.num === mNum) || { num: mNum, name: `M${mNum}` };
+                const active = selectedMonths.includes(mNum);
+                return (
+                  <button
+                    key={mNum}
+                    onClick={() => toggleMonth(mNum)}
+                    style={{
+                      padding: "0.35rem 0.6rem",
+                      borderRadius: "6px",
+                      border: active ? "1.5px solid var(--primary)" : "1px solid var(--border)",
+                      background: active ? "var(--primary-light)" : "var(--surface)",
+                      color: active ? "var(--primary)" : "var(--text-muted)",
+                      fontWeight: active ? 800 : 600,
+                      fontSize: "0.75rem",
+                      cursor: "pointer"
+                    }}
+                  >
+                    {mObj.name}
+                  </button>
+                );
+              })}
+            </div>
+          </div>
+
+        </div>
+
+        {/* Direita: Seletor de Unidade e Upload Múltiplo */}
+        <div style={{ display: "flex", alignItems: "center", gap: "1rem", flexWrap: "wrap" }}>
+          
+          <div style={{ display: "flex", alignItems: "center", gap: "0.5rem" }}>
+            <span style={{ fontSize: "0.85rem", fontWeight: 700, color: "var(--text-muted)" }}>Unidade (Fonte):</span>
+            <select
+              value={selectedUnit}
+              onChange={(e) => setSelectedUnit(e.target.value)}
+              style={{
+                padding: "0.45rem 1rem",
+                borderRadius: "8px",
+                border: "1px solid var(--border)",
+                background: "var(--surface)",
+                color: "var(--text)",
+                fontWeight: 700,
+                fontSize: "0.85rem",
+                cursor: "pointer",
+                outline: "none"
+              }}
+            >
+              <option value="ALL">Geral (Todas as Unidades)</option>
+              {SOURCE_UNITS.map(u => (
+                <option key={u} value={u}>{u}</option>
+              ))}
+            </select>
+          </div>
+
+          <div style={{ display: "flex", gap: "0.5rem" }}>
+            <button
+              onClick={() => fileInputRef.current?.click()}
+              title="Importar uma ou múltiplas planilhas mensais de HHT (ex: 09.2026.xlsx, 10.2026.xlsx, etc.)"
+              style={{
+                display: "flex",
+                alignItems: "center",
+                gap: "0.4rem",
+                padding: "0.45rem 0.9rem",
+                borderRadius: "8px",
+                border: "1px dashed var(--primary)",
+                background: "white",
+                color: "var(--primary)",
+                fontWeight: 700,
+                fontSize: "0.8rem",
+                cursor: "pointer"
+              }}
+            >
+              <Upload size={14} />
+              <span>+ Upload Mensal (XLSX)</span>
+            </button>
+            <input
+              ref={fileInputRef}
+              type="file"
+              multiple
+              accept=".xlsx, .xls"
+              onChange={handleMultipleHHTUpload}
+              style={{ display: "none" }}
+            />
+
+            <button
+              onClick={handleResetLocalStorage}
+              title="Restaurar base nativa de HHT"
+              style={{
+                padding: "0.45rem 0.6rem",
+                borderRadius: "8px",
+                border: "1px solid var(--border)",
+                background: "var(--surface)",
+                color: "var(--text-muted)",
+                cursor: "pointer"
+              }}
+            >
+              <RotateCcw size={14} />
+            </button>
+          </div>
+
+        </div>
+      </div>
+
+      {/* Feedback de Upload Persistente */}
+      {uploadFeedback && (
+        <motion.div
+          initial={{ opacity: 0, y: -10 }}
+          animate={{ opacity: 1, y: 0 }}
+          style={{
+            display: "flex",
+            alignItems: "center",
+            gap: "0.5rem",
+            background: "#ECFDF5",
+            border: "1px solid #A7F3D0",
+            color: "#065F46",
+            padding: "0.75rem 1.25rem",
+            borderRadius: "8px",
+            fontSize: "0.85rem",
+            fontWeight: 700
+          }}
+        >
+          <CheckCircle2 size={18} color="#10B981" />
+          <span>{uploadFeedback}</span>
+        </motion.div>
+      )}
+
+      {/* KPI Cards Grid */}
+      <div style={{ display: "grid", gridTemplateColumns: "repeat(4, 1fr)", gap: "1.5rem" }}>
+        
+        {/* F Card */}
+        <div className="panel-premium" style={{ position: "relative", overflow: "hidden" }}>
+          <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: "0.75rem", gap: "0.5rem" }}>
+            <div style={{ display: "flex", alignItems: "center", gap: "0.5rem", minWidth: 0 }}>
+              <div style={{ background: "var(--primary-light)", color: "var(--primary)", padding: "0.4rem", borderRadius: "8px", flexShrink: 0 }}>
+                <Gauge size={20} />
+              </div>
+              <span style={{ fontWeight: 800, fontSize: "0.85rem", color: "var(--text-muted)", textTransform: "uppercase", letterSpacing: "0.5px", whiteSpace: "nowrap" }}>
+                Frequência
+              </span>
+            </div>
+            <span style={{ 
+              padding: "0.2rem 0.6rem", 
+              borderRadius: "6px", 
+              fontSize: "0.75rem", 
+              fontWeight: 800,
+              whiteSpace: "nowrap",
+              flexShrink: 0,
+              color: getStatusColor(overview.overallFrequencyStatus),
+              background: getStatusBg(overview.overallFrequencyStatus)
+            }}>
+              {overview.overallFrequencyStatus}
+            </span>
+          </div>
+          
+          <div style={{ fontSize: "2.8rem", fontWeight: 900, lineHeight: 1, color: "var(--text)" }}>
+            {fmtNumber(overview.overallFrequencyRate)}
+          </div>
+          
+          <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginTop: "1rem", paddingTop: "0.75rem", borderTop: "1px solid var(--border)", fontSize: "0.75rem", color: "var(--text-muted)", whiteSpace: "nowrap" }}>
+            <span>N: <strong>{overview.totalAccidents} acidentados</strong></span>
+            <span>Meta OIT: <strong>F ≤ 20,00</strong></span>
+          </div>
+        </div>
+
+        {/* G Card */}
+        <div className="panel-premium" style={{ position: "relative", overflow: "hidden" }}>
+          <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: "0.75rem", gap: "0.5rem" }}>
+            <div style={{ display: "flex", alignItems: "center", gap: "0.5rem", minWidth: 0 }}>
+              <div style={{ background: "rgba(14, 165, 233, 0.15)", color: "#0284C7", padding: "0.4rem", borderRadius: "8px", flexShrink: 0 }}>
+                <Activity size={20} />
+              </div>
+              <span style={{ fontWeight: 800, fontSize: "0.85rem", color: "var(--text-muted)", textTransform: "uppercase", letterSpacing: "0.5px", whiteSpace: "nowrap" }}>
+                Gravidade
+              </span>
+            </div>
+            <span style={{ 
+              padding: "0.2rem 0.6rem", 
+              borderRadius: "6px", 
+              fontSize: "0.75rem", 
+              fontWeight: 800,
+              whiteSpace: "nowrap",
+              flexShrink: 0,
+              color: getStatusColor(overview.overallSeverityStatus),
+              background: getStatusBg(overview.overallSeverityStatus)
+            }}>
+              {overview.overallSeverityStatus}
+            </span>
+          </div>
+          
+          <div style={{ fontSize: "2.8rem", fontWeight: 900, lineHeight: 1, color: "var(--text)" }}>
+            {fmtNumber(overview.overallSeverityRate)}
+          </div>
+          
+          <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginTop: "1rem", paddingTop: "0.75rem", borderTop: "1px solid var(--border)", fontSize: "0.75rem", color: "var(--text-muted)", whiteSpace: "nowrap" }}>
+            <span>T: <strong>{overview.totalLostDays} dias computados</strong></span>
+            <span>Meta OIT: <strong>G ≤ 500,00</strong></span>
+          </div>
+        </div>
+
+        {/* Horas Trabalhadas (HHT) */}
+        <div className="panel-premium" style={{ background: "linear-gradient(135deg, #0F172A 0%, #1E293B 100%)", color: "white", border: "none" }}>
+          <div style={{ display: "flex", alignItems: "center", gap: "0.5rem", marginBottom: "0.75rem" }}>
+            <div style={{ background: "rgba(255,255,255,0.15)", padding: "0.4rem", borderRadius: "8px", color: "white", flexShrink: 0 }}>
+              <Clock size={20} />
+            </div>
+            <span style={{ fontWeight: 800, fontSize: "0.85rem", opacity: 0.9, textTransform: "uppercase", letterSpacing: "0.5px", whiteSpace: "nowrap" }}>
+              Horas Trabalhadas
+            </span>
+          </div>
+          
+          <div style={{ fontSize: "2.2rem", fontWeight: 900, lineHeight: 1.1 }}>
+            {fmtNumber(overview.totalHHT)} h
+          </div>
+          
+          <div style={{ marginTop: "1rem", paddingTop: "0.75rem", borderTop: "1px solid rgba(255,255,255,0.1)", fontSize: "0.75rem", opacity: 0.85, display: "flex", justifyContent: "space-between", whiteSpace: "nowrap" }}>
+            <span>Horas Trabalhadas (HH)</span>
+            <span>Exercício {selectedYear}</span>
+          </div>
+        </div>
+
+        {/* Severidade / Dias por Acidente */}
+        <div className="panel-premium">
+          <div style={{ display: "flex", alignItems: "center", gap: "0.5rem", marginBottom: "0.75rem" }}>
+            <div style={{ background: "rgba(245, 158, 11, 0.15)", color: "#D97706", padding: "0.4rem", borderRadius: "8px", flexShrink: 0 }}>
+              <TrendingUp size={20} />
+            </div>
+            <span style={{ fontWeight: 800, fontSize: "0.85rem", color: "var(--text-muted)", textTransform: "uppercase", letterSpacing: "0.5px", whiteSpace: "nowrap" }}>
+              Média Afastamento
+            </span>
+          </div>
+          
+          <div style={{ fontSize: "2.8rem", fontWeight: 900, lineHeight: 1, color: "var(--text)" }}>
+            {overview.totalAccidents > 0 ? fmtNumber(overview.totalLostDays / overview.totalAccidents, 1) : "0,0"}
+            <span style={{ fontSize: "1rem", fontWeight: 700, color: "var(--text-muted)", marginLeft: "0.3rem" }}>dias/acd</span>
+          </div>
+          
+          <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginTop: "1rem", paddingTop: "0.75rem", borderTop: "1px solid var(--border)", fontSize: "0.75rem", color: "var(--text-muted)", whiteSpace: "nowrap" }}>
+            <span>Período: <strong>{overview.monthlyRecords.length} meses</strong></span>
+            <span>Severidade Média</span>
+          </div>
+        </div>
+
+      </div>
+
+      {/* Síntese Executiva de Segurança do Trabalho - Banner Premium Ilustrado */}
+      <div 
+        className="panel-premium" 
+        style={{ 
+          background: "linear-gradient(135deg, #FFFFFF 0%, #F8FAFC 55%, #FEF2F2 100%)", 
+          borderLeft: "6px solid var(--primary)",
+          borderTop: "1px solid #F1F5F9",
+          borderRight: "1px solid #E2E8F0",
+          borderBottom: "1px solid #E2E8F0",
+          padding: "1.5rem 2rem",
+          borderRadius: "16px",
+          boxShadow: "0 10px 30px -5px rgba(0, 0, 0, 0.05), 0 4px 10px -2px rgba(0, 0, 0, 0.02)",
+          position: "relative",
+          overflow: "hidden"
+        }}
+      >
+        {/* Marca d'água decorativa ilustrada de engenharia */}
+        <div style={{
+          position: "absolute",
+          right: "-20px",
+          bottom: "-30px",
+          opacity: 0.035,
+          pointerEvents: "none",
+          transform: "rotate(-10deg)"
+        }}>
+          <ShieldCheck size={220} color="var(--primary)" />
+        </div>
+
+        {/* Cabeçalho do Banner com Ícone 3D e Tags */}
+        <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", flexWrap: "wrap", gap: "1rem", marginBottom: "1.25rem", position: "relative", zIndex: 1 }}>
+          <div style={{ display: "flex", alignItems: "center", gap: "1rem" }}>
+            <div style={{ 
+              background: "linear-gradient(135deg, #B91C1C 0%, #7F1D1D 100%)", 
+              color: "white", 
+              padding: "0.75rem", 
+              borderRadius: "14px", 
+              boxShadow: "0 6px 16px rgba(185, 28, 28, 0.35)",
+              display: "flex",
+              alignItems: "center",
+              justifyContent: "center"
+            }}>
+              <ShieldCheck size={26} strokeWidth={2.2} />
+            </div>
+            <div>
+              <div style={{ display: "flex", alignItems: "center", gap: "0.5rem", marginBottom: "0.2rem" }}>
+                <span style={{ 
+                  fontSize: "0.68rem", 
+                  fontWeight: 900, 
+                  letterSpacing: "0.8px", 
+                  color: "#B91C1C", 
+                  textTransform: "uppercase",
+                  background: "rgba(185, 28, 28, 0.08)",
+                  padding: "2px 8px",
+                  borderRadius: "4px"
+                }}>
+                  PARECER TÉCNICO REGULAMENTAR
+                </span>
+                <span style={{ fontSize: "0.75rem", color: "#94A3B8" }}>•</span>
+                <span style={{ fontSize: "0.75rem", color: "#64748B", fontWeight: 700 }}>NBR 14280 / OIT</span>
+              </div>
+              <h2 style={{ margin: 0, fontSize: "1.25rem", fontWeight: 900, color: "#0F172A", letterSpacing: "-0.3px" }}>
+                Síntese Executiva de Segurança do Trabalho
+              </h2>
+            </div>
+          </div>
+
+          {/* Badges de Status Executivo */}
+          <div style={{ display: "flex", alignItems: "center", gap: "0.6rem", flexWrap: "wrap" }}>
+            <span style={{ 
+              background: "#0F172A", 
+              color: "white", 
+              padding: "0.35rem 0.85rem", 
+              borderRadius: "9999px", 
+              fontSize: "0.75rem", 
+              fontWeight: 800,
+              display: "inline-flex",
+              alignItems: "center",
+              gap: "5px",
+              boxShadow: "0 2px 6px rgba(15, 23, 42, 0.2)"
+            }}>
+              <Calendar size={13} />
+              Exercício {selectedYear}
+            </span>
+
+            {overview.overallFrequencyRate <= 20 && overview.overallSeverityRate <= 500 ? (
+              <span style={{ 
+                background: "rgba(16, 185, 129, 0.12)", 
+                color: "#059669", 
+                border: "1px solid rgba(16, 185, 129, 0.3)", 
+                padding: "0.35rem 0.85rem", 
+                borderRadius: "9999px", 
+                fontSize: "0.75rem", 
+                fontWeight: 800,
+                display: "inline-flex",
+                alignItems: "center",
+                gap: "5px"
+              }}>
+                <CheckCircle2 size={14} />
+                Metas OIT em Conformidade
+              </span>
+            ) : (
+              <span style={{ 
+                background: "rgba(245, 158, 11, 0.12)", 
+                color: "#D97706", 
+                border: "1px solid rgba(245, 158, 11, 0.3)", 
+                padding: "0.35rem 0.85rem", 
+                borderRadius: "9999px", 
+                fontSize: "0.75rem", 
+                fontWeight: 800,
+                display: "inline-flex",
+                alignItems: "center",
+                gap: "5px"
+              }}>
+                <Target size={14} />
+                Foco em Mitigação de Riscos
+              </span>
+            )}
+          </div>
+        </div>
+
+        {/* Conteúdo: Narrativa Técnica + Cards de Destaque Rápido */}
+        <div style={{ display: "grid", gridTemplateColumns: "1.6fr 1fr", gap: "1.75rem", alignItems: "center", position: "relative", zIndex: 1 }}>
+          
+          {/* Lado Esquerdo: Texto da Síntese com Chaves Ilustradas */}
+          <div>
+            <p style={{ fontSize: "0.95rem", lineHeight: 1.65, color: "#334155", margin: "0 0 1rem 0" }}>
+              {storyText}
+            </p>
+            
+            {/* Chips de Destaque dos Parâmetros Regulamentares */}
+            <div style={{ display: "flex", flexWrap: "wrap", gap: "0.6rem" }}>
+              <div style={{ 
+                display: "inline-flex", 
+                alignItems: "center", 
+                gap: "0.4rem", 
+                background: "white", 
+                border: "1px solid #E2E8F0", 
+                padding: "0.35rem 0.75rem", 
+                borderRadius: "8px", 
+                fontSize: "0.78rem", 
+                color: "#475569",
+                boxShadow: "0 1px 3px rgba(0,0,0,0.04)"
+              }}>
+                <Clock size={14} color="#0F172A" />
+                <span>Base HH: <strong style={{ color: "#0F172A" }}>{fmtNumber(overview.totalHHT)} h</strong></span>
+              </div>
+
+              <div style={{ 
+                display: "inline-flex", 
+                alignItems: "center", 
+                gap: "0.4rem", 
+                background: "white", 
+                border: "1px solid #E2E8F0", 
+                padding: "0.35rem 0.75rem", 
+                borderRadius: "8px", 
+                fontSize: "0.78rem", 
+                color: "#475569",
+                boxShadow: "0 1px 3px rgba(0,0,0,0.04)"
+              }}>
+                <Gauge size={14} color="var(--primary)" />
+                <span>Acidentados (N): <strong style={{ color: "var(--primary)" }}>{overview.totalAccidents}</strong></span>
+              </div>
+
+              <div style={{ 
+                display: "inline-flex", 
+                alignItems: "center", 
+                gap: "0.4rem", 
+                background: "white", 
+                border: "1px solid #E2E8F0", 
+                padding: "0.35rem 0.75rem", 
+                borderRadius: "8px", 
+                fontSize: "0.78rem", 
+                color: "#475569",
+                boxShadow: "0 1px 3px rgba(0,0,0,0.04)"
+              }}>
+                <Activity size={14} color="#0284C7" />
+                <span>Dias Perdidos (T): <strong style={{ color: "#0284C7" }}>{overview.totalLostDays}</strong></span>
+              </div>
+            </div>
+          </div>
+
+          {/* Lado Direito: Dois Mini-Cards Executivos de Performance OIT */}
+          <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "0.75rem" }}>
+            
+            {/* Box Frequência */}
+            <div style={{ 
+              background: "white", 
+              border: "1.5px solid #E2E8F0", 
+              borderRadius: "12px", 
+              padding: "0.85rem 1rem", 
+              boxShadow: "0 2px 8px rgba(0,0,0,0.04)",
+              position: "relative"
+            }}>
+              <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "0.3rem" }}>
+                <span style={{ fontSize: "0.72rem", fontWeight: 800, color: "#64748B", textTransform: "uppercase" }}>Frequência (F)</span>
+                <span style={{ 
+                  fontSize: "0.68rem", 
+                  fontWeight: 900, 
+                  padding: "1px 6px", 
+                  borderRadius: "4px",
+                  color: getStatusColor(overview.overallFrequencyStatus),
+                  background: getStatusBg(overview.overallFrequencyStatus)
+                }}>
+                  {overview.overallFrequencyStatus}
+                </span>
+              </div>
+              <div style={{ fontSize: "1.5rem", fontWeight: 900, color: "#0F172A", lineHeight: 1 }}>
+                {fmtNumber(overview.overallFrequencyRate)}
+              </div>
+              <div style={{ fontSize: "0.68rem", color: "#94A3B8", marginTop: "0.35rem", fontWeight: 600 }}>
+                Meta OIT: F ≤ 20,00
+              </div>
+            </div>
+
+            {/* Box Gravidade */}
+            <div style={{ 
+              background: "white", 
+              border: "1.5px solid #E2E8F0", 
+              borderRadius: "12px", 
+              padding: "0.85rem 1rem", 
+              boxShadow: "0 2px 8px rgba(0,0,0,0.04)",
+              position: "relative"
+            }}>
+              <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "0.3rem" }}>
+                <span style={{ fontSize: "0.72rem", fontWeight: 800, color: "#64748B", textTransform: "uppercase" }}>Gravidade (G)</span>
+                <span style={{ 
+                  fontSize: "0.68rem", 
+                  fontWeight: 900, 
+                  padding: "1px 6px", 
+                  borderRadius: "4px",
+                  color: getStatusColor(overview.overallSeverityStatus),
+                  background: getStatusBg(overview.overallSeverityStatus)
+                }}>
+                  {overview.overallSeverityStatus}
+                </span>
+              </div>
+              <div style={{ fontSize: "1.5rem", fontWeight: 900, color: "#0F172A", lineHeight: 1 }}>
+                {fmtNumber(overview.overallSeverityRate)}
+              </div>
+              <div style={{ fontSize: "0.68rem", color: "#94A3B8", marginTop: "0.35rem", fontWeight: 600 }}>
+                Meta OIT: G ≤ 500,00
+              </div>
+            </div>
+
+          </div>
+
+        </div>
+      </div>
+
+      {/* Charts Section: Monthly F and G - Perfect Symmetry and Alignment */}
+      <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "1.5rem", alignItems: "stretch" }}>
+        
+        {/* F Chart Card */}
+        <div className="panel-premium" style={{ display: "flex", flexDirection: "column", height: "100%" }}>
+          
+          {/* Header F: 2 linhas alinhadas sem quebra indevida */}
+          <div style={{ display: "flex", flexDirection: "column", gap: "0.45rem", marginBottom: "1.25rem", minHeight: "68px" }}>
+            {/* Linha 1: Título e Toggle */}
+            <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+              <h3 style={{ fontSize: "1.1rem", fontWeight: 800, color: "var(--text)", margin: 0, whiteSpace: "nowrap" }}>
+                {fViewMode === "monthly" ? "Frequência Mensal (F)" : "Ranking de Frequência"}
+              </h3>
+
+              {/* Toggle Switch */}
+              <div style={{ 
+                display: "flex", 
+                background: "#F1F5F9", 
+                padding: "3px", 
+                borderRadius: "8px", 
+                border: "1px solid #E2E8F0",
+                flexShrink: 0
+              }}>
+                <button
+                  type="button"
+                  onClick={() => setFViewMode("monthly")}
+                  style={{
+                    border: "none",
+                    padding: "4px 10px",
+                    borderRadius: "6px",
+                    fontSize: "0.75rem",
+                    fontWeight: 700,
+                    cursor: "pointer",
+                    background: fViewMode === "monthly" ? "white" : "transparent",
+                    color: fViewMode === "monthly" ? "var(--primary)" : "#64748B",
+                    boxShadow: fViewMode === "monthly" ? "0 2px 4px rgba(0,0,0,0.08)" : "none",
+                    display: "flex",
+                    alignItems: "center",
+                    gap: "4px",
+                    transition: "all 0.15s ease",
+                    whiteSpace: "nowrap"
+                  }}
+                >
+                  <Calendar size={13} />
+                  Mensal
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setFViewMode("ranking")}
+                  style={{
+                    border: "none",
+                    padding: "4px 10px",
+                    borderRadius: "6px",
+                    fontSize: "0.75rem",
+                    fontWeight: 700,
+                    cursor: "pointer",
+                    background: fViewMode === "ranking" ? "var(--primary)" : "transparent",
+                    color: fViewMode === "ranking" ? "white" : "#64748B",
+                    boxShadow: fViewMode === "ranking" ? "0 2px 4px rgba(185,28,28,0.25)" : "none",
+                    display: "flex",
+                    alignItems: "center",
+                    gap: "4px",
+                    transition: "all 0.15s ease",
+                    whiteSpace: "nowrap"
+                  }}
+                >
+                  <Building2 size={13} />
+                  Ranking Empresas
+                </button>
+              </div>
+            </div>
+
+            {/* Linha 2: Subtítulo */}
+            <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+              <p style={{ fontSize: "0.8rem", color: "var(--text-muted)", margin: 0, whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>
+                {fViewMode === "monthly" 
+                  ? `Acidentados por milhão de horas trabalhadas (${selectedYear})` 
+                  : `Unidades com maior frequência acumulada (${selectedYear})`}
+              </p>
+            </div>
+          </div>
+
+          {/* Área do Gráfico: Altura Rigorosamente Fixa (285px) em Ambos os Modos */}
+          <div style={{ height: "285px", display: "flex", flexDirection: "column", justifyContent: "space-between" }}>
+            {fViewMode === "monthly" ? (
+              <div style={{ height: 260, width: "100%" }}>
+                <ResponsiveContainer width="100%" height="100%">
+                  <BarChart data={overview.monthlyRecords} margin={{ top: 15, right: 15, left: -20, bottom: 5 }}>
+                    <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#F1F5F9" />
+                    <XAxis dataKey="monthName" tick={{ fontSize: 11, fontWeight: 700, fill: "#64748B" }} axisLine={{ stroke: "#E2E8F0" }} tickLine={false} />
+                    <YAxis tick={{ fontSize: 11, fontWeight: 600, fill: "#94A3B8" }} axisLine={false} tickLine={false} />
+                    <Tooltip content={<FrequencyCustomTooltip />} cursor={{ fill: "rgba(241, 245, 249, 0.6)" }} />
+                    <Bar dataKey="frequencyRate" radius={[6, 6, 0, 0]}>
+                      {overview.monthlyRecords.map((entry, index) => (
+                        <Cell key={`f-cell-${index}`} fill={getStatusColor(entry.frequencyStatus)} />
+                      ))}
+                    </Bar>
+                  </BarChart>
+                </ResponsiveContainer>
+              </div>
+            ) : (
+              <div style={{ width: "100%", overflowX: "auto", overflowY: "hidden", paddingBottom: "6px" }}>
+                <div style={{ minWidth: "960px", height: 260 }}>
+                  <BarChart width={960} height={260} data={fUnitRanking} margin={{ top: 20, right: 15, left: -20, bottom: 45 }}>
+                    <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#F1F5F9" />
+                    <XAxis 
+                      dataKey="shortName" 
+                      tick={{ fontSize: 10, fontWeight: 700, fill: "#475569" }} 
+                      axisLine={{ stroke: "#E2E8F0" }} 
+                      tickLine={false} 
+                      interval={0}
+                      angle={-30}
+                      textAnchor="end"
+                    />
+                    <YAxis tick={{ fontSize: 11, fontWeight: 600, fill: "#94A3B8" }} axisLine={false} tickLine={false} />
+                    <Tooltip content={<UnitFrequencyCustomTooltip />} cursor={{ fill: "rgba(241, 245, 249, 0.6)" }} />
+                    <Bar dataKey="frequencyRate" radius={[6, 6, 0, 0]} barSize={28}>
+                      {fUnitRanking.map((entry, index) => (
+                        <Cell key={`f-rank-cell-${index}`} fill={getStatusColor(entry.frequencyStatus)} />
+                      ))}
+                    </Bar>
+                  </BarChart>
+                </div>
+              </div>
+            )}
+
+            {/* Linha de rodapé do gráfico com altura fixa garantida para manter paridade */}
+            <div style={{ height: "20px", display: "flex", alignItems: "center", gap: "0.4rem", fontSize: "0.72rem", color: "#64748B", marginTop: "0.25rem" }}>
+              {fViewMode === "monthly" ? (
+                <span>📅 Distribuição cronológica mensal ({selectedYear})</span>
+              ) : (
+                <>
+                  <span>↔️ Role horizontalmente para ver todas as 16 empresas</span>
+                  <span>•</span>
+                  <span>Ordenado da maior taxa para a menor</span>
+                </>
+              )}
+            </div>
+          </div>
+
+          {/* Caixa Explicativa NBR 14280 / OIT - Frequência */}
+          <div style={{ 
+            marginTop: "1.25rem", 
+            padding: "1.1rem 1.25rem", 
+            background: "#F8FAFC", 
+            borderRadius: "10px", 
+            border: "1px solid #E2E8F0",
+            flex: 1,
+            minHeight: "220px",
+            display: "flex",
+            flexDirection: "column",
+            justifyContent: "space-between"
+          }}>
+            <div>
+              <div style={{ fontWeight: 800, fontSize: "0.85rem", color: "var(--primary)", textTransform: "uppercase", letterSpacing: "0.5px", marginBottom: "0.4rem" }}>
+                TAXA DE FREQUÊNCIA (F)
+              </div>
+              <p style={{ margin: 0, fontSize: "0.78rem", color: "#475569", lineHeight: 1.45, minHeight: "44px" }}>
+                É o número de acidentados por milhão de horas trabalhadas de exposição ao risco, em determinado período.<br />
+                Essa taxa é calculada pela fórmula oficial:
+              </p>
+            </div>
+
+            <div style={{ 
+              alignSelf: "flex-start",
+              padding: "0.45rem 1.25rem", 
+              background: "white", 
+              border: "1.5px solid var(--primary)", 
+              borderRadius: "8px", 
+              fontWeight: 900, 
+              fontSize: "0.95rem", 
+              color: "var(--primary)", 
+              fontFamily: "monospace",
+              boxShadow: "0 2px 4px rgba(185, 28, 28, 0.08)",
+              margin: "0.5rem 0"
+            }}>
+              F = (N × 1.000.000) / HHT
+            </div>
+
+            <div style={{ fontSize: "0.75rem", color: "#64748B", lineHeight: 1.5, borderTop: "1px solid #E2E8F0", paddingTop: "0.5rem", minHeight: "72px" }}>
+              <strong>Onde:</strong><br />
+              <strong>F</strong> = Frequência de acidentados<br />
+              <strong>N</strong> = Número de acidentados<br />
+              <strong>HHT</strong> = Horas-Homem Trabalhadas líquidas (coluna HH)
+            </div>
+          </div>
+        </div>
+
+        {/* G Chart Card */}
+        <div className="panel-premium" style={{ display: "flex", flexDirection: "column", height: "100%" }}>
+          
+          {/* Header G: 2 linhas alinhadas sem quebra indevida */}
+          <div style={{ display: "flex", flexDirection: "column", gap: "0.45rem", marginBottom: "1.25rem", minHeight: "68px" }}>
+            {/* Linha 1: Título e Toggle */}
+            <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+              <h3 style={{ fontSize: "1.1rem", fontWeight: 800, color: "var(--text)", margin: 0, whiteSpace: "nowrap" }}>
+                {gViewMode === "monthly" ? "Gravidade Mensal (G)" : "Ranking de Gravidade"}
+              </h3>
+
+              {/* Toggle Switch */}
+              <div style={{ 
+                display: "flex", 
+                background: "#F1F5F9", 
+                padding: "3px", 
+                borderRadius: "8px", 
+                border: "1px solid #E2E8F0",
+                flexShrink: 0
+              }}>
+                <button
+                  type="button"
+                  onClick={() => setGViewMode("monthly")}
+                  style={{
+                    border: "none",
+                    padding: "4px 10px",
+                    borderRadius: "6px",
+                    fontSize: "0.75rem",
+                    fontWeight: 700,
+                    cursor: "pointer",
+                    background: gViewMode === "monthly" ? "white" : "transparent",
+                    color: gViewMode === "monthly" ? "#0284C7" : "#64748B",
+                    boxShadow: gViewMode === "monthly" ? "0 2px 4px rgba(0,0,0,0.08)" : "none",
+                    display: "flex",
+                    alignItems: "center",
+                    gap: "4px",
+                    transition: "all 0.15s ease",
+                    whiteSpace: "nowrap"
+                  }}
+                >
+                  <Calendar size={13} />
+                  Mensal
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setGViewMode("ranking")}
+                  style={{
+                    border: "none",
+                    padding: "4px 10px",
+                    borderRadius: "6px",
+                    fontSize: "0.75rem",
+                    fontWeight: 700,
+                    cursor: "pointer",
+                    background: gViewMode === "ranking" ? "#0284C7" : "transparent",
+                    color: gViewMode === "ranking" ? "white" : "#64748B",
+                    boxShadow: gViewMode === "ranking" ? "0 2px 4px rgba(2,132,199,0.25)" : "none",
+                    display: "flex",
+                    alignItems: "center",
+                    gap: "4px",
+                    transition: "all 0.15s ease",
+                    whiteSpace: "nowrap"
+                  }}
+                >
+                  <Building2 size={13} />
+                  Ranking Empresas
+                </button>
+              </div>
+            </div>
+
+            {/* Linha 2: Subtítulo */}
+            <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+              <p style={{ fontSize: "0.8rem", color: "var(--text-muted)", margin: 0, whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>
+                {gViewMode === "monthly" 
+                  ? `Dias computados por milhão de horas trabalhadas (${selectedYear})` 
+                  : `Unidades com maior gravidade acumulada (${selectedYear})`}
+              </p>
+            </div>
+          </div>
+
+          {/* Área do Gráfico: Altura Rigorosamente Fixa (285px) em Ambos os Modos */}
+          <div style={{ height: "285px", display: "flex", flexDirection: "column", justifyContent: "space-between" }}>
+            {gViewMode === "monthly" ? (
+              <div style={{ height: 260, width: "100%" }}>
+                <ResponsiveContainer width="100%" height="100%">
+                  <BarChart data={overview.monthlyRecords} margin={{ top: 15, right: 15, left: -10, bottom: 5 }}>
+                    <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#F1F5F9" />
+                    <XAxis dataKey="monthName" tick={{ fontSize: 11, fontWeight: 700, fill: "#64748B" }} axisLine={{ stroke: "#E2E8F0" }} tickLine={false} />
+                    <YAxis tick={{ fontSize: 11, fontWeight: 600, fill: "#94A3B8" }} axisLine={false} tickLine={false} />
+                    <Tooltip content={<SeverityCustomTooltip />} cursor={{ fill: "rgba(241, 245, 249, 0.6)" }} />
+                    <Bar dataKey="severityRate" radius={[6, 6, 0, 0]}>
+                      {overview.monthlyRecords.map((entry, index) => (
+                        <Cell key={`g-cell-${index}`} fill={getStatusColor(entry.severityStatus)} />
+                      ))}
+                    </Bar>
+                  </BarChart>
+                </ResponsiveContainer>
+              </div>
+            ) : (
+              <div style={{ width: "100%", overflowX: "auto", overflowY: "hidden", paddingBottom: "6px" }}>
+                <div style={{ minWidth: "960px", height: 260 }}>
+                  <BarChart width={960} height={260} data={gUnitRanking} margin={{ top: 20, right: 15, left: -10, bottom: 45 }}>
+                    <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#F1F5F9" />
+                    <XAxis 
+                      dataKey="shortName" 
+                      tick={{ fontSize: 10, fontWeight: 700, fill: "#475569" }} 
+                      axisLine={{ stroke: "#E2E8F0" }} 
+                      tickLine={false} 
+                      interval={0}
+                      angle={-30}
+                      textAnchor="end"
+                    />
+                    <YAxis tick={{ fontSize: 11, fontWeight: 600, fill: "#94A3B8" }} axisLine={false} tickLine={false} />
+                    <Tooltip content={<UnitSeverityCustomTooltip />} cursor={{ fill: "rgba(241, 245, 249, 0.6)" }} />
+                    <Bar dataKey="severityRate" radius={[6, 6, 0, 0]} barSize={28}>
+                      {gUnitRanking.map((entry, index) => (
+                        <Cell key={`g-rank-cell-${index}`} fill={getStatusColor(entry.severityStatus)} />
+                      ))}
+                    </Bar>
+                  </BarChart>
+                </div>
+              </div>
+            )}
+
+            {/* Linha de rodapé do gráfico com altura fixa garantida para manter paridade */}
+            <div style={{ height: "20px", display: "flex", alignItems: "center", gap: "0.4rem", fontSize: "0.72rem", color: "#64748B", marginTop: "0.25rem" }}>
+              {gViewMode === "monthly" ? (
+                <span>📅 Distribuição cronológica mensal ({selectedYear})</span>
+              ) : (
+                <>
+                  <span>↔️ Role horizontalmente para ver todas as 16 empresas</span>
+                  <span>•</span>
+                  <span>Ordenado da maior gravidade para a menor</span>
+                </>
+              )}
+            </div>
+          </div>
+
+          {/* Caixa Explicativa NBR 14280 / OIT - Gravidade */}
+          <div style={{ 
+            marginTop: "1.25rem", 
+            padding: "1.1rem 1.25rem", 
+            background: "#F8FAFC", 
+            borderRadius: "10px", 
+            border: "1px solid #E2E8F0",
+            flex: 1,
+            minHeight: "220px",
+            display: "flex",
+            flexDirection: "column",
+            justifyContent: "space-between"
+          }}>
+            <div>
+              <div style={{ fontWeight: 800, fontSize: "0.85rem", color: "#0284C7", textTransform: "uppercase", letterSpacing: "0.5px", marginBottom: "0.4rem" }}>
+                TAXA DE GRAVIDADE (G)
+              </div>
+              <p style={{ margin: 0, fontSize: "0.78rem", color: "#475569", lineHeight: 1.45, minHeight: "44px" }}>
+                É a quantidade de dias computados nos acidentes com afastamento por milhão de horas-homem trabalhadas.<br />
+                Essa taxa é calculada pela fórmula oficial:
+              </p>
+            </div>
+
+            <div style={{ 
+              alignSelf: "flex-start",
+              padding: "0.45rem 1.25rem", 
+              background: "white", 
+              border: "1.5px solid #0284C7", 
+              borderRadius: "8px", 
+              fontWeight: 900, 
+              fontSize: "0.95rem", 
+              color: "#0284C7", 
+              fontFamily: "monospace",
+              boxShadow: "0 2px 4px rgba(2, 132, 199, 0.08)",
+              margin: "0.5rem 0"
+            }}>
+              G = (T × 1.000.000) / HHT
+            </div>
+
+            <div style={{ fontSize: "0.75rem", color: "#64748B", lineHeight: 1.5, borderTop: "1px solid #E2E8F0", paddingTop: "0.5rem", minHeight: "72px" }}>
+              <strong>Onde:</strong><br />
+              <strong>G</strong> = Gravidade de acidentes<br />
+              <strong>T</strong> = Tempo computado (dias de afastamento)<br />
+              <strong>HHT</strong> = Horas-Homem Trabalhadas líquidas (coluna HH)
+            </div>
+          </div>
+        </div>
+
+      </div>
+
+      {/* Monthly Detailed Table */}
+      <div className="panel-premium" style={{ padding: "1.5rem" }}>
+        <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "1rem" }}>
+          <div>
+            <h3 style={{ fontSize: "1.1rem", fontWeight: 800, color: "var(--text)" }}>Estudo por Mês ({selectedYear} • NBR 14280 / OIT)</h3>
+            <p style={{ fontSize: "0.8rem", color: "var(--text-muted)" }}>
+              Fórmulas ponderadas oficiais: F = (N × 1.000.000) / HH e G = (T × 1.000.000) / HH
+            </p>
+          </div>
+          <div style={{ fontSize: "0.75rem", fontWeight: 700, color: "var(--primary)", background: "var(--primary-light)", padding: "0.3rem 0.75rem", borderRadius: "6px" }}>
+            * Base oficial: Campo "HH" das planilhas mensais
+          </div>
+        </div>
+
+        <div style={{ overflowX: "auto" }}>
+          <table style={{ width: "100%", borderCollapse: "collapse", textAlign: "left", fontSize: "0.85rem" }}>
+            <thead>
+              <tr style={{ background: "#F8FAFC", borderBottom: "2px solid #E2E8F0", color: "#475569", fontWeight: 800 }}>
+                <th style={{ padding: "0.75rem 1rem" }}>Mês / {selectedYear}</th>
+                <th style={{ padding: "0.75rem 1rem", textAlign: "center" }}>Acidentados (N)</th>
+                <th style={{ padding: "0.75rem 1rem", textAlign: "right" }}>Horas Trabalhadas - HH (h)</th>
+                <th style={{ padding: "0.75rem 1rem", textAlign: "center" }}>Dias Computados (T)</th>
+                <th style={{ padding: "0.75rem 1rem", textAlign: "right" }}>Frequência (F)</th>
+                <th style={{ padding: "0.75rem 1rem", textAlign: "center" }}>Classif. F</th>
+                <th style={{ padding: "0.75rem 1rem", textAlign: "right" }}>Gravidade (G)</th>
+                <th style={{ padding: "0.75rem 1rem", textAlign: "center" }}>Classif. G</th>
+              </tr>
+            </thead>
+            <tbody>
+              {overview.monthlyRecords.map((row, idx) => (
+                <tr 
+                  key={row.month} 
+                  style={{ 
+                    borderBottom: "1px solid #F1F5F9",
+                    background: idx % 2 === 0 ? "white" : "#FAFAFA"
+                  }}
+                >
+                  <td style={{ padding: "0.75rem 1rem", fontWeight: 700, color: "var(--text)" }}>{row.monthName}</td>
+                  <td style={{ padding: "0.75rem 1rem", textAlign: "center", fontWeight: 700 }}>{row.accidents}</td>
+                  <td style={{ padding: "0.75rem 1rem", textAlign: "right", fontFamily: "monospace", fontWeight: 800, color: "var(--primary)" }}>{fmtNumber(row.hht)}</td>
+                  <td style={{ padding: "0.75rem 1rem", textAlign: "center", fontWeight: 700 }}>{row.lostDays}</td>
+                  <td style={{ padding: "0.75rem 1rem", textAlign: "right", fontWeight: 800, color: getStatusColor(row.frequencyStatus) }}>{fmtNumber(row.frequencyRate)}</td>
+                  <td style={{ padding: "0.75rem 1rem", textAlign: "center" }}>
+                    <span style={{ 
+                      padding: "0.2rem 0.5rem", 
+                      borderRadius: "4px", 
+                      fontSize: "0.75rem", 
+                      fontWeight: 800,
+                      color: getStatusColor(row.frequencyStatus),
+                      background: getStatusBg(row.frequencyStatus)
+                    }}>
+                      {row.frequencyStatus}
+                    </span>
+                  </td>
+                  <td style={{ padding: "0.75rem 1rem", textAlign: "right", fontWeight: 800, color: getStatusColor(row.severityStatus) }}>{fmtNumber(row.severityRate)}</td>
+                  <td style={{ padding: "0.75rem 1rem", textAlign: "center" }}>
+                    <span style={{ 
+                      padding: "0.2rem 0.5rem", 
+                      borderRadius: "4px", 
+                      fontSize: "0.75rem", 
+                      fontWeight: 800,
+                      color: getStatusColor(row.severityStatus),
+                      background: getStatusBg(row.severityStatus)
+                    }}>
+                      {row.severityStatus}
+                    </span>
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+            <tfoot>
+              <tr style={{ background: "#0F172A", color: "white", fontWeight: 900, borderTop: "2px solid #334155" }}>
+                <td style={{ padding: "0.85rem 1rem", letterSpacing: "0.5px" }}>TOTAL ACUMULADO (NBR 14280)</td>
+                <td style={{ padding: "0.85rem 1rem", textAlign: "center" }}>{overview.totalAccidents}</td>
+                <td style={{ padding: "0.85rem 1rem", textAlign: "right", fontFamily: "monospace", color: "#38BDF8" }}>{fmtNumber(overview.totalHHT)}</td>
+                <td style={{ padding: "0.85rem 1rem", textAlign: "center" }}>{overview.totalLostDays}</td>
+                <td style={{ padding: "0.85rem 1rem", textAlign: "right", color: "#38BDF8" }}>{fmtNumber(overview.overallFrequencyRate)}</td>
+                <td style={{ padding: "0.85rem 1rem", textAlign: "center" }}>
+                  <span style={{ 
+                    padding: "0.2rem 0.6rem", 
+                    borderRadius: "4px", 
+                    fontSize: "0.75rem", 
+                    fontWeight: 900,
+                    color: getStatusColor(overview.overallFrequencyStatus),
+                    background: "rgba(255,255,255,0.15)"
+                  }}>
+                    {overview.overallFrequencyStatus}
+                  </span>
+                </td>
+                <td style={{ padding: "0.85rem 1rem", textAlign: "right", color: "#38BDF8" }}>{fmtNumber(overview.overallSeverityRate)}</td>
+                <td style={{ padding: "0.85rem 1rem", textAlign: "center" }}>
+                  <span style={{ 
+                    padding: "0.2rem 0.6rem", 
+                    borderRadius: "4px", 
+                    fontSize: "0.75rem", 
+                    fontWeight: 900,
+                    color: getStatusColor(overview.overallSeverityStatus),
+                    background: "rgba(255,255,255,0.15)"
+                  }}>
+                    {overview.overallSeverityStatus}
+                  </span>
+                </td>
+              </tr>
+            </tfoot>
+          </table>
+        </div>
+      </div>
+
+      {/* Unit Breakdown Table */}
+      <div className="panel-premium" style={{ padding: "1.5rem" }}>
+        <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "1rem" }}>
+          <div>
+            <h3 style={{ fontSize: "1.1rem", fontWeight: 800, color: "var(--text)" }}>Estudo por Unidade de Negócio ({selectedYear})</h3>
+            <p style={{ fontSize: "0.8rem", color: "var(--text-muted)" }}>
+              Acompanhamento detalhado por Unidade (16 unidades de fonte, com AÇOTUBO - Carbono e Matriz unificadas)
+            </p>
+          </div>
+          <div style={{ fontSize: "0.8rem", color: "var(--text-muted)", fontWeight: 700 }}>
+            Horas Trabalhadas (HH): {fmtNumber(overview.totalHHT)} h
+          </div>
+        </div>
+
+        <div style={{ overflowX: "auto" }}>
+          <table style={{ width: "100%", borderCollapse: "collapse", textAlign: "left", fontSize: "0.85rem" }}>
+            <thead>
+              <tr style={{ background: "#F8FAFC", borderBottom: "2px solid #E2E8F0", color: "#475569", fontWeight: 800 }}>
+                <th style={{ padding: "0.75rem 1rem" }}>Unidade (Fonte)</th>
+                <th style={{ padding: "0.75rem 1rem", textAlign: "center" }}>Acidentados (N)</th>
+                <th style={{ padding: "0.75rem 1rem", textAlign: "right" }}>Horas Trabalhadas - HH (h)</th>
+                <th style={{ padding: "0.75rem 1rem", textAlign: "center" }}>Dias Computados (T)</th>
+                <th style={{ padding: "0.75rem 1rem", textAlign: "right" }}>Frequência (F)</th>
+                <th style={{ padding: "0.75rem 1rem", textAlign: "center" }}>Classificação F</th>
+                <th style={{ padding: "0.75rem 1rem", textAlign: "right" }}>Gravidade (G)</th>
+                <th style={{ padding: "0.75rem 1rem", textAlign: "center" }}>Classificação G</th>
+              </tr>
+            </thead>
+            <tbody>
+              {overview.unitRecords.map((unit, idx) => (
+                <tr 
+                  key={unit.unitName} 
+                  style={{ 
+                    borderBottom: "1px solid #F1F5F9",
+                    background: idx % 2 === 0 ? "white" : "#FAFAFA"
+                  }}
+                >
+                  <td style={{ padding: "0.75rem 1rem", fontWeight: 700, color: "var(--text)" }}>{unit.unitName}</td>
+                  <td style={{ padding: "0.75rem 1rem", textAlign: "center", fontWeight: 700 }}>{unit.accidents}</td>
+                  <td style={{ padding: "0.75rem 1rem", textAlign: "right", fontFamily: "monospace", fontWeight: 800, color: "var(--primary)" }}>{fmtNumber(unit.hht)}</td>
+                  <td style={{ padding: "0.75rem 1rem", textAlign: "center", fontWeight: 700 }}>{unit.lostDays}</td>
+                  <td style={{ padding: "0.75rem 1rem", textAlign: "right", fontWeight: 800, color: getStatusColor(unit.frequencyStatus) }}>{fmtNumber(unit.frequencyRate)}</td>
+                  <td style={{ padding: "0.75rem 1rem", textAlign: "center" }}>
+                    <span style={{ 
+                      padding: "0.2rem 0.5rem", 
+                      borderRadius: "4px", 
+                      fontSize: "0.75rem", 
+                      fontWeight: 800,
+                      color: getStatusColor(unit.frequencyStatus),
+                      background: getStatusBg(unit.frequencyStatus)
+                    }}>
+                      {unit.frequencyStatus}
+                    </span>
+                  </td>
+                  <td style={{ padding: "0.75rem 1rem", textAlign: "right", fontWeight: 800, color: getStatusColor(unit.severityStatus) }}>{fmtNumber(unit.severityRate)}</td>
+                  <td style={{ padding: "0.75rem 1rem", textAlign: "center" }}>
+                    <span style={{ 
+                      padding: "0.2rem 0.5rem", 
+                      borderRadius: "4px", 
+                      fontSize: "0.75rem", 
+                      fontWeight: 800,
+                      color: getStatusColor(unit.severityStatus),
+                      background: getStatusBg(unit.severityStatus)
+                    }}>
+                      {unit.severityStatus}
+                    </span>
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
+      </div>
+
+    </motion.div>
+  );
+};

@@ -2,10 +2,7 @@ import React, { useMemo, useState } from 'react';
 import { 
   BarChart, Bar, XAxis, YAxis, Tooltip, Legend, ResponsiveContainer
 } from 'recharts';
-import { 
-  AlertCircle, TrendingUp, Calendar, Printer, ShieldCheck, Layers, Upload, Monitor, X, ExternalLink,
-  Search, Filter, ArrowUpDown, ArrowUp, ArrowDown, RotateCcw, Clock, FileSpreadsheet
-} from 'lucide-react';
+import { AlertCircle, TrendingUp, Calendar, Printer, ShieldCheck, Layers, Upload, Monitor, Gauge, FileSpreadsheet } from 'lucide-react';
 import type { Accident } from '../types';
 import { calculateStats, generateInsights, generateTemporalInsights } from '../utils/dataLoader';
 import { motion } from 'framer-motion';
@@ -13,41 +10,8 @@ import { LOGO_BASE64 } from '../constants';
 import { TemporalAnalysis } from './TemporalAnalysis';
 import { SafetyManagement } from './SafetyManagement';
 import { Breakdown } from './Breakdown';
+import { FrequencySeverityTab } from './FrequencySeverityTab';
 import { generateSafetyInsights } from '../utils/dataLoader';
-import { ExpandableChart } from './ExpandableChart';
-
-const MonthlyTooltip = ({ active, payload, label, drillDownYear }: any) => {
-  if (active && payload && payload.length) {
-    if (drillDownYear) {
-      return (
-        <div style={{ background: 'white', padding: '1rem', border: '1px solid #E2E8F0', borderRadius: '12px', boxShadow: '0 4px 6px rgba(0,0,0,0.05)' }}>
-          <h4 style={{ margin: '0 0 0.5rem 0', fontWeight: 800 }}>{label} {drillDownYear}</h4>
-          <div style={{ fontWeight: 700, fontSize: '0.9rem', marginBottom: '4px', color: '#B91C1C' }}>
-            {payload[0].value} Acidente{payload[0].value !== 1 ? 's' : ''}
-          </div>
-          <div style={{ marginTop: '0.5rem', fontSize: '0.65rem', color: '#94A3B8', fontWeight: 600, fontStyle: 'italic', background: '#F8FAFC', padding: '4px 6px', borderRadius: '4px' }}>
-            Clique na barra para detalhes completos
-          </div>
-        </div>
-      );
-    } else {
-      return (
-        <div style={{ background: 'white', padding: '1rem', border: '1px solid #E2E8F0', borderRadius: '12px', boxShadow: '0 4px 6px rgba(0,0,0,0.05)' }}>
-          <h4 style={{ margin: '0 0 0.5rem 0', fontWeight: 800 }}>{label}</h4>
-          {payload.map((entry: any, index: number) => (
-            <div key={index} style={{ color: entry.color, fontWeight: 700, fontSize: '0.85rem', marginBottom: '2px' }}>
-              {entry.name}: {entry.value}
-            </div>
-          ))}
-          <div style={{ marginTop: '0.5rem', fontSize: '0.65rem', color: '#94A3B8', fontWeight: 600, fontStyle: 'italic', background: '#F8FAFC', padding: '4px 6px', borderRadius: '4px' }}>
-            Clique na barra para detalhar o ano
-          </div>
-        </div>
-      );
-    }
-  }
-  return null;
-};
 
 interface DashboardProps {
   accidents: Accident[];
@@ -57,10 +21,8 @@ interface DashboardProps {
   onDivisionChange: (val: string) => void;
   filterManager: string;
   onManagerChange: (val: string) => void;
-  filterArea: string[];
-  onAreaChange: (val: string[]) => void;
-  safetyGroupBy: 'area' | 'division';
-  onSafetyGroupByChange: (val: 'area' | 'division') => void;
+  filterArea: string;
+  onAreaChange: (val: string) => void;
   onReset: () => void;
   onPrint: () => void;
   onLandscapePrint: () => void;
@@ -79,55 +41,20 @@ export const Dashboard: React.FC<DashboardProps> = ({
   onManagerChange,
   filterArea,
   onAreaChange,
-  safetyGroupBy,
-  onSafetyGroupByChange,
   onReset, 
   onPrint, 
   onLandscapePrint,
   onBatchPrint 
 }) => {
-  const [activeTab, setActiveTab] = useState<'monthly' | 'temporal' | 'safety' | 'breakdown'>('monthly');
-  const [areaDropdownOpen, setAreaDropdownOpen] = useState(false);
-  const [drillDownYear, setDrillDownYear] = useState<number | null>(null);
-  const [monthDetailsModal, setMonthDetailsModal] = useState<{ monthIndex: number } | null>(null);
+  const [activeTab, setActiveTab] = useState<'monthly' | 'temporal' | 'safety' | 'breakdown' | 'frequency_severity'>('monthly');
   const [isBreakdownModalOpen, setIsBreakdownModalOpen] = useState(false);
-
-  // Modal Sorting & Filtering states
-  const [modalSortKey, setModalSortKey] = useState<'date' | 'employee' | 'role' | 'area' | 'unsafeAct' | 'type' | 'lostDays'>('date');
-  const [modalSortDirection, setModalSortDirection] = useState<'asc' | 'desc'>('asc');
-  const [modalSearchText, setModalSearchText] = useState('');
-  const [modalFilterCause, setModalFilterCause] = useState<'ALL' | 'UNSAFE_ACT' | 'UNSAFE_COND'>('ALL');
-  const [modalFilterType, setModalFilterType] = useState<'ALL' | string>('ALL');
-  const [modalFilterLostDays, setModalFilterLostDays] = useState<'ALL' | 'WITH_LOST_DAYS' | 'NO_LOST_DAYS'>('ALL');
-
-  const handleModalSort = (key: 'date' | 'employee' | 'role' | 'area' | 'unsafeAct' | 'type' | 'lostDays') => {
-    if (modalSortKey === key) {
-      setModalSortDirection(prev => prev === 'asc' ? 'desc' : 'asc');
-    } else {
-      setModalSortKey(key);
-      setModalSortDirection('asc');
-    }
-  };
-
-  const resetModalFilters = () => {
-    setModalSearchText('');
-    setModalFilterCause('ALL');
-    setModalFilterType('ALL');
-    setModalFilterLostDays('ALL');
-    setModalSortKey('date');
-    setModalSortDirection('asc');
-  };
-
-  const sortedSelectedYears = useMemo(() => {
-    return [...selectedYears].sort((a, b) => a - b);
-  }, [selectedYears]);
 
   const filteredAccidents = useMemo(() => {
     return accidents.filter(a => {
       const matchesYear = selectedYears.includes(a.year);
       const matchesDivision = filterDivision === 'ALL' || a.division === filterDivision;
       const matchesManager = filterManager === 'ALL' || a.manager === filterManager;
-      const matchesArea = filterArea.length === 0 || filterArea.includes(a.area);
+      const matchesArea = filterArea === 'ALL' || a.area === filterArea;
       return matchesYear && matchesDivision && matchesManager && matchesArea;
     });
   }, [accidents, selectedYears, filterDivision, filterManager, filterArea]);
@@ -184,73 +111,6 @@ export const Dashboard: React.FC<DashboardProps> = ({
   const uniqueManagers = useMemo(() => Array.from(new Set(accidents.map(a => a.manager))).sort(), [accidents]);
   const uniqueAreas = useMemo(() => Array.from(new Set(accidents.map(a => a.area))).sort(), [accidents]);
 
-  const baseMonthAccidents = useMemo(() => {
-    if (!monthDetailsModal || !drillDownYear) return [];
-    return filteredAccidents.filter(a => a.year === drillDownYear && (a.month - 1) === monthDetailsModal.monthIndex);
-  }, [filteredAccidents, drillDownYear, monthDetailsModal]);
-
-  const modalAvailableTypes = useMemo(() => {
-    return Array.from(new Set(baseMonthAccidents.map(a => a.type).filter(Boolean))).sort();
-  }, [baseMonthAccidents]);
-
-  const modalProcessedAccidents = useMemo(() => {
-    let list = [...baseMonthAccidents];
-
-    if (modalSearchText.trim()) {
-      const q = modalSearchText.toLowerCase();
-      list = list.filter(a => 
-        (a.employee && a.employee.toLowerCase().includes(q)) ||
-        (a.role && a.role.toLowerCase().includes(q)) ||
-        (a.area && a.area.toLowerCase().includes(q)) ||
-        (a.type && a.type.toLowerCase().includes(q))
-      );
-    }
-
-    if (modalFilterCause !== 'ALL') {
-      list = list.filter(a => modalFilterCause === 'UNSAFE_ACT' ? a.unsafeAct : !a.unsafeAct);
-    }
-
-    if (modalFilterType !== 'ALL') {
-      list = list.filter(a => a.type === modalFilterType);
-    }
-
-    if (modalFilterLostDays === 'WITH_LOST_DAYS') {
-      list = list.filter(a => a.lostDays > 0);
-    } else if (modalFilterLostDays === 'NO_LOST_DAYS') {
-      list = list.filter(a => a.lostDays === 0);
-    }
-
-    list.sort((a, b) => {
-      let valA: any = a[modalSortKey as keyof Accident];
-      let valB: any = b[modalSortKey as keyof Accident];
-
-      if (modalSortKey === 'date') {
-        valA = a.date ? new Date(a.date).getTime() : 0;
-        valB = b.date ? new Date(b.date).getTime() : 0;
-      } else if (modalSortKey === 'unsafeAct') {
-        valA = a.unsafeAct ? 1 : 0;
-        valB = b.unsafeAct ? 1 : 0;
-      } else if (typeof valA === 'string') {
-        return modalSortDirection === 'asc' 
-          ? valA.localeCompare(valB || '') 
-          : (valB || '').localeCompare(valA);
-      }
-
-      if (valA < valB) return modalSortDirection === 'asc' ? -1 : 1;
-      if (valA > valB) return modalSortDirection === 'asc' ? 1 : -1;
-      return 0;
-    });
-
-    return list;
-  }, [baseMonthAccidents, modalSearchText, modalFilterCause, modalFilterType, modalFilterLostDays, modalSortKey, modalSortDirection]);
-
-  const formatDateBR = (dateVal: any) => {
-    if (!dateVal) return '-';
-    const d = new Date(dateVal);
-    if (isNaN(d.getTime())) return String(dateVal);
-    return d.toLocaleDateString('pt-BR', { day: '2-digit', month: '2-digit', year: 'numeric', timeZone: 'UTC' });
-  };
-
   const chartData = useMemo(() => {
     return Array.from({ length: 12 }, (_, i) => {
       const monthData: any = { month: MONTH_NAMES[i] };
@@ -289,20 +149,20 @@ export const Dashboard: React.FC<DashboardProps> = ({
   }, [yearsLabel]);
 
   return (
-    <div className="dashboard-container">
-      <header className="header no-print">
-        <div className="header-brand">
-          <div className="brand-logo-container">
-            <img src={LOGO_BASE64} alt="Logo" className="brand-logo" />
+    <div className="dashboard">
+      <header className="header no-print" style={{ padding: '0.75rem 2rem' }}>
+        <div style={{ display: 'flex', alignItems: 'center', gap: '1.5rem' }}>
+          <div style={{ background: 'linear-gradient(135deg, #B91C1C 0%, #7F1D1D 100%)', padding: '0.75rem', borderRadius: '0.75rem', boxShadow: '0 4px 12px rgba(185, 28, 28, 0.2)' }}>
+            <img src={LOGO_BASE64} alt="Logo" style={{ height: '32px', filter: 'brightness(0) invert(1)' }} />
           </div>
-          <div className="brand-title">
-            <h1>{dashboardTitle}</h1>
-            <p>Grupo Açotubo</p>
+          <div>
+            <h1 style={{ fontSize: '1.4rem', margin: 0, fontWeight: 900 }}>{dashboardTitle}</h1>
+            <p style={{ margin: 0, fontSize: '0.8rem', fontWeight: 600, opacity: 0.8 }}>Grupo Açotubo</p>
           </div>
         </div>
 
-        <div className="header-years">
-          <div className="years-btn-group">
+        <div style={{ flex: 1, display: 'flex', justifyContent: 'center' }}>
+          <div style={{ display: 'flex', gap: '0.4rem' }}>
             {allAvailableYears.map(year => (
               <button
                 key={year}
@@ -312,7 +172,18 @@ export const Dashboard: React.FC<DashboardProps> = ({
                     : [...selectedYears, year];
                   onYearsChange(newYears.sort((a, b) => a - b));
                 }}
-                className={`year-select-btn ${selectedYears.includes(year) ? 'active' : ''}`}
+                style={{
+                  padding: '0.4rem 0.9rem',
+                  borderRadius: '10px',
+                  border: '1px solid ' + (selectedYears.includes(year) ? 'var(--primary)' : '#334155'),
+                  background: selectedYears.includes(year) ? 'var(--primary)' : 'rgba(255,255,255,0.05)',
+                  color: 'white',
+                  fontSize: '0.8rem',
+                  fontWeight: 800,
+                  cursor: 'pointer',
+                  transition: 'all 0.2s',
+                  boxShadow: selectedYears.includes(year) ? '0 4px 12px rgba(185, 28, 28, 0.3)' : 'none'
+                }}
               >
                 {year}
               </button>
@@ -320,7 +191,7 @@ export const Dashboard: React.FC<DashboardProps> = ({
           </div>
         </div>
 
-        <div className="action-buttons">
+        <div className="action-buttons" style={{ display: 'flex', gap: '0.75rem' }}>
           <button 
             onClick={() => setIsBreakdownModalOpen(true)}
             className="btn-action detail" 
@@ -328,13 +199,17 @@ export const Dashboard: React.FC<DashboardProps> = ({
             style={{
               position: 'relative',
               background: 'linear-gradient(135deg, #1E293B 0%, #0F172A 100%)',
-              border: '1px solid rgba(59, 130, 246, 0.4)',
+              border: '1.5px solid rgba(59, 130, 246, 0.45)',
               color: '#60A5FA',
               boxShadow: '0 4px 12px rgba(37, 99, 235, 0.25)',
               display: 'flex',
               alignItems: 'center',
               justifyContent: 'center',
               cursor: 'pointer',
+              width: '42px',
+              height: '42px',
+              padding: 0,
+              borderRadius: '12px',
               transition: 'all 0.25s cubic-bezier(0.4, 0, 0.2, 1)'
             }}
             onMouseOver={e => {
@@ -347,134 +222,203 @@ export const Dashboard: React.FC<DashboardProps> = ({
             onMouseOut={e => {
               e.currentTarget.style.transform = 'translateY(0) scale(1)';
               e.currentTarget.style.boxShadow = '0 4px 12px rgba(37, 99, 235, 0.25)';
-              e.currentTarget.style.borderColor = 'rgba(59, 130, 246, 0.4)';
+              e.currentTarget.style.borderColor = 'rgba(59, 130, 246, 0.45)';
               e.currentTarget.style.color = '#60A5FA';
               e.currentTarget.style.background = 'linear-gradient(135deg, #1E293B 0%, #0F172A 100%)';
             }}
           >
-            <FileSpreadsheet size={22} />
+            <FileSpreadsheet size={22} color="currentColor" style={{ flexShrink: 0 }} />
+            <span style={{
+              position: 'absolute',
+              top: '-4px',
+              right: '-4px',
+              background: 'linear-gradient(135deg, #EF4444 0%, #DC2626 100%)',
+              color: 'white',
+              fontSize: '0.65rem',
+              fontWeight: 900,
+              padding: '1px 5px',
+              borderRadius: '999px',
+              border: '2px solid #0F172A',
+              boxShadow: '0 2px 5px rgba(0,0,0,0.3)',
+              pointerEvents: 'none'
+            }}>
+              {filteredAccidents.length}
+            </span>
           </button>
           <button 
             onClick={onReset} 
-            className="btn-action reset" 
+            className="btn-pdf" 
             title="Reenviar Excel"
+            style={{ background: '#334155', width: '42px', height: '42px', padding: 0, display: 'flex', alignItems: 'center', justifyContent: 'center', borderRadius: '12px' }}
           >
             <Upload size={20} />
           </button>
           <button 
             onClick={onBatchPrint}
-            className="btn-action batch" 
+            className="btn-pdf" 
             title="Relatórios em Massa"
+            style={{ background: '#3B82F6', width: '42px', height: '42px', padding: 0, display: 'flex', alignItems: 'center', justifyContent: 'center', borderRadius: '12px' }}
           >
             <Layers size={22} />
           </button>
           <button 
             onClick={onLandscapePrint} 
-            className="btn-action landscape" 
+            className="btn-pdf" 
             title="Gerar Quadro Paisagem (Gestão à Vista)"
+            style={{ background: '#10B981', width: '42px', height: '42px', padding: 0, display: 'flex', alignItems: 'center', justifyContent: 'center', borderRadius: '12px' }}
           >
             <Monitor size={22} />
           </button>
           <button 
             onClick={onPrint} 
-            className="btn-action print" 
+            className="btn-pdf" 
             title="Gerar Relatório PDF (Retrato)"
+            style={{ background: 'var(--primary)', width: '42px', height: '42px', padding: 0, display: 'flex', alignItems: 'center', justifyContent: 'center', borderRadius: '12px' }}
           >
             <Printer size={22} />
           </button>
         </div>
       </header>
 
-      <div className="filters-bar no-print">
-        <div className="filters-selectors">
-          <div className="filter-group">
-            <label><div className="filter-dot blue"></div>Unidade</label>
-            <select value={filterDivision} onChange={e => onDivisionChange(e.target.value)}>
-              <option value="ALL">Todas as Unidades</option>
-              {uniqueDivisions.map(d => <option key={d} value={d}>{d}</option>)}
-            </select>
-          </div>
-          <div className="filter-group">
-            <label><div className="filter-dot green"></div>Superior Direto</label>
-            <select value={filterManager} onChange={e => onManagerChange(e.target.value)}>
-              <option value="ALL">Todos os Superiores</option>
-              {uniqueManagers.map(m => <option key={m} value={m}>{m}</option>)}
-            </select>
-          </div>
-          <div className="filter-group" style={{ position: 'relative' }}>
-            <label><div className="filter-dot orange"></div>Área</label>
-            <div 
-              onClick={() => setAreaDropdownOpen(!areaDropdownOpen)}
-              style={{ padding: '0.4rem 0.75rem', background: 'white', border: '1px solid var(--border)', borderRadius: '8px', fontSize: '0.8rem', fontWeight: 600, color: 'var(--text)', cursor: 'pointer', display: 'flex', justifyContent: 'space-between', alignItems: 'center', minWidth: '160px', height: '34px' }}
-            >
-              <span style={{ overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
-                {filterArea.length === 0 ? 'Todas as Áreas' : filterArea.length === 1 ? filterArea[0] : `${filterArea.length} áreas selec.`}
-              </span>
-              <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" style={{ flexShrink: 0, marginLeft: '8px' }}><polyline points="6 9 12 15 18 9"></polyline></svg>
+      <div className="filters-bar no-print" style={{ alignItems: 'center', justifyContent: 'space-between' }}>
+        <div style={{ display: 'flex', gap: '2rem' }}>
+          {activeTab !== 'frequency_severity' ? (
+            <>
+              <div className="filter-group">
+                <label><div style={{ width: '8px', height: '8px', borderRadius: '50%', background: '#3B82F6', marginRight: '8px' }}></div>Unidade</label>
+                <select value={filterDivision} onChange={e => onDivisionChange(e.target.value)}>
+                  <option value="ALL">Todas as Unidades</option>
+                  {uniqueDivisions.map(d => <option key={d} value={d}>{d}</option>)}
+                </select>
+              </div>
+              <div className="filter-group">
+                <label><div style={{ width: '8px', height: '8px', borderRadius: '50%', background: '#10B981', marginRight: '8px' }}></div>Superior Direto</label>
+                <select value={filterManager} onChange={e => onManagerChange(e.target.value)}>
+                  <option value="ALL">Todos os Superiores</option>
+                  {uniqueManagers.map(m => <option key={m} value={m}>{m}</option>)}
+                </select>
+              </div>
+              <div className="filter-group">
+                <label><div style={{ width: '8px', height: '8px', borderRadius: '50%', background: '#F59E0B', marginRight: '8px' }}></div>Área</label>
+                <select value={filterArea} onChange={e => onAreaChange(e.target.value)}>
+                  <option value="ALL">Todas as Áreas</option>
+                  {uniqueAreas.map(a => <option key={a} value={a}>{a}</option>)}
+                </select>
+              </div>
+            </>
+          ) : (
+            <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem', color: 'var(--text-muted)', fontSize: '0.85rem', fontWeight: 700 }}>
+              <span style={{ display: 'inline-block', width: '8px', height: '8px', borderRadius: '50%', background: 'var(--primary)' }} />
+              <span>Controle NBR 14280 / OIT • Filtros de Período e Unidade (Fonte) no painel abaixo</span>
             </div>
-            
-            {areaDropdownOpen && (
-              <>
-                <div 
-                  style={{ position: 'fixed', top: 0, left: 0, right: 0, bottom: 0, zIndex: 40 }}
-                  onClick={() => setAreaDropdownOpen(false)}
-                />
-                <div style={{ position: 'absolute', top: '100%', left: 0, marginTop: '4px', width: '220px', background: 'white', border: '1px solid var(--border)', borderRadius: '8px', boxShadow: '0 10px 15px -3px rgba(0, 0, 0, 0.1)', zIndex: 50, maxHeight: '250px', overflowY: 'auto', padding: '0.5rem' }}>
-                  <label style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', padding: '0.4rem', cursor: 'pointer', borderBottom: '1px solid #E2E8F0', marginBottom: '0.25rem', fontWeight: 700 }}>
-                    <input type="checkbox" checked={filterArea.length === 0} onChange={() => onAreaChange([])} />
-                    <span>Todas as Áreas</span>
-                  </label>
-                  {uniqueAreas.map(a => (
-                    <label key={a} style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', padding: '0.4rem', cursor: 'pointer', borderRadius: '4px', background: filterArea.includes(a) ? '#FFF7ED' : 'transparent' }}>
-                      <input type="checkbox" checked={filterArea.includes(a)} onChange={() => {
-                        if (filterArea.includes(a)) {
-                          onAreaChange(filterArea.filter(item => item !== a));
-                        } else {
-                          onAreaChange([...filterArea, a]);
-                        }
-                      }} />
-                      <span style={{ fontSize: '0.8rem', color: '#475569', fontWeight: filterArea.includes(a) ? 700 : 500 }}>{a}</span>
-                    </label>
-                  ))}
-                </div>
-              </>
-            )}
-          </div>
+          )}
         </div>
 
-        <div className="filters-tabs">
+        <div style={{ display: 'flex', gap: '0.5rem', background: '#F1F5F9', padding: '0.4rem', borderRadius: '12px' }}>
           <button
             onClick={() => setActiveTab('monthly')}
-            className={`tab-btn ${activeTab === 'monthly' ? 'active' : ''}`}
+            style={{
+              padding: '0.6rem 1.2rem',
+              borderRadius: '8px',
+              border: 'none',
+              background: activeTab === 'monthly' ? 'white' : 'transparent',
+              color: activeTab === 'monthly' ? 'var(--primary)' : 'var(--text-muted)',
+              fontWeight: 800,
+              fontSize: '0.8rem',
+              cursor: 'pointer',
+              boxShadow: activeTab === 'monthly' ? '0 2px 8px rgba(0,0,0,0.05)' : 'none',
+              transition: 'all 0.2s'
+            }}
           >
             Visão Mensal
           </button>
           <button
             onClick={() => setActiveTab('temporal')}
-            className={`tab-btn ${activeTab === 'temporal' ? 'active' : ''}`}
+            style={{
+              padding: '0.6rem 1.2rem',
+              borderRadius: '8px',
+              border: 'none',
+              background: activeTab === 'temporal' ? 'white' : 'transparent',
+              color: activeTab === 'temporal' ? 'var(--primary)' : 'var(--text-muted)',
+              fontWeight: 800,
+              fontSize: '0.8rem',
+              cursor: 'pointer',
+              boxShadow: activeTab === 'temporal' ? '0 2px 8px rgba(0,0,0,0.05)' : 'none',
+              transition: 'all 0.2s'
+            }}
           >
-            Análise de Períodos
+            Análise Temporal
           </button>
           <button
             onClick={() => setActiveTab('safety')}
-            className={`tab-btn ${activeTab === 'safety' ? 'active' : ''}`}
+            style={{
+              padding: '0.6rem 1.2rem',
+              borderRadius: '8px',
+              border: 'none',
+              background: activeTab === 'safety' ? 'white' : 'transparent',
+              color: activeTab === 'safety' ? 'var(--primary)' : 'var(--text-muted)',
+              fontWeight: 800,
+              fontSize: '0.8rem',
+              cursor: 'pointer',
+              boxShadow: activeTab === 'safety' ? '0 2px 8px rgba(0,0,0,0.05)' : 'none',
+              transition: 'all 0.2s'
+            }}
           >
-            Dias sem Acidentes
+            Gestão de Segurança
           </button>
           <button
             onClick={() => setActiveTab('breakdown')}
-            className={`tab-btn ${activeTab === 'breakdown' ? 'active' : ''}`}
+            style={{
+              padding: '0.6rem 1.2rem',
+              borderRadius: '8px',
+              border: 'none',
+              background: activeTab === 'breakdown' ? 'white' : 'transparent',
+              color: activeTab === 'breakdown' ? 'var(--primary)' : 'var(--text-muted)',
+              fontWeight: 800,
+              fontSize: '0.8rem',
+              cursor: 'pointer',
+              boxShadow: activeTab === 'breakdown' ? '0 2px 8px rgba(0,0,0,0.05)' : 'none',
+              transition: 'all 0.2s',
+              display: 'flex',
+              alignItems: 'center',
+              gap: '0.4rem'
+            }}
           >
+            <FileSpreadsheet size={15} />
             Breakdown
+          </button>
+          <button
+            onClick={() => setActiveTab('frequency_severity')}
+            style={{
+              padding: '0.6rem 1.2rem',
+              borderRadius: '8px',
+              border: 'none',
+              background: activeTab === 'frequency_severity' ? 'white' : 'transparent',
+              color: activeTab === 'frequency_severity' ? 'var(--primary)' : 'var(--text-muted)',
+              fontWeight: 800,
+              fontSize: '0.8rem',
+              cursor: 'pointer',
+              boxShadow: activeTab === 'frequency_severity' ? '0 2px 8px rgba(0,0,0,0.05)' : 'none',
+              transition: 'all 0.2s',
+              display: 'flex',
+              alignItems: 'center',
+              gap: '0.4rem'
+            }}
+          >
+            <Gauge size={15} />
+            Frequência e Gravidade
           </button>
         </div>
       </div>
 
-      <div className={`grid-main ${activeTab === 'safety' ? 'grid-safety-layout' : ''}`}>
-        {activeTab !== 'safety' && (
-        <aside className="panorama-panel">
+      {activeTab === 'frequency_severity' ? (
+        <FrequencySeverityTab accidents={filteredAccidents} availableYears={allAvailableYears} />
+      ) : (
+        <>
+          <div className="grid-main">
+            <aside className="panorama-panel">
           <h2 style={{fontSize: '1.25rem', fontWeight: 800, marginBottom: '0.5rem'}}>Panorama Geral</h2>
-          {sortedSelectedYears.map((year, i) => {
+          {selectedYears.map((year, i) => {
             const s = stats[year];
             if (!s) return null;
             return (
@@ -484,23 +428,12 @@ export const Dashboard: React.FC<DashboardProps> = ({
                 initial={{ opacity: 0, x: -20 }}
                 animate={{ opacity: 1, x: 0 }}
                 transition={{ delay: i * 0.1 }}
-                style={{ padding: '1rem', background: 'white', borderRadius: '12px', border: '1px solid #E2E8F0', boxShadow: '0 4px 6px -1px rgba(0, 0, 0, 0.05)', marginBottom: '1rem' }}
               >
-                <h3 style={{ margin: '0 0 0.5rem 0', textAlign: 'center', color: '#64748B', fontSize: '0.9rem', fontWeight: 800 }}>{year}</h3>
-                
-                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '0.5rem', textAlign: 'center' }}>
-                  <div style={{ borderRight: '1px solid #E2E8F0', paddingRight: '0.5rem' }}>
-                    <div style={{ fontSize: '1.6rem', fontWeight: 900, color: 'var(--primary)', lineHeight: 1.1 }}>{s.total}</div>
-                    <div style={{ fontSize: '0.65rem', color: '#64748B', fontWeight: 700, marginTop: '2px', textTransform: 'uppercase' }}>acidentes</div>
-                  </div>
-                  <div style={{ paddingLeft: '0.5rem' }}>
-                    <div style={{ fontSize: '1.6rem', fontWeight: 900, color: '#475569', lineHeight: 1.1 }}>{s.totalLostDays}</div>
-                    <div style={{ fontSize: '0.65rem', color: '#64748B', fontWeight: 700, marginTop: '2px', textTransform: 'uppercase' }}>dias afast.</div>
-                  </div>
-                </div>
-
-                <div style={{ marginTop: '0.75rem', borderTop: '1px dashed #E2E8F0', paddingTop: '0.5rem', fontSize: '0.65rem', color: '#64748B', textAlign: 'center', fontWeight: 700 }}>
-                  média {s.avgPerMonth} acid/mês
+                <h3>{year}</h3>
+                <div className="count">{s.total}</div>
+                <div className="stats-line">
+                  <span>acidentes</span>
+                  <strong>média {s.avgPerMonth}/mês</strong>
                 </div>
               </motion.div>
             );
@@ -513,113 +446,79 @@ export const Dashboard: React.FC<DashboardProps> = ({
             </span>
           </div>
         </aside>
-        )}
 
         <main className="content-area">
           {activeTab === 'monthly' ? (
             <>
               {/* Monthly View Content */}
-              <div className="panel-premium" style={{ position: 'relative' }}>
+              <div className="panel-premium">
                 <h2 style={{textAlign: 'center', marginBottom: '0.5rem', fontWeight: 900, color: 'var(--text)'}}>Comparativo <span style={{color: 'var(--primary)'}}>Mensal</span></h2>
                 <p style={{textAlign: 'center', fontSize: '0.75rem', color: 'var(--text-muted)', marginBottom: '2rem'}}>Distribuição histórica de acidentes no {yearsLabel.noun} selecionado</p>
-                
-                {drillDownYear && (
-                  <button 
-                    onClick={() => setDrillDownYear(null)}
-                    style={{ position: 'absolute', top: '1.5rem', left: '1.5rem', background: '#F1F5F9', border: 'none', padding: '0.5rem 1rem', borderRadius: '8px', color: '#475569', fontWeight: 700, cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '0.5rem', fontSize: '0.8rem', zIndex: 10 }}
-                  >
-                    ← Voltar para Visão Anual
-                  </button>
-                )}
-
                 <div style={{ height: 350, overflowX: 'auto', overflowY: 'hidden', paddingBottom: '1rem' }}>
-                  <ExpandableChart title={drillDownYear ? `Detalhes Mensais de ${drillDownYear}` : "Comparativo Mensal"}>
-                    {(isMaximized) => (
-                      <div style={{ 
-                        minWidth: (drillDownYear ? 1 : selectedYears.length) > 2 ? `${(drillDownYear ? 1 : selectedYears.length) * 400}px` : '100%', 
-                        height: isMaximized ? '100%' : '100%' 
-                      }}>
-                        <ResponsiveContainer width="100%" height="100%">
-                          <BarChart data={chartData} margin={{ top: 25, right: 30, left: 0, bottom: 0 }} style={{ outline: 'none' }}>
-                            <XAxis dataKey="month" axisLine={false} tickLine={false} tick={{fontSize: 12, fill: '#64748B'}} />
-                            <YAxis axisLine={false} tickLine={false} tick={{fontSize: 12, fill: '#64748B'}} domain={[0, 'dataMax + 2']} />
-                            <Tooltip 
-                              cursor={{fill: '#F1F5F9'}} 
-                              content={<MonthlyTooltip drillDownYear={drillDownYear} />} 
-                              wrapperStyle={{ pointerEvents: 'none', zIndex: 1000 }}
+                  <div style={{ 
+                    minWidth: selectedYears.length > 2 ? `${selectedYears.length * 400}px` : '100%', 
+                    height: '100%' 
+                  }}>
+                    <ResponsiveContainer width="100%" height="100%">
+                      <BarChart data={chartData} margin={{ top: 25, right: 30, left: 0, bottom: 0 }}>
+                        <XAxis dataKey="month" axisLine={false} tickLine={false} tick={{fontSize: 12, fill: '#64748B'}} />
+                        <YAxis axisLine={false} tickLine={false} tick={{fontSize: 12, fill: '#64748B'}} domain={[0, 'dataMax + 2']} />
+                        <Tooltip 
+                          cursor={{fill: '#F1F5F9'}} 
+                          contentStyle={{backgroundColor: '#FFFFFF', borderRadius: '12px', border: '1px solid #E2E8F0', boxShadow: '0 8px 20px rgba(0,0,0,0.1)'}} 
+                          itemStyle={{color: '#0F172A', fontWeight: 600}} 
+                          labelStyle={{color: '#0F172A', fontWeight: 800, marginBottom: '4px'}} 
+                        />
+                        <Legend verticalAlign="top" align="center" iconType="circle" />
+                        {selectedYears.map((year, idx) => {
+                          const colors = ['#B91C1C', '#94A3B8', '#0F172A', '#3B82F6', '#10B981', '#F59E0B'];
+                          return (
+                            <Bar 
+                              key={year}
+                              dataKey={String(year)} 
+                              fill={colors[idx % colors.length]} 
+                              radius={[4, 4, 0, 0]} 
+                              barSize={selectedYears.length > 3 ? 12 : 20}
+                              label={{ position: 'top', fill: '#64748B', fontSize: 10, fontWeight: 700 }}
                             />
-                            <Legend verticalAlign="top" align="center" iconType="circle" />
-                            {(drillDownYear ? [drillDownYear] : sortedSelectedYears).map((year, idx) => {
-                              const colors = drillDownYear ? ['#B91C1C'] : ['#B91C1C', '#94A3B8', '#0F172A', '#3B82F6', '#10B981', '#F59E0B'];
-                              return (
-                                <Bar 
-                                  key={year}
-                                  dataKey={String(year)} 
-                                  fill={colors[idx % colors.length]} 
-                                  radius={[4, 4, 0, 0]} 
-                                  barSize={(drillDownYear ? 1 : selectedYears.length) > 3 ? 12 : (isMaximized ? 40 : 20)}
-                                  label={{ position: 'top', fill: '#64748B', fontSize: isMaximized ? 14 : 10, fontWeight: 700 }}
-                                  onClick={(entry: any, index: number) => {
-                                    if (!drillDownYear) {
-                                      setDrillDownYear(year);
-                                    } else {
-                                      const monthStr = entry?.payload?.month || entry?.month;
-                                      const actualIndex = monthStr ? MONTH_NAMES.indexOf(monthStr) : -1;
-                                      setMonthDetailsModal({ monthIndex: actualIndex !== -1 ? actualIndex : index });
-                                    }
-                                  }}
-                                  style={{ cursor: 'pointer', outline: 'none' }}
-                                />
-                              );
-                            })}
-                          </BarChart>
-                        </ResponsiveContainer>
-                      </div>
-                    )}
-                  </ExpandableChart>
+                          );
+                        })}
+                      </BarChart>
+                    </ResponsiveContainer>
+                  </div>
                 </div>
               </div>
 
               <div className="panel-premium">
                 <h2 style={{textAlign: 'center', marginBottom: '0.5rem', fontWeight: 900, color: 'var(--text)'}}>Mapa de <span style={{color: 'var(--primary)'}}>Intensidade</span></h2>
                 <p style={{textAlign: 'center', fontSize: '0.75rem', color: 'var(--text-muted)', marginBottom: '1.5rem'}}>Frequência mensal de ocorrências (Mapa de Calor)</p>
-                <div className="heatmap-container">
-                  <ExpandableChart title="Mapa de Calor (Intensidade)">
-                    {(isMaximized) => (
-                      <table className="heatmap-table" style={{ height: isMaximized ? '100%' : 'auto' }}>
-                        <thead>
-                          <tr>
-                            <th></th>
-                            {MONTH_NAMES.map(m => <th key={m}>{m.toUpperCase()}</th>)}
-                          </tr>
-                        </thead>
-                        <tbody>
-                          {sortedSelectedYears.map(year => {
-                            const yearStats = stats[year];
-                            if (!yearStats) return null;
-                            return (
-                              <tr key={year}>
-                                <td style={{fontWeight: 700, color: 'var(--text-muted)'}}>{year}</td>
-                                {yearStats?.monthly.map((m, i) => (
-                                  <td 
-                                    key={i} 
-                                    style={{ 
-                                      background: getHeatmapColor(m.count), 
-                                      color: m.count > 4 ? 'white' : 'var(--text)',
-                                      fontSize: isMaximized ? '1.5rem' : 'inherit'
-                                    }}
-                                  >
-                                    <div>{m.count > 0 ? m.count : '-'}</div>
-                                  </td>
-                                ))}
-                              </tr>
-                            );
-                          })}
-                        </tbody>
-                      </table>
-                    )}
-                  </ExpandableChart>
-                </div>
+                <table className="heatmap-table">
+                  <thead>
+                    <tr>
+                      <th></th>
+                      {MONTH_NAMES.map(m => <th key={m}>{m.toUpperCase()}</th>)}
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {selectedYears.map(year => {
+                      const s = stats[year];
+                      if (!s) return null;
+                      return (
+                        <tr key={year}>
+                          <td style={{fontWeight: 700, color: 'var(--text-muted)'}}>{year}</td>
+                          {stats[year]?.monthly.map((m, i) => (
+                            <td 
+                              key={i} 
+                              style={{ background: getHeatmapColor(m.count), color: m.count > 5 ? 'white' : 'var(--text)' }}
+                            >
+                              <div>{m.count > 0 ? m.count : '-'}</div>
+                            </td>
+                          ))}
+                        </tr>
+                      );
+                    })}
+                  </tbody>
+                </table>
                 
                 <div style={{display: 'flex', justifyContent: 'center', alignItems: 'center', gap: '8px', marginTop: '1.5rem', fontSize: '0.7rem', color: 'var(--text-muted)'}}>
                   <span>Menos</span>
@@ -632,11 +531,7 @@ export const Dashboard: React.FC<DashboardProps> = ({
           ) : activeTab === 'temporal' ? (
             <TemporalAnalysis accidents={filteredAccidents} />
           ) : activeTab === 'safety' ? (
-            <SafetyManagement 
-              accidents={filteredAccidents} 
-              groupBy={safetyGroupBy}
-              onGroupByChange={onSafetyGroupByChange}
-            />
+            <SafetyManagement accidents={filteredAccidents} />
           ) : (
             <Breakdown 
               accidents={filteredAccidents} 
@@ -649,13 +544,12 @@ export const Dashboard: React.FC<DashboardProps> = ({
         {/* Right: Períodos de Atenção */}
         {/* Right: Insights / Storytelling */}
         {/* Right: Insights / Storytelling (Top 3) */}
-        {activeTab !== 'safety' && (
         <aside className="insights-panel">
           <div style={{ marginBottom: '1.5rem' }}>
             <h2 style={{ fontSize: '1.4rem', fontWeight: 900, color: 'var(--text)', margin: 0, letterSpacing: '-0.02em' }}>
-              {activeTab === 'monthly' ? 'Períodos de ' : activeTab === 'temporal' ? 'Análise de ' : 'Detalhes de '}
+              {activeTab === 'monthly' ? 'Períodos de ' : activeTab === 'temporal' ? 'Análise de ' : activeTab === 'safety' ? 'Gestão de ' : 'Detalhes de '}
               <span style={{ color: 'var(--primary)' }}>
-                {activeTab === 'monthly' ? 'Atenção' : activeTab === 'temporal' ? 'Padrões' : 'Causas'}
+                {activeTab === 'monthly' ? 'Atenção' : activeTab === 'temporal' ? 'Padrões' : activeTab === 'safety' ? 'Indicadores' : 'Causas'}
               </span>
             </h2>
             <p style={{ fontSize: '0.8rem', color: 'var(--text-muted)', marginTop: '0.25rem', fontWeight: 500 }}>
@@ -663,7 +557,9 @@ export const Dashboard: React.FC<DashboardProps> = ({
                 ? `Padrões identificados na comparação ${yearsLabel.adj}` 
                 : activeTab === 'temporal' 
                   ? 'Storytelling baseado em horários e dias' 
-                  : 'Fatores causais e perfil de experiência'}
+                  : activeTab === 'safety'
+                    ? 'Fatores críticos de performance de segurança'
+                    : 'Fatores causais e perfil de experiência'}
             </p>
           </div>
           
@@ -697,7 +593,6 @@ export const Dashboard: React.FC<DashboardProps> = ({
             );
           })}
         </aside>
-        )}
       </div>
 
       {/* Fourth Insight (Full Width Bottom) */}
@@ -728,342 +623,12 @@ export const Dashboard: React.FC<DashboardProps> = ({
           </div>
         </motion.div>
       )}
-
-      {monthDetailsModal && drillDownYear && (
-        <div 
-          style={{ position: 'fixed', top: 0, left: 0, width: '100vw', height: '100vh', background: 'rgba(15, 23, 42, 0.75)', backdropFilter: 'blur(6px)', zIndex: 999999, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '1rem' }}
-          onClick={(e) => {
-            if (e.target === e.currentTarget) setMonthDetailsModal(null);
-          }}
-        >
-          <div style={{ background: '#F8FAFC', borderRadius: '20px', width: '100%', maxWidth: '1050px', maxHeight: '92vh', display: 'flex', flexDirection: 'column', boxShadow: '0 25px 50px -12px rgba(0, 0, 0, 0.5)', overflow: 'hidden', border: '1px solid rgba(255,255,255,0.15)' }}>
-            
-            {/* Modal Header */}
-            <div style={{ padding: '1.25rem 1.75rem', borderBottom: '1px solid #E2E8F0', display: 'flex', justifyContent: 'space-between', alignItems: 'center', background: 'white' }}>
-              <div>
-                <h2 style={{ margin: 0, fontWeight: 900, color: 'var(--text)', fontSize: '1.35rem', display: 'flex', alignItems: 'center', gap: '0.6rem', letterSpacing: '-0.02em' }}>
-                  <Calendar color="var(--primary)" size={26} />
-                  Ocorrências em {MONTH_NAMES[monthDetailsModal.monthIndex]} de {drillDownYear}
-                </h2>
-                <p style={{ margin: '0.2rem 0 0 0', fontSize: '0.85rem', color: '#64748B', fontWeight: 500, display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
-                  <span style={{ display: 'inline-block', width: '8px', height: '8px', borderRadius: '50%', background: 'var(--primary)' }}></span>
-                  {modalProcessedAccidents.length} de {baseMonthAccidents.length} {baseMonthAccidents.length === 1 ? 'ocorrência' : 'ocorrências'} {baseMonthAccidents.length !== modalProcessedAccidents.length ? '(filtradas)' : 'registradas'}.
-                </p>
-              </div>
-              <button 
-                onClick={() => setMonthDetailsModal(null)}
-                style={{ background: '#F1F5F9', border: 'none', padding: '0.5rem', borderRadius: '12px', cursor: 'pointer', color: '#64748B', display: 'flex', alignItems: 'center', justifyContent: 'center', transition: 'all 0.2s' }}
-                onMouseOver={(e) => e.currentTarget.style.background = '#E2E8F0'}
-                onMouseOut={(e) => e.currentTarget.style.background = '#F1F5F9'}
-                title="Fechar janela"
-              >
-                <X size={22} />
-              </button>
-            </div>
-
-            {/* Quick Filters Toolbar */}
-            <div style={{ padding: '0.75rem 1.5rem', background: '#F8FAFC', borderBottom: '1px solid #E2E8F0', display: 'flex', gap: '0.6rem', alignItems: 'center', flexWrap: 'wrap' }}>
-              {/* Text Search */}
-              <div style={{ position: 'relative', flex: '1 1 200px', minWidth: '180px' }}>
-                <Search size={15} color="#94A3B8" style={{ position: 'absolute', left: '10px', top: '50%', transform: 'translateY(-50%)' }} />
-                <input 
-                  type="text" 
-                  placeholder="Buscar colaborador, cargo, área..." 
-                  value={modalSearchText}
-                  onChange={(e) => setModalSearchText(e.target.value)}
-                  style={{
-                    width: '100%',
-                    padding: '0.45rem 0.75rem 0.45rem 2rem',
-                    borderRadius: '8px',
-                    border: '1px solid #CBD5E1',
-                    fontSize: '0.8rem',
-                    outline: 'none',
-                    background: 'white'
-                  }}
-                />
-              </div>
-
-              {/* Cause Filter */}
-              <div style={{ display: 'flex', alignItems: 'center', gap: '4px' }}>
-                <Filter size={13} color="#64748B" />
-                <select 
-                  value={modalFilterCause}
-                  onChange={(e) => setModalFilterCause(e.target.value as any)}
-                  style={{
-                    padding: '0.45rem 0.6rem',
-                    borderRadius: '8px',
-                    border: '1px solid #CBD5E1',
-                    fontSize: '0.78rem',
-                    fontWeight: 600,
-                    background: 'white',
-                    color: '#334155'
-                  }}
-                >
-                  <option value="ALL">Todas as Causas</option>
-                  <option value="UNSAFE_ACT">Ato Inseguro</option>
-                  <option value="UNSAFE_COND">Condição Insegura</option>
-                </select>
-              </div>
-
-              {/* Type Filter */}
-              {modalAvailableTypes.length > 1 && (
-                <select 
-                  value={modalFilterType}
-                  onChange={(e) => setModalFilterType(e.target.value)}
-                  style={{
-                    padding: '0.45rem 0.6rem',
-                    borderRadius: '8px',
-                    border: '1px solid #CBD5E1',
-                    fontSize: '0.78rem',
-                    fontWeight: 600,
-                    background: 'white',
-                    color: '#334155'
-                  }}
-                >
-                  <option value="ALL">Todos os Tipos</option>
-                  {modalAvailableTypes.map(t => (
-                    <option key={t} value={t}>{t}</option>
-                  ))}
-                </select>
-              )}
-
-              {/* Lost Days Filter */}
-              <select 
-                value={modalFilterLostDays}
-                onChange={(e) => setModalFilterLostDays(e.target.value as any)}
-                style={{
-                  padding: '0.45rem 0.6rem',
-                  borderRadius: '8px',
-                  border: '1px solid #CBD5E1',
-                  fontSize: '0.78rem',
-                  fontWeight: 600,
-                  background: 'white',
-                  color: '#334155'
-                }}
-              >
-                <option value="ALL">Com e Sem Afast.</option>
-                <option value="WITH_LOST_DAYS">Com Afastamento</option>
-                <option value="NO_LOST_DAYS">Sem Afastamento</option>
-              </select>
-
-              {/* Reset button if filtered */}
-              {(modalSearchText || modalFilterCause !== 'ALL' || modalFilterType !== 'ALL' || modalFilterLostDays !== 'ALL') && (
-                <button
-                  onClick={resetModalFilters}
-                  style={{
-                    display: 'flex',
-                    alignItems: 'center',
-                    gap: '4px',
-                    padding: '0.45rem 0.75rem',
-                    background: '#FEE2E2',
-                    border: '1px solid #FECACA',
-                    color: '#991B1B',
-                    borderRadius: '8px',
-                    fontSize: '0.75rem',
-                    fontWeight: 700,
-                    cursor: 'pointer'
-                  }}
-                >
-                  <RotateCcw size={12} /> Limpar
-                </button>
-              )}
-            </div>
-            
-            {/* Modal Body with Filterable & Sortable Table */}
-            <div style={{ padding: '1.25rem 1.75rem', overflowY: 'auto' }} className="custom-scrollbar">
-              <div style={{ background: 'white', borderRadius: '16px', boxShadow: '0 4px 6px -1px rgba(0,0,0,0.05)', border: '1px solid #E2E8F0', overflow: 'hidden' }}>
-                <table style={{ width: '100%', borderCollapse: 'collapse', textAlign: 'left' }}>
-                  <thead style={{ background: '#F8FAFC', borderBottom: '2px solid #E2E8F0' }}>
-                    <tr>
-                      {/* Data Column */}
-                      <th 
-                        onClick={() => handleModalSort('date')}
-                        style={{ padding: '0.85rem 1.25rem', color: '#64748B', fontWeight: 800, fontSize: '0.75rem', textTransform: 'uppercase', letterSpacing: '0.05em', cursor: 'pointer', userSelect: 'none' }}
-                        title="Clique para ordenar por Data"
-                      >
-                        <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
-                          <span>Data</span>
-                          {modalSortKey === 'date' ? (
-                            modalSortDirection === 'asc' ? <ArrowUp size={13} color="var(--primary)" /> : <ArrowDown size={13} color="var(--primary)" />
-                          ) : (
-                            <ArrowUpDown size={12} color="#94A3B8" />
-                          )}
-                        </div>
-                      </th>
-
-                      {/* Colaborador Column */}
-                      <th 
-                        onClick={() => handleModalSort('employee')}
-                        style={{ padding: '0.85rem 1.25rem', color: '#64748B', fontWeight: 800, fontSize: '0.75rem', textTransform: 'uppercase', letterSpacing: '0.05em', cursor: 'pointer', userSelect: 'none' }}
-                        title="Clique para ordenar por Colaborador"
-                      >
-                        <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
-                          <span>Colaborador</span>
-                          {modalSortKey === 'employee' ? (
-                            modalSortDirection === 'asc' ? <ArrowUp size={13} color="var(--primary)" /> : <ArrowDown size={13} color="var(--primary)" />
-                          ) : (
-                            <ArrowUpDown size={12} color="#94A3B8" />
-                          )}
-                        </div>
-                      </th>
-
-                      {/* Cargo & Área Column */}
-                      <th 
-                        onClick={() => handleModalSort('role')}
-                        style={{ padding: '0.85rem 1.25rem', color: '#64748B', fontWeight: 800, fontSize: '0.75rem', textTransform: 'uppercase', letterSpacing: '0.05em', cursor: 'pointer', userSelect: 'none' }}
-                        title="Clique para ordenar por Cargo"
-                      >
-                        <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
-                          <span>Cargo & Área</span>
-                          {modalSortKey === 'role' ? (
-                            modalSortDirection === 'asc' ? <ArrowUp size={13} color="var(--primary)" /> : <ArrowDown size={13} color="var(--primary)" />
-                          ) : (
-                            <ArrowUpDown size={12} color="#94A3B8" />
-                          )}
-                        </div>
-                      </th>
-
-                      {/* Causa Raiz Column */}
-                      <th 
-                        onClick={() => handleModalSort('unsafeAct')}
-                        style={{ padding: '0.85rem 1.25rem', color: '#64748B', fontWeight: 800, fontSize: '0.75rem', textTransform: 'uppercase', letterSpacing: '0.05em', textAlign: 'center', cursor: 'pointer', userSelect: 'none' }}
-                        title="Clique para ordenar por Causa Raiz"
-                      >
-                        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '6px' }}>
-                          <span>Causa Raiz & Tipo</span>
-                          {modalSortKey === 'unsafeAct' ? (
-                            modalSortDirection === 'asc' ? <ArrowUp size={13} color="var(--primary)" /> : <ArrowDown size={13} color="var(--primary)" />
-                          ) : (
-                            <ArrowUpDown size={12} color="#94A3B8" />
-                          )}
-                        </div>
-                      </th>
-
-                      {/* Afastamento Column */}
-                      <th 
-                        onClick={() => handleModalSort('lostDays')}
-                        style={{ padding: '0.85rem 1.25rem', color: '#64748B', fontWeight: 800, fontSize: '0.75rem', textTransform: 'uppercase', letterSpacing: '0.05em', textAlign: 'right', cursor: 'pointer', userSelect: 'none' }}
-                        title="Clique para ordenar por Dias de Afastamento"
-                      >
-                        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'flex-end', gap: '6px' }}>
-                          <span>Afastamento</span>
-                          {modalSortKey === 'lostDays' ? (
-                            modalSortDirection === 'asc' ? <ArrowUp size={13} color="var(--primary)" /> : <ArrowDown size={13} color="var(--primary)" />
-                          ) : (
-                            <ArrowUpDown size={12} color="#94A3B8" />
-                          )}
-                        </div>
-                      </th>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    {modalProcessedAccidents.length === 0 ? (
-                      <tr>
-                        <td colSpan={5} style={{ padding: '3rem 1.5rem', textAlign: 'center', color: '#94A3B8' }}>
-                          <AlertCircle size={36} style={{ margin: '0 auto 0.5rem auto', opacity: 0.5 }} />
-                          <div style={{ fontWeight: 700, fontSize: '0.95rem', color: '#64748B' }}>Nenhuma ocorrência encontrada</div>
-                          <div style={{ fontSize: '0.8rem', marginTop: '4px' }}>Tente ajustar os termos da busca ou os filtros aplicados.</div>
-                          <button
-                            onClick={resetModalFilters}
-                            style={{
-                              marginTop: '1rem',
-                              padding: '0.4rem 1rem',
-                              background: '#F1F5F9',
-                              border: '1px solid #CBD5E1',
-                              borderRadius: '8px',
-                              fontSize: '0.78rem',
-                              fontWeight: 700,
-                              cursor: 'pointer',
-                              color: '#475569'
-                            }}
-                          >
-                            Redefinir Filtros
-                          </button>
-                        </td>
-                      </tr>
-                    ) : (
-                      modalProcessedAccidents.map((a, idx) => (
-                        <tr 
-                          key={idx} 
-                          style={{ borderBottom: '1px solid #F1F5F9', transition: 'background 0.2s', cursor: 'default' }} 
-                          onMouseOver={e => e.currentTarget.style.background = '#F8FAFC'} 
-                          onMouseOut={e => e.currentTarget.style.background = 'white'}
-                        >
-                          {/* Data */}
-                          <td style={{ padding: '1rem 1.25rem', whiteSpace: 'nowrap' }}>
-                            <div style={{ display: 'flex', flexDirection: 'column', gap: '3px' }}>
-                              <span style={{ fontWeight: 800, color: '#1E293B', fontSize: '0.85rem' }}>
-                                {formatDateBR(a.date)}
-                              </span>
-                              {a.time && (
-                                <span style={{ fontSize: '0.72rem', color: '#64748B', display: 'flex', alignItems: 'center', gap: '3px', fontWeight: 600 }}>
-                                  <Clock size={11} color="#94A3B8" /> {a.time} {a.period ? `(${a.period})` : ''}
-                                </span>
-                              )}
-                            </div>
-                          </td>
-
-                          {/* Colaborador */}
-                          <td style={{ padding: '1rem 1.25rem' }}>
-                            <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
-                              <div style={{ width: '38px', height: '38px', borderRadius: '10px', background: 'linear-gradient(135deg, #EFF6FF 0%, #DBEAFE 100%)', color: '#1D4ED8', display: 'flex', alignItems: 'center', justifyContent: 'center', fontWeight: 900, fontSize: '0.95rem', border: '1px solid #BFDBFE', flexShrink: 0 }}>
-                                {a.employee.split(' ').map(n => n[0]).slice(0,2).join('')}
-                              </div>
-                              <div style={{ display: 'flex', flexDirection: 'column', gap: '3px' }}>
-                                <span style={{ fontWeight: 800, color: '#0F172A', fontSize: '0.9rem' }}>{a.employee}</span>
-                                {a.investigationLink && (
-                                  <a href={a.investigationLink} target="_blank" rel="noopener noreferrer" style={{ display: 'inline-flex', alignItems: 'center', gap: '4px', fontSize: '0.68rem', color: '#2563EB', fontWeight: 800, textDecoration: 'none', background: '#EFF6FF', padding: '2px 6px', borderRadius: '4px', border: '1px solid #BFDBFE', width: 'fit-content', transition: 'background 0.2s' }} onMouseOver={e => e.currentTarget.style.background = '#DBEAFE'} onMouseOut={e => e.currentTarget.style.background = '#EFF6FF'}>
-                                    <ExternalLink size={11} strokeWidth={3} /> Investigação
-                                  </a>
-                                )}
-                              </div>
-                            </div>
-                          </td>
-
-                          {/* Cargo & Área */}
-                          <td style={{ padding: '1rem 1.25rem' }}>
-                            <div style={{ fontWeight: 700, color: '#334155', fontSize: '0.85rem' }}>{a.role}</div>
-                            <div style={{ fontSize: '0.78rem', color: '#64748B', marginTop: '2px', display: 'flex', alignItems: 'center', gap: '4px', fontWeight: 500 }}>
-                              <Layers size={13} color="#94A3B8" /> {a.area}
-                            </div>
-                          </td>
-
-                          {/* Causa Raiz */}
-                          <td style={{ padding: '1rem 1.25rem', textAlign: 'center' }}>
-                            <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', gap: '4px' }}>
-                              <span style={{ display: 'inline-flex', alignItems: 'center', gap: '5px', padding: '4px 10px', borderRadius: '999px', background: a.unsafeAct ? '#FEF2F2' : '#F0FDF4', color: a.unsafeAct ? '#991B1B' : '#166534', fontWeight: 800, fontSize: '0.72rem', border: `1px solid ${a.unsafeAct ? '#FECACA' : '#BBF7D0'}` }}>
-                                {a.unsafeAct ? <AlertCircle size={13} /> : <ShieldCheck size={13} />}
-                                {a.unsafeAct ? 'Ato Inseguro' : 'Condição Insegura'}
-                              </span>
-                              <div style={{ color: '#475569', fontSize: '0.75rem', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.04em', textAlign: 'center' }}>
-                                {a.type}
-                              </div>
-                            </div>
-                          </td>
-
-                          {/* Afastamento */}
-                          <td style={{ padding: '1rem 1.25rem', textAlign: 'right' }}>
-                            {a.lostDays > 0 ? (
-                              <div style={{ display: 'inline-flex', flexDirection: 'column', alignItems: 'flex-end' }}>
-                                <span style={{ color: '#EF4444', fontWeight: 900, fontSize: '1.05rem', display: 'flex', alignItems: 'center', gap: '4px' }}>
-                                  <TrendingUp size={16} /> {a.lostDays} dias
-                                </span>
-                                <span style={{ fontSize: '0.68rem', color: '#94A3B8', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.05em' }}>afastado</span>
-                              </div>
-                            ) : (
-                              <span style={{ display: 'inline-block', padding: '6px 10px', background: '#F8FAFC', color: '#94A3B8', borderRadius: '8px', fontWeight: 700, fontSize: '0.75rem', border: '1px solid #E2E8F0' }}>
-                                Sem Afastamento
-                              </span>
-                            )}
-                          </td>
-                        </tr>
-                      ))
-                    )}
-                  </tbody>
-                </table>
-              </div>
-            </div>
-          </div>
+        </>
+      )}
+      
+      {filteredAccidents.length > 0 && (
+        <div style={{marginTop: '2rem', padding: '1rem', background: 'var(--primary-light)', borderRadius: '0.5rem', border: '1px solid var(--primary)', color: 'var(--primary)', textAlign: 'center', fontWeight: 600}}>
+           O dashboard está operando com filtros ativos. Os dados acima representam exclusivamente o cenário de {filterDivision === 'ALL' ? 'todas as unidades' : filterDivision}.
         </div>
       )}
 
@@ -1073,12 +638,6 @@ export const Dashboard: React.FC<DashboardProps> = ({
           isOpen={isBreakdownModalOpen} 
           onClose={() => setIsBreakdownModalOpen(false)} 
         />
-      )}
-      
-      {filteredAccidents.length > 0 && (
-        <div style={{marginTop: '2rem', padding: '1rem', background: 'var(--primary-light)', borderRadius: '0.5rem', border: '1px solid var(--primary)', color: 'var(--primary)', textAlign: 'center', fontWeight: 600}}>
-           O dashboard está operando com filtros ativos. Os dados acima representam exclusivamente o cenário de {filterDivision === 'ALL' ? 'todas as unidades' : filterDivision}.
-        </div>
       )}
     </div>
   );

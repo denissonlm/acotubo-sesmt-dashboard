@@ -20,28 +20,10 @@ function App() {
   const [selectedYears, setSelectedYears] = useState<number[]>([2024, 2025, 2026])
   const [filterDivision, setFilterDivision] = useState('ALL')
   const [filterManager, setFilterManager] = useState('ALL')
-  const [filterArea, setFilterArea] = useState<string[]>([])
-  const [safetyGroupBy, setSafetyGroupBy] = useState<'area' | 'division'>('area')
+  const [filterArea, setFilterArea] = useState('ALL')
 
   useEffect(() => {
     const fetchData = async () => {
-      try {
-        const savedData = localStorage.getItem('savedAccidentsData')
-        if (savedData) {
-          const parsedData = JSON.parse(savedData) as Accident[]
-          parsedData.forEach(d => {
-            d.date = new Date(d.date)
-          })
-          if (parsedData.length > 0) {
-            setAccidents(parsedData)
-            setLoading(false)
-            return
-          }
-        }
-      } catch (e) {
-        console.error('Failed to load saved data from localStorage:', e)
-      }
-
       const data = await loadAccidentData('./data.xlsx')
       if (data.length > 0) {
         setAccidents(data)
@@ -81,7 +63,6 @@ function App() {
         filterDivision={filterDivision}
         filterManager={filterManager}
         filterArea={filterArea}
-        safetyGroupBy={safetyGroupBy}
         onBack={() => setIsPrinting(false)} 
       />
     )
@@ -95,7 +76,6 @@ function App() {
         filterDivision={filterDivision}
         filterManager={filterManager}
         filterArea={filterArea}
-        safetyGroupBy={safetyGroupBy}
         onBack={() => setIsLandscapePrinting(false)} 
       />
     )
@@ -106,7 +86,6 @@ function App() {
       <BatchPrintView 
         accidents={accidents} 
         configs={batchConfigs} 
-        safetyGroupBy={safetyGroupBy}
         onBack={() => setBatchConfigs([])} 
       />
     )
@@ -124,8 +103,6 @@ function App() {
         onManagerChange={setFilterManager}
         filterArea={filterArea}
         onAreaChange={setFilterArea}
-        safetyGroupBy={safetyGroupBy}
-        onSafetyGroupByChange={setSafetyGroupBy}
         onReset={() => setShowUpload(true)}
         onPrint={() => setIsPrinting(true)}
         onLandscapePrint={() => setIsLandscapePrinting(true)}

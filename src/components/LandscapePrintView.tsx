@@ -5,7 +5,8 @@ import {
 } from 'recharts';
 import { 
   Printer, ArrowLeft, ShieldCheck, Clock, Target, FileText, 
-  AlertCircle, TrendingUp, Calendar, Zap, Users, Activity, HardHat, GraduationCap, ClipboardList
+  AlertCircle, TrendingUp, Calendar, Trophy, Zap, Users, Activity, HardHat, GraduationCap, ClipboardList,
+  Gauge
 } from 'lucide-react';
 import type { Accident } from '../types';
 import { 
@@ -14,17 +15,23 @@ import {
   generateInsights,
   generateTemporalInsights, 
   calculateSafetyRecords,
-  calculateSafetyRanking
+  generateSafetyInsights
 } from '../utils/dataLoader';
 import { LOGO_BASE64 } from '../constants';
+import { 
+  processFrequencyAndSeverity, 
+  generateFrequencySeverityStory, 
+  loadHHTStore,
+  matchAccidentToSourceUnit,
+  SOURCE_UNITS
+} from '../utils/frequencySeverityLoader';
 
 interface LandscapePrintViewProps {
   accidents: Accident[];
   selectedYears: number[];
   filterDivision: string;
   filterManager: string;
-  filterArea: string[];
-  safetyGroupBy: 'area' | 'division';
+  filterArea: string;
   onBack: () => void;
 }
 
@@ -36,7 +43,6 @@ export const LandscapePrintView: React.FC<LandscapePrintViewProps> = ({
   filterDivision,
   filterManager,
   filterArea,
-  safetyGroupBy,
   onBack
 }) => {
   // 1. Filtered Accidents (only print those matching filters, as requested in users first request)
@@ -45,7 +51,7 @@ export const LandscapePrintView: React.FC<LandscapePrintViewProps> = ({
       const matchesYear = selectedYears.includes(a.year);
       const matchesDivision = filterDivision === 'ALL' || a.division === filterDivision;
       const matchesManager = filterManager === 'ALL' || a.manager === filterManager;
-      const matchesArea = filterArea.length === 0 || filterArea.includes(a.area);
+      const matchesArea = filterArea === 'ALL' || a.area === filterArea;
       return matchesYear && matchesDivision && matchesManager && matchesArea;
     });
   }, [accidents, selectedYears, filterDivision, filterManager, filterArea]);
@@ -58,6 +64,7 @@ export const LandscapePrintView: React.FC<LandscapePrintViewProps> = ({
   // 3. Insights
   const monthlyInsights = useMemo(() => generateInsights(filteredAccidents, selectedYears), [filteredAccidents, selectedYears]);
   const temporalInsights = useMemo(() => generateTemporalInsights(filteredAccidents), [filteredAccidents]);
+  const safetyInsights = useMemo(() => generateSafetyInsights(filteredAccidents), [filteredAccidents]);
   
   const breakdownInsights = useMemo(() => [
     { 
@@ -81,6 +88,25 @@ export const LandscapePrintView: React.FC<LandscapePrintViewProps> = ({
       type: 'warning' as const
     }
   ], [filteredAccidents]);
+
+  const occurrenceInsights = useMemo(() => [
+    {
+      title: 'Total de Ocorrências',
+      text: `${filteredAccidents.length} acidentes registrados no período trienal analisado.`,
+      type: 'info' as const
+    },
+    {
+      title: 'Dias Perdidos',
+      text: `${filteredAccidents.reduce((sum, a) => sum + a.lostDays, 0)} dias totais de afastamento acumulados no período.`,
+      type: 'danger' as const
+    },
+    {
+      title: 'Gravidade de Eventos',
+      text: `${Math.round((filteredAccidents.filter(a => a.lostDays > 0).length / Math.max(filteredAccidents.length, 1)) * 100)}% dos acidentes resultaram em afastamento.`,
+      type: 'warning' as const
+    }
+  ], [filteredAccidents]);
+
   const reportTitle = useMemo(() => {
     const yearsCount = selectedYears.length;
     switch (yearsCount) {
@@ -106,15 +132,67 @@ export const LandscapePrintView: React.FC<LandscapePrintViewProps> = ({
     const sorted = [...filteredAccidents].sort((a, b) => b.date.getTime() - a.date.getTime());
     if (sorted.length === 0) return [[]];
     const chunks: typeof filteredAccidents[] = [];
-    for (let i = 0; i < sorted.length; i += 15) {
-      chunks.push(sorted.slice(i, i + 15));
+    for (let i = 0; i < sorted.length; i += 12) {
+      chunks.push(sorted.slice(i, i + 12));
     }
     return chunks;
   }, [filteredAccidents]);
 
   const totalPages = useMemo(() => {
-    return 4 + occurrenceChunks.length;
+    return 5 + occurrenceChunks.length;
   }, [occurrenceChunks]);
+
+  const hhtStore = useMemo(() => loadHHTStore(), []);
+
+  const primaryYear = useMemo(() => {
+    const storeYears = Object.keys(hhtStore).map(Number);
+    const matched = selectedYears.filter(y => storeYears.includes(y));
+    if (matched.length > 0) return Math.max(...matched);
+    if (storeYears.length > 0) return Math.max(...storeYears);
+    return 2026;
+  }, [hhtStore, selectedYears]);
+
+  const availableMonths = useMemo(() => {
+    const yearObj = hhtStore[primaryYear] || {};
+    const months = Object.keys(yearObj).map(Number).sort((a, b) => a - b);
+    return months.length > 0 ? months : [1, 2, 3, 4, 5, 6, 7, 8];
+  }, [hhtStore, primaryYear]);
+
+  const unitForRates = useMemo(() => {
+    if (filterDivision === 'ALL') return 'ALL';
+    if (SOURCE_UNITS.includes(filterDivision)) return filterDivision;
+    return matchAccidentToSourceUnit(filterDivision, filterArea) || 'ALL';
+  }, [filterDivision, filterArea]);
+
+  const freqOverview = useMemo(() => {
+    return processFrequencyAndSeverity(accidents, primaryYear, availableMonths, unitForRates, hhtStore);
+  }, [accidents, primaryYear, availableMonths, unitForRates, hhtStore]);
+
+  const freqStory = useMemo(() => {
+    return generateFrequencySeverityStory(freqOverview, primaryYear);
+  }, [freqOverview, primaryYear]);
+
+  const getOITStatusColor = (status: string): string => {
+    switch (status) {
+      case 'MUITO BOA': return '#10B981';
+      case 'BOA': return '#0284C7';
+      case 'REGULAR': return '#F59E0B';
+      case 'RUIM': return '#F97316';
+      case 'PÉSSIMA': return '#EF4444';
+      default: return '#64748B';
+    }
+  };
+
+  const getOITStatusBg = (status: string): string => {
+    switch (status) {
+      case 'MUITO BOA': return '#ECFDF5';
+      case 'BOA': return '#F0F9FF';
+      case 'REGULAR': return '#FFFBEB';
+      case 'RUIM': return '#FFF7ED';
+      case 'PÉSSIMA': return '#FEF2F2';
+      default: return '#F1F5F9';
+    }
+  };
 
   const employeeCounts = useMemo(() => {
     return filteredAccidents.reduce((acc, a) => {
@@ -200,19 +278,11 @@ export const LandscapePrintView: React.FC<LandscapePrintViewProps> = ({
         const s = stats[year];
         if (!s) return null;
         return (
-          <div key={year} className="year-card" style={{ background: '#FFF', borderLeft: '4px solid var(--primary)', display: 'flex', flexDirection: 'column', gap: '2px', padding: '0.4rem 0.5rem' }}>
-            <h3 style={{ margin: 0, color: '#64748B', fontWeight: 800, fontSize: '0.75rem', textAlign: 'center' }}>{year}</h3>
-            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '0.25rem', textAlign: 'center', marginTop: '2px' }}>
-              <div style={{ borderRight: '1px solid #E2E8F0', paddingRight: '0.25rem' }}>
-                <div style={{ fontSize: '1.25rem', fontWeight: 900, color: 'var(--primary)', lineHeight: 1 }}>{s.total}</div>
-                <div style={{ fontSize: '0.55rem', fontWeight: 800, color: '#94A3B8', textTransform: 'uppercase' }}>acd.</div>
-              </div>
-              <div style={{ paddingLeft: '0.25rem' }}>
-                <div style={{ fontSize: '1.25rem', fontWeight: 900, color: '#475569', lineHeight: 1 }}>{s.totalLostDays}</div>
-                <div style={{ fontSize: '0.55rem', fontWeight: 800, color: '#94A3B8', textTransform: 'uppercase' }}>dias</div>
-              </div>
-            </div>
-            <div style={{ fontSize: '0.55rem', fontWeight: 900, color: '#475569', marginTop: '4px', textAlign: 'center', borderTop: '1px dashed #E2E8F0', paddingTop: '2px' }}>média {s.avgPerMonth}/mês</div>
+          <div key={year} className="year-card" style={{ background: '#FFF', borderLeft: '4px solid var(--primary)', display: 'flex', flexDirection: 'column', gap: '1px', padding: '0.35rem 0.55rem' }}>
+            <h3 style={{ margin: 0, color: '#64748B', fontWeight: 800 }}>{year}</h3>
+            <div className="count" style={{ lineHeight: 1, margin: '2px 0 1px 0' }}>{s.total}</div>
+            <div style={{ fontSize: '0.62rem', fontWeight: 800, color: '#94A3B8', textTransform: 'uppercase' }}>acidentes</div>
+            <div style={{ fontSize: '0.62rem', fontWeight: 900, color: '#475569', marginTop: '1px' }}>média {s.avgPerMonth}/mês</div>
           </div>
         );
       })}
@@ -227,7 +297,7 @@ export const LandscapePrintView: React.FC<LandscapePrintViewProps> = ({
   );
 
   // Insight List Renders
-  const renderRightSidebar = (title: string, subtitle: string, desc: string, insights: Array<{ title: string, text: string, type: 'danger' | 'warning' | 'info' | 'success' }>, limit = 3) => (
+  const renderRightSidebar = (title: string, subtitle: string, desc: string, insights: Array<{ title: string, text: string, type: 'danger' | 'warning' | 'info' | 'success' }>) => (
     <aside className="insights-panel">
       <div>
         <h2 style={{ fontSize: '0.9rem', fontWeight: 900, color: '#0F172A', margin: 0 }}>
@@ -238,7 +308,7 @@ export const LandscapePrintView: React.FC<LandscapePrintViewProps> = ({
         </p>
       </div>
 
-      {insights.slice(0, limit).map((insight, idx) => {
+      {insights.slice(0, 3).map((insight, idx) => {
         const colors = {
           danger: { bg: '#FEE2E2', text: '#EF4444', icon: <AlertCircle color="#EF4444" /> },
           warning: { bg: '#FEF3C7', text: '#F59E0B', icon: <Calendar color="#F59E0B" /> },
@@ -303,7 +373,7 @@ export const LandscapePrintView: React.FC<LandscapePrintViewProps> = ({
             <div>
               <h1 style={{ color: '#0F172A', fontSize: '1.15rem', fontWeight: 900, textTransform: 'uppercase', margin: 0, letterSpacing: '0.5px' }}>{reportTitle} — Panorama Geral</h1>
               <div style={{ fontSize: '0.65rem', color: '#64748B', fontWeight: 700 }}>
-                {filterDivision === 'ALL' ? 'Grupo Açotubo' : filterDivision} • {filterArea.length === 0 ? 'Todas as Áreas' : filterArea.length === 1 ? filterArea[0] : 'Múltiplas Áreas'} • Anos: {selectedYears.join(', ')}
+                {filterDivision === 'ALL' ? 'Grupo Açotubo' : filterDivision} • {filterArea === 'ALL' ? 'Todas as Áreas' : filterArea} • Anos: {selectedYears.join(', ')}
               </div>
             </div>
           </div>
@@ -323,34 +393,15 @@ export const LandscapePrintView: React.FC<LandscapePrintViewProps> = ({
                 <div key={year} className="panel-premium" style={{ flex: 1, display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '0.45rem 1rem', borderLeft: '5px solid var(--primary)', background: '#FFF' }}>
                   <div>
                     <h3 style={{ margin: 0, color: '#64748B', fontWeight: 800, fontSize: '0.75rem' }}>ANO {year}</h3>
-                    <div style={{ fontSize: '0.58rem', fontWeight: 800, color: '#94A3B8', textTransform: 'uppercase', marginTop: '1px' }}>méd {s.avgPerMonth}/mês</div>
+                    <div style={{ fontSize: '0.58rem', fontWeight: 800, color: '#94A3B8', textTransform: 'uppercase', marginTop: '1px' }}>acidentes registrados</div>
                   </div>
-                  <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
-                    <div style={{ textAlign: 'center' }}>
-                      <div style={{ fontSize: '1.55rem', fontWeight: 900, color: 'var(--primary)', lineHeight: 1 }}>{s.total}</div>
-                      <div style={{ fontSize: '0.55rem', fontWeight: 800, color: '#94A3B8', textTransform: 'uppercase', marginTop: '2px' }}>acd.</div>
-                    </div>
-                    <div style={{ height: '28px', width: '1px', background: '#E2E8F0' }}></div>
-                    <div style={{ textAlign: 'center' }}>
-                      <div style={{ fontSize: '1.55rem', fontWeight: 900, color: '#475569', lineHeight: 1 }}>{s.totalLostDays}</div>
-                      <div style={{ fontSize: '0.55rem', fontWeight: 800, color: '#94A3B8', textTransform: 'uppercase', marginTop: '2px' }}>dias</div>
-                    </div>
+                  <div style={{ display: 'flex', alignItems: 'baseline', gap: '0.4rem' }}>
+                    <span style={{ fontSize: '1.85rem', fontWeight: 900, color: '#0F172A', lineHeight: 1 }}>{s.total}</span>
+                    <span style={{ fontSize: '0.7rem', fontWeight: 800, color: '#475569' }}>• méd. {s.avgPerMonth}/mês</span>
                   </div>
                 </div>
               );
             })}
-            
-            {/* Streak de dias sem acidentes */}
-            <div className="panel-premium" style={{ flex: 1, display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '0.45rem 1rem', borderLeft: '5px solid #10B981', background: '#FFF' }}>
-              <div>
-                <h3 style={{ margin: 0, color: '#64748B', fontWeight: 800, fontSize: '0.75rem' }}>DIAS SEM ACIDENTES</h3>
-                <div style={{ fontSize: '0.58rem', fontWeight: 800, color: '#94A3B8', textTransform: 'uppercase', marginTop: '1px' }}>streak atual de segurança</div>
-              </div>
-              <div style={{ display: 'flex', alignItems: 'baseline', gap: '0.4rem' }}>
-                <span style={{ fontSize: '1.85rem', fontWeight: 900, color: '#10B981', lineHeight: 1 }}>{safetyRecords.currentStreak}</span>
-                <span style={{ fontSize: '0.7rem', fontWeight: 800, color: '#475569' }}>dias</span>
-              </div>
-            </div>
           </div>
 
           {/* Centro: Gráficos Lado a Lado (Comparativo Mensal e Mapa de Calor) */}
@@ -364,7 +415,12 @@ export const LandscapePrintView: React.FC<LandscapePrintViewProps> = ({
                   <BarChart data={monthlyChartData} margin={{ top: 10, right: 10, left: -25, bottom: 0 }}>
                     <XAxis dataKey="month" axisLine={false} tickLine={false} tick={{ fontSize: 8, fontWeight: 700, fill: '#64748B' }} />
                     <YAxis axisLine={false} tickLine={false} tick={{ fontSize: 8, fill: '#64748B' }} />
-                    <Tooltip cursor={{ fill: '#F1F5F9' }} />
+                    <Tooltip 
+                      cursor={{ fill: '#F1F5F9' }} 
+                      contentStyle={{ backgroundColor: '#FFFFFF', borderRadius: '8px', border: '1px solid #E2E8F0', boxShadow: '0 4px 12px rgba(0,0,0,0.1)', fontSize: '0.75rem' }} 
+                      itemStyle={{ color: '#0F172A', fontWeight: 600 }} 
+                      labelStyle={{ color: '#0F172A', fontWeight: 800, marginBottom: '2px' }} 
+                    />
                     <Legend verticalAlign="top" align="center" iconType="circle" wrapperStyle={{ fontSize: 8, paddingBottom: 3 }} />
                     {selectedYears.map((year, idx) => {
                       const colors = ['#B91C1C', '#94A3B8', '#0F172A', '#3B82F6', '#10B981'];
@@ -405,7 +461,7 @@ export const LandscapePrintView: React.FC<LandscapePrintViewProps> = ({
                             key={i} 
                             style={{ 
                               background: getHeatmapColor(m.count), 
-                              color: m.count === 0 ? '#94A3B8' : m.count > 2 ? '#FFFFFF' : '#B91C1C',
+                              color: m.count > 0 ? '#B91C1C' : '#94A3B8',
                               height: '20px',
                               borderRadius: '3px',
                               fontSize: '9px',
@@ -466,7 +522,7 @@ export const LandscapePrintView: React.FC<LandscapePrintViewProps> = ({
         </footer>
       </div>
 
-      {/* PAGE 2: Análise de Períodos */}
+      {/* PAGE 2: Análise Temporal */}
       <div className="a4-landscape">
         {/* Header */}
         <header style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', borderBottom: '2px solid #3B82F6', paddingBottom: '0.4rem' }}>
@@ -475,7 +531,7 @@ export const LandscapePrintView: React.FC<LandscapePrintViewProps> = ({
               <Clock size={20} />
             </div>
             <div>
-              <h1 style={{ color: '#0F172A', fontSize: '1.15rem', fontWeight: 900, textTransform: 'uppercase', margin: 0, letterSpacing: '0.5px' }}>{reportTitle} — Análise de Períodos</h1>
+              <h1 style={{ color: '#0F172A', fontSize: '1.15rem', fontWeight: 900, textTransform: 'uppercase', margin: 0, letterSpacing: '0.5px' }}>{reportTitle} — Análise Temporal</h1>
               <div style={{ fontSize: '0.65rem', color: '#64748B', fontWeight: 700 }}>Identificação de Padrões por Período, Dia e Horários</div>
             </div>
           </div>
@@ -509,7 +565,11 @@ export const LandscapePrintView: React.FC<LandscapePrintViewProps> = ({
                             <Cell key={`cell-${index}`} fill={entry.color} />
                           ))}
                         </Pie>
-                        <Tooltip />
+                        <Tooltip 
+                          contentStyle={{ backgroundColor: '#FFFFFF', borderRadius: '8px', border: '1px solid #E2E8F0', boxShadow: '0 4px 12px rgba(0,0,0,0.1)', fontSize: '0.75rem' }} 
+                          itemStyle={{ color: '#0F172A', fontWeight: 600 }} 
+                          labelStyle={{ color: '#0F172A', fontWeight: 800, marginBottom: '2px' }} 
+                        />
                       </PieChart>
                     </ResponsiveContainer>
                   </div>
@@ -535,7 +595,12 @@ export const LandscapePrintView: React.FC<LandscapePrintViewProps> = ({
                     <BarChart data={temporalStats.dayOfWeekStats} margin={{ top: 10, right: 5, left: -30, bottom: 0 }}>
                       <XAxis dataKey="day" axisLine={false} tickLine={false} tickFormatter={(val) => val.substring(0, 3)} tick={{ fontSize: 9, fontWeight: 700, fill: '#64748B' }} />
                       <YAxis axisLine={false} tickLine={false} tick={{ fontSize: 9, fill: '#64748B' }} />
-                      <Tooltip />
+                      <Tooltip 
+                        cursor={{ fill: '#F1F5F9' }} 
+                        contentStyle={{ backgroundColor: '#FFFFFF', borderRadius: '8px', border: '1px solid #E2E8F0', boxShadow: '0 4px 12px rgba(0,0,0,0.1)', fontSize: '0.75rem' }} 
+                        itemStyle={{ color: '#0F172A', fontWeight: 600 }} 
+                        labelStyle={{ color: '#0F172A', fontWeight: 800, marginBottom: '2px' }} 
+                      />
                       <Bar dataKey="count" fill="#3B82F6" radius={[3, 3, 0, 0]} barSize={15} label={{ position: 'top', fontSize: 8, fontWeight: 900, fill: '#3B82F6' }} />
                     </BarChart>
                   </ResponsiveContainer>
@@ -557,7 +622,11 @@ export const LandscapePrintView: React.FC<LandscapePrintViewProps> = ({
                     </defs>
                     <XAxis dataKey="hour" axisLine={false} tickLine={false} tick={{ fontSize: 8, fontWeight: 700, fill: '#64748B' }} />
                     <YAxis axisLine={false} tickLine={false} hide />
-                    <Tooltip />
+                    <Tooltip 
+                      contentStyle={{ backgroundColor: '#FFFFFF', borderRadius: '8px', border: '1px solid #E2E8F0', boxShadow: '0 4px 12px rgba(0,0,0,0.1)', fontSize: '0.75rem' }} 
+                      itemStyle={{ color: '#0F172A', fontWeight: 600 }} 
+                      labelStyle={{ color: '#0F172A', fontWeight: 800, marginBottom: '2px' }} 
+                    />
                     <Area type="monotone" dataKey="count" stroke="#10B981" strokeWidth={2.5} fillOpacity={1} fill="url(#printColorCount)" />
                   </AreaChart>
                 </ResponsiveContainer>
@@ -583,7 +652,7 @@ export const LandscapePrintView: React.FC<LandscapePrintViewProps> = ({
               <Target size={20} />
             </div>
             <div>
-              <h1 style={{ color: '#0F172A', fontSize: '1.15rem', fontWeight: 900, textTransform: 'uppercase', margin: 0, letterSpacing: '0.5px' }}>{reportTitle} — Dias sem Acidentes</h1>
+              <h1 style={{ color: '#0F172A', fontSize: '1.15rem', fontWeight: 900, textTransform: 'uppercase', margin: 0, letterSpacing: '0.5px' }}>{reportTitle} — Gestão de Segurança</h1>
               <div style={{ fontSize: '0.65rem', color: '#64748B', fontWeight: 700 }}>Recordes de Dias Sem Acidentes e Cronologia de Incidentes</div>
             </div>
           </div>
@@ -594,68 +663,118 @@ export const LandscapePrintView: React.FC<LandscapePrintViewProps> = ({
         </header>
 
         <div style={{ display: 'flex', flexDirection: 'column', gap: '0.65rem', height: 'calc(100% - 60px)', marginTop: '0.65rem' }}>
-          {/* Topo: Histórico DSA Gráfico */}
-          <div className="panel-premium" style={{ display: 'flex', flexDirection: 'column', padding: '0.75rem', height: '180px', flexShrink: 0 }}>
-            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '0.15rem' }}>
+          {/* Extremo Superior: Year Cards + Safety KPIs */}
+          <div style={{ display: 'flex', gap: '0.75rem' }}>
+            {/* Year Cards */}
+            {selectedYears.slice(0, 3).map(year => {
+              const s = stats[year];
+              if (!s) return null;
+              return (
+                <div key={year} className="panel-premium" style={{ flex: 1, display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '0.45rem 1rem', borderLeft: '4px solid var(--primary)', background: '#FFF' }}>
+                  <div>
+                    <h3 style={{ margin: 0, color: '#64748B', fontWeight: 800, fontSize: '0.75rem' }}>ANO {year}</h3>
+                    <div style={{ fontSize: '0.58rem', fontWeight: 800, color: '#94A3B8', textTransform: 'uppercase' }}>acidentes</div>
+                  </div>
+                  <div style={{ display: 'flex', alignItems: 'baseline', gap: '0.3rem' }}>
+                    <span style={{ fontSize: '1.6rem', fontWeight: 900, color: '#0F172A', lineHeight: 1 }}>{s.total}</span>
+                    <span style={{ fontSize: '0.65rem', fontWeight: 800, color: '#475569' }}>({s.avgPerMonth}/m)</span>
+                  </div>
+                </div>
+              );
+            })}
+
+            {/* KPI 1 */}
+            <div className="panel-premium" style={{ flex: 1, background: 'linear-gradient(135deg, #0F172A 0%, #1E293B 100%)', border: 'none', color: 'white', display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '0.45rem 1rem' }}>
               <div>
-                <h3 style={{ fontSize: '0.85rem', fontWeight: 900, margin: '0 0 0.15rem 0', color: '#0F172A' }}>Espaçamento de Dias Sem Acidentes entre Ocorrências</h3>
-                <p style={{ fontSize: '0.58rem', color: 'var(--text-muted)', margin: 0 }}>Histórico cronológico de dias entre eventos consecutivos</p>
+                <div style={{ fontSize: '0.75rem', fontWeight: 900, color: '#10B981', display: 'flex', alignItems: 'center', gap: '3px' }}>
+                  <Target size={12} color="#10B981" /> <span>Sem Ocorrências</span>
+                </div>
+                <div style={{ fontSize: '0.58rem', fontWeight: 800, color: '#94A3B8', textTransform: 'uppercase', marginTop: '1px' }}>dias atuais</div>
               </div>
-              <div style={{ textAlign: 'right' }}>
-                <div style={{ fontSize: '0.9rem', fontWeight: 900, color: '#10B981', lineHeight: 1 }}>{safetyRecords.currentStreak} dias atuais</div>
-                <div style={{ fontSize: '0.6rem', color: '#64748B', fontWeight: 700, marginTop: '2px' }}>Recorde: {safetyRecords.historicalRecord} dias</div>
+              <div style={{ fontSize: '1.75rem', fontWeight: 900, color: '#10B981', lineHeight: 1 }}>{safetyRecords.currentStreak}</div>
+            </div>
+
+            {/* KPI 2 */}
+            <div className="panel-premium" style={{ flex: 1, display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '0.45rem 1rem', background: '#FFF' }}>
+              <div>
+                <div style={{ fontSize: '0.75rem', fontWeight: 900, color: '#F59E0B', display: 'flex', alignItems: 'center', gap: '3px' }}>
+                  <Trophy size={12} color="#F59E0B" /> <span>Recorde DSA</span>
+                </div>
+                <div style={{ fontSize: '0.58rem', fontWeight: 800, color: '#94A3B8', textTransform: 'uppercase', marginTop: '1px' }}>histórico</div>
+              </div>
+              <div style={{ fontSize: '1.75rem', fontWeight: 900, color: '#0F172A', lineHeight: 1 }}>{safetyRecords.historicalRecord}</div>
+            </div>
+
+            {/* KPI 3 */}
+            <div className="panel-premium" style={{ flex: 1, display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '0.45rem 1rem', background: '#FFF' }}>
+              <div>
+                <div style={{ fontSize: '0.75rem', fontWeight: 900, color: '#3B82F6', display: 'flex', alignItems: 'center', gap: '3px' }}>
+                  <Calendar size={12} color="#3B82F6" /> <span>Intervalo DSA</span>
+                </div>
+                <div style={{ fontSize: '0.58rem', fontWeight: 800, color: '#94A3B8', textTransform: 'uppercase', marginTop: '1px' }}>média dias</div>
+              </div>
+              <div style={{ fontSize: '1.75rem', fontWeight: 900, color: '#0F172A', lineHeight: 1 }}>
+                {safetyRecords.intervals.length > 0 
+                  ? Math.round(safetyRecords.intervals.reduce((sum, item) => sum + item.days, 0) / safetyRecords.intervals.length)
+                  : '-'}
               </div>
             </div>
-            
-            <div style={{ flex: 1, minHeight: 0, marginTop: '4px' }}>
+          </div>
+
+          {/* Centro: Histórico DSA Gráfico em Largura Total */}
+          <div className="panel-premium" style={{ flex: 1, display: 'flex', flexDirection: 'column', padding: '0.75rem', minHeight: 0 }}>
+            <h3 style={{ fontSize: '0.85rem', fontWeight: 900, margin: '0 0 0.15rem 0', color: '#0F172A' }}>Espaçamento de Dias Sem Acidentes entre Ocorrências</h3>
+            <p style={{ fontSize: '0.58rem', color: 'var(--text-muted)', margin: '0 0 0.35rem 0' }}>Linha do tempo cronológica com a contagem de dias entre eventos consecutivos vs recorde de segurança</p>
+            <div style={{ flex: 1, minHeight: 0 }}>
               <ResponsiveContainer width="100%" height="100%">
                 <LineChart data={safetyChartData} margin={{ top: 10, right: 20, left: -25, bottom: 0 }}>
                   <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#F1F5F9" />
                   <XAxis dataKey="date" axisLine={false} tickLine={false} tick={{ fontSize: 8, fill: '#64748B', fontWeight: 700 }} />
                   <YAxis axisLine={false} tickLine={false} tick={{ fontSize: 8, fill: '#64748B' }} />
+                  <Tooltip 
+                    contentStyle={{ backgroundColor: '#FFFFFF', borderRadius: '8px', border: '1px solid #E2E8F0', boxShadow: '0 4px 12px rgba(0,0,0,0.1)', fontSize: '0.75rem' }} 
+                    itemStyle={{ color: '#0F172A', fontWeight: 600 }} 
+                    labelStyle={{ color: '#0F172A', fontWeight: 800, marginBottom: '2px' }} 
+                  />
                   <ReferenceLine y={safetyRecords.historicalRecord} stroke="#B91C1C" strokeDasharray="4 4" label={{ position: 'right', value: 'Recorde', fill: '#B91C1C', fontSize: 8, fontWeight: 900 }} />
-                  <Line type="monotone" dataKey="days" stroke="#0F172A" strokeWidth={2.5} dot={{ fill: '#B91C1C', strokeWidth: 1.5, r: 3, stroke: '#FFF' }} />
+                  <Line 
+                    type="monotone" 
+                    dataKey="days" 
+                    stroke="#0F172A" 
+                    strokeWidth={3} 
+                    dot={{ fill: '#B91C1C', strokeWidth: 1.5, r: 3.5, stroke: '#FFF' }}
+                  />
                 </LineChart>
               </ResponsiveContainer>
             </div>
           </div>
 
-          {/* Centro: Tabela de Ranking */}
-          <div className="panel-premium" style={{ flex: 1, padding: '0.75rem', overflow: 'hidden', display: 'flex', flexDirection: 'column' }}>
-            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '0.5rem' }}>
-               <h3 style={{ fontSize: '0.85rem', fontWeight: 900, margin: 0, color: '#0F172A' }}>Ranking Abrangente por {safetyGroupBy === 'area' ? 'Área' : 'Divisão'}</h3>
-               <span style={{ fontSize: '0.6rem', background: '#F1F5F9', padding: '2px 6px', borderRadius: '4px', fontWeight: 800, color: '#64748B' }}>Ordem: Dias Sem Acidentes</span>
-            </div>
-            
-            <div style={{ flex: 1, overflowY: 'auto' }} className="custom-scrollbar">
-              <table className="ranking-table-premium" style={{ marginTop: 0 }}>
-                <thead>
-                  <tr>
-                    <th style={{ padding: '0.4rem 0.75rem', fontSize: '0.6rem' }}>Pos.</th>
-                    <th style={{ padding: '0.4rem 0.75rem', fontSize: '0.6rem' }}>Nome</th>
-                    <th style={{ padding: '0.4rem 0.75rem', fontSize: '0.6rem', textAlign: 'center' }}>Dias Invicto</th>
-                    <th style={{ padding: '0.4rem 0.75rem', fontSize: '0.6rem', textAlign: 'center' }}>Última Ocorrência</th>
-                    <th style={{ padding: '0.4rem 0.75rem', fontSize: '0.6rem', textAlign: 'center' }}>Acidentes Totais</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {calculateSafetyRanking(filteredAccidents, safetyGroupBy).map((row, idx) => (
-                    <tr key={row.name}>
-                      <td style={{ padding: '0.3rem 0.75rem', fontSize: '0.65rem', fontWeight: 900, textAlign: 'center', color: idx < 3 ? '#0F172A' : '#64748B', borderBottom: '1px solid var(--border)' }}>{idx + 1}º</td>
-                      <td style={{ padding: '0.3rem 0.75rem', fontSize: '0.65rem', fontWeight: 800, borderBottom: '1px solid var(--border)' }}>{row.name}</td>
-                      <td style={{ padding: '0.3rem 0.75rem', fontSize: '0.75rem', fontWeight: 900, textAlign: 'center', color: row.neverHad ? '#10B981' : '#0F172A', borderBottom: '1px solid var(--border)' }}>
-                        {row.neverHad ? `+${row.days}` : row.days}
-                      </td>
-                      <td style={{ padding: '0.3rem 0.75rem', fontSize: '0.6rem', color: '#64748B', textAlign: 'center', fontWeight: 700, borderBottom: '1px solid var(--border)' }}>
-                        {row.neverHad ? 'Nenhum' : (row.lastDate ? row.lastDate.toLocaleDateString('pt-BR') : '-')}
-                      </td>
-                      <td style={{ padding: '0.3rem 0.75rem', fontSize: '0.65rem', fontWeight: 800, textAlign: 'center', color: '#64748B', borderBottom: '1px solid var(--border)' }}>
-                        {row.totalAccidents}
-                      </td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
+          {/* Extremo Inferior: Gestão de Indicadores Storytelling */}
+          <div style={{ display: 'flex', flexDirection: 'column', gap: '0.25rem' }}>
+            <h2 style={{ fontSize: '0.8rem', fontWeight: 900, color: '#0F172A', margin: 0, paddingLeft: '0.15rem' }}>
+              Gestão de <span style={{ color: 'var(--primary)' }}>Indicadores</span> • <span style={{ fontSize: '0.65rem', color: 'var(--text-muted)', fontWeight: 500 }}>Fatores críticos de performance de segurança</span>
+            </h2>
+            <div style={{ display: 'flex', gap: '0.75rem' }}>
+              {safetyInsights.slice(0, 3).map((insight, idx) => {
+                const colors = {
+                  danger: { bg: '#FEE2E2', text: '#EF4444', icon: <AlertCircle color="#EF4444" size={16} /> },
+                  warning: { bg: '#FEF3C7', text: '#F59E0B', icon: <Calendar color="#F59E0B" size={16} /> },
+                  info: { bg: '#DBEAFE', text: '#3B82F6', icon: <TrendingUp color="#3B82F6" size={16} /> },
+                  success: { bg: '#D1FAE5', text: '#10B981', icon: <ShieldCheck color="#10B981" size={16} /> }
+                };
+                const config = colors[insight.type];
+                return (
+                  <div key={idx} className="insight-card" style={{ flex: 1, display: 'flex', alignItems: 'center', gap: '0.6rem', padding: '0.45rem 0.75rem', borderLeft: `4px solid ${config.text}`, background: '#FFF' }}>
+                    <div className="insight-icon" style={{ backgroundColor: config.bg, width: '26px', height: '26px', display: 'flex', alignItems: 'center', justifyContent: 'center', borderRadius: '50%', flexShrink: 0 }}>
+                      {config.icon}
+                    </div>
+                    <div className="insight-content" style={{ minWidth: 0 }}>
+                      <h4 style={{ fontSize: '0.72rem', fontWeight: 900, margin: 0, color: '#0F172A' }}>{insight.title}</h4>
+                      <p style={{ fontSize: '0.62rem', margin: '2px 0 0 0', color: '#64748B', lineHeight: 1.2 }}>{insight.text}</p>
+                    </div>
+                  </div>
+                );
+              })}
             </div>
           </div>
         </div>
@@ -666,7 +785,191 @@ export const LandscapePrintView: React.FC<LandscapePrintViewProps> = ({
         </footer>
       </div>
 
-      {/* PAGE 4: Breakdown de Causas */}
+      {/* PAGE 4: Indicadores Regulamentares (NBR 14280 / OIT) */}
+      <div className="a4-landscape">
+        {/* Header */}
+        <header style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', borderBottom: '2px solid #0284C7', paddingBottom: '0.4rem' }}>
+          <div style={{ display: 'flex', gap: '0.6rem', alignItems: 'center' }}>
+            <div style={{ background: '#0284C7', padding: '0.4rem', borderRadius: '6px', color: 'white', display: 'flex', alignItems: 'center' }}>
+              <Gauge size={20} />
+            </div>
+            <div>
+              <h1 style={{ color: '#0F172A', fontSize: '1.15rem', fontWeight: 900, textTransform: 'uppercase', margin: 0, letterSpacing: '0.5px' }}>{reportTitle} — Indicadores Regulamentares (NBR 14280 / OIT)</h1>
+              <div style={{ fontSize: '0.65rem', color: '#64748B', fontWeight: 700 }}>Taxas Oficiais de Frequência (F) e Gravidade (G) • Exercício {primaryYear} • Grupo Açotubo</div>
+            </div>
+          </div>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+            <img src={LOGO_BASE64} alt="Açotubo" style={{ height: '22px' }} />
+            <span style={{ fontSize: '0.65rem', fontWeight: 900, background: '#F1F5F9', padding: '3px 8px', borderRadius: '4px', color: '#475569' }}>FOLHA 04 / {String(totalPages).padStart(2, '0')}</span>
+          </div>
+        </header>
+
+        <div style={{ display: 'flex', flexDirection: 'column', gap: '0.65rem', height: 'calc(100% - 60px)', marginTop: '0.65rem' }}>
+          {/* Top Row: 4 KPI Cards */}
+          <div style={{ display: 'flex', gap: '0.75rem' }}>
+            {/* Card 1: Frequência */}
+            <div className="panel-premium" style={{ flex: 1, display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '0.45rem 1rem', borderLeft: '4px solid #0284C7', background: '#FFF' }}>
+              <div>
+                <div style={{ display: 'flex', alignItems: 'center', gap: '0.4rem' }}>
+                  <span style={{ color: '#64748B', fontWeight: 800, fontSize: '0.75rem', textTransform: 'uppercase' }}>Frequência (F)</span>
+                  <span style={{ fontSize: '0.62rem', fontWeight: 900, padding: '1px 6px', borderRadius: '4px', background: getOITStatusBg(freqOverview.overallFrequencyStatus), color: getOITStatusColor(freqOverview.overallFrequencyStatus) }}>
+                    {freqOverview.overallFrequencyStatus}
+                  </span>
+                </div>
+                <div style={{ fontSize: '0.58rem', fontWeight: 800, color: '#94A3B8', textTransform: 'uppercase', marginTop: '1px' }}>
+                  N: {freqOverview.totalAccidents} acd • Meta: F ≤ 20
+                </div>
+              </div>
+              <div style={{ fontSize: '1.75rem', fontWeight: 900, color: '#0F172A', lineHeight: 1 }}>
+                {freqOverview.overallFrequencyRate.toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+              </div>
+            </div>
+
+            {/* Card 2: Gravidade */}
+            <div className="panel-premium" style={{ flex: 1, display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '0.45rem 1rem', borderLeft: '4px solid #F59E0B', background: '#FFF' }}>
+              <div>
+                <div style={{ display: 'flex', alignItems: 'center', gap: '0.4rem' }}>
+                  <span style={{ color: '#64748B', fontWeight: 800, fontSize: '0.75rem', textTransform: 'uppercase' }}>Gravidade (G)</span>
+                  <span style={{ fontSize: '0.62rem', fontWeight: 900, padding: '1px 6px', borderRadius: '4px', background: getOITStatusBg(freqOverview.overallSeverityStatus), color: getOITStatusColor(freqOverview.overallSeverityStatus) }}>
+                    {freqOverview.overallSeverityStatus}
+                  </span>
+                </div>
+                <div style={{ fontSize: '0.58rem', fontWeight: 800, color: '#94A3B8', textTransform: 'uppercase', marginTop: '1px' }}>
+                  T: {freqOverview.totalLostDays} dias • Meta: G ≤ 500
+                </div>
+              </div>
+              <div style={{ fontSize: '1.75rem', fontWeight: 900, color: '#0F172A', lineHeight: 1 }}>
+                {freqOverview.overallSeverityRate.toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+              </div>
+            </div>
+
+            {/* Card 3: Horas Trabalhadas */}
+            <div className="panel-premium" style={{ flex: 1, background: 'linear-gradient(135deg, #0F172A 0%, #1E293B 100%)', border: 'none', color: 'white', display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '0.45rem 1rem' }}>
+              <div>
+                <div style={{ fontSize: '0.75rem', fontWeight: 900, color: '#38BDF8', display: 'flex', alignItems: 'center', gap: '3px' }}>
+                  <Clock size={12} color="#38BDF8" /> <span>Horas Trabalhadas</span>
+                </div>
+                <div style={{ fontSize: '0.58rem', fontWeight: 800, color: '#94A3B8', textTransform: 'uppercase', marginTop: '1px' }}>campo HH efetivo</div>
+              </div>
+              <div style={{ fontSize: '1.45rem', fontWeight: 900, color: '#FFFFFF', lineHeight: 1 }}>
+                {freqOverview.totalHHT.toLocaleString('pt-BR', { maximumFractionDigits: 0 })} h
+              </div>
+            </div>
+
+            {/* Card 4: Média Afastamento */}
+            <div className="panel-premium" style={{ flex: 1, display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '0.45rem 1rem', background: '#FFF' }}>
+              <div>
+                <div style={{ fontSize: '0.75rem', fontWeight: 900, color: '#10B981', display: 'flex', alignItems: 'center', gap: '3px' }}>
+                  <TrendingUp size={12} color="#10B981" /> <span>Média Afastamento</span>
+                </div>
+                <div style={{ fontSize: '0.58rem', fontWeight: 800, color: '#94A3B8', textTransform: 'uppercase', marginTop: '1px' }}>severidade média</div>
+              </div>
+              <div style={{ fontSize: '1.75rem', fontWeight: 900, color: '#0F172A', lineHeight: 1 }}>
+                {freqOverview.totalAccidents > 0 ? (freqOverview.totalLostDays / freqOverview.totalAccidents).toLocaleString('pt-BR', { minimumFractionDigits: 1, maximumFractionDigits: 1 }) : '0,0'}
+                <span style={{ fontSize: '0.7rem', fontWeight: 800, color: '#64748B', marginLeft: '3px' }}>d/acd</span>
+              </div>
+            </div>
+          </div>
+
+          {/* Main Area: 2 Side-by-Side Charts (F and G) + Ranking Box */}
+          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: '0.75rem', flex: 1, minHeight: 0 }}>
+            {/* Chart 1: Evolução Frequência */}
+            <div className="panel-premium" style={{ display: 'flex', flexDirection: 'column', padding: '0.75rem' }}>
+              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '0.25rem' }}>
+                <h3 style={{ fontSize: '0.8rem', fontWeight: 900, margin: 0, color: '#0F172A' }}>Frequência Mensal (F)</h3>
+                <span style={{ fontSize: '0.62rem', fontWeight: 800, color: '#0284C7' }}>F = (N × 10⁶) / HHT</span>
+              </div>
+              <p style={{ fontSize: '0.58rem', color: '#64748B', margin: '0 0 0.4rem 0' }}>Taxa de acidentados por milhão de horas trabalhadas</p>
+              <div style={{ flex: 1, minHeight: 0 }}>
+                <ResponsiveContainer width="100%" height="100%">
+                  <BarChart data={freqOverview.monthlyRecords} margin={{ top: 15, right: 10, left: -25, bottom: 0 }}>
+                    <XAxis dataKey="monthName" axisLine={false} tickLine={false} tick={{ fontSize: 8, fontWeight: 700, fill: '#64748B' }} />
+                    <YAxis axisLine={false} tickLine={false} tick={{ fontSize: 8, fill: '#64748B' }} />
+                    <Tooltip 
+                      contentStyle={{ backgroundColor: '#FFFFFF', borderRadius: '8px', border: '1px solid #E2E8F0', fontSize: '0.75rem' }} 
+                      formatter={(val: any) => [`${Number(val).toFixed(2)}`, 'Frequência']}
+                    />
+                    <Bar dataKey="frequencyRate" fill="#0284C7" radius={[3, 3, 0, 0]} barSize={16} label={{ position: 'top', fill: '#0284C7', fontSize: 8, fontWeight: 800, formatter: (v: any) => Number(v) > 0 ? Number(v).toFixed(1) : '' }} />
+                  </BarChart>
+                </ResponsiveContainer>
+              </div>
+            </div>
+
+            {/* Chart 2: Evolução Gravidade */}
+            <div className="panel-premium" style={{ display: 'flex', flexDirection: 'column', padding: '0.75rem' }}>
+              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '0.25rem' }}>
+                <h3 style={{ fontSize: '0.8rem', fontWeight: 900, margin: 0, color: '#0F172A' }}>Gravidade Mensal (G)</h3>
+                <span style={{ fontSize: '0.62rem', fontWeight: 800, color: '#F59E0B' }}>G = (T × 10⁶) / HHT</span>
+              </div>
+              <p style={{ fontSize: '0.58rem', color: '#64748B', margin: '0 0 0.4rem 0' }}>Taxa de dias perdidos por milhão de horas trabalhadas</p>
+              <div style={{ flex: 1, minHeight: 0 }}>
+                <ResponsiveContainer width="100%" height="100%">
+                  <BarChart data={freqOverview.monthlyRecords} margin={{ top: 15, right: 10, left: -25, bottom: 0 }}>
+                    <XAxis dataKey="monthName" axisLine={false} tickLine={false} tick={{ fontSize: 8, fontWeight: 700, fill: '#64748B' }} />
+                    <YAxis axisLine={false} tickLine={false} tick={{ fontSize: 8, fill: '#64748B' }} />
+                    <Tooltip 
+                      contentStyle={{ backgroundColor: '#FFFFFF', borderRadius: '8px', border: '1px solid #E2E8F0', fontSize: '0.75rem' }} 
+                      formatter={(val: any) => [`${Number(val).toFixed(2)}`, 'Gravidade']}
+                    />
+                    <Bar dataKey="severityRate" fill="#F59E0B" radius={[3, 3, 0, 0]} barSize={16} label={{ position: 'top', fill: '#F59E0B', fontSize: 8, fontWeight: 800, formatter: (v: any) => Number(v) > 0 ? Number(v).toFixed(0) : '' }} />
+                  </BarChart>
+                </ResponsiveContainer>
+              </div>
+            </div>
+
+            {/* Ranking de Unidades Críticas */}
+            <div className="panel-premium" style={{ display: 'flex', flexDirection: 'column', padding: '0.75rem' }}>
+              <h3 style={{ fontSize: '0.8rem', fontWeight: 900, margin: '0 0 0.25rem 0', color: '#0F172A' }}>Ranking Crítico por Unidade</h3>
+              <p style={{ fontSize: '0.58rem', color: '#64748B', margin: '0 0 0.4rem 0' }}>Unidades com maior incidência no período</p>
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '0.3rem', flex: 1, overflow: 'hidden' }}>
+                {[...freqOverview.unitRecords]
+                  .sort((a, b) => b.frequencyRate - a.frequencyRate || b.severityRate - a.severityRate)
+                  .slice(0, 5)
+                  .map((u, idx) => (
+                    <div key={u.unitName} style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '0.3rem 0.5rem', background: '#F8FAFC', borderRadius: '6px', border: '1px solid #E2E8F0', fontSize: '0.62rem' }}>
+                      <div style={{ display: 'flex', alignItems: 'center', gap: '0.4rem', minWidth: 0 }}>
+                        <span style={{ width: '16px', height: '16px', borderRadius: '50%', background: idx < 2 && u.accidents > 0 ? '#B91C1C' : '#CBD5E1', color: idx < 2 && u.accidents > 0 ? 'white' : '#475569', display: 'flex', alignItems: 'center', justifyContent: 'center', fontWeight: 900, fontSize: '0.6rem', flexShrink: 0 }}>
+                          {idx + 1}
+                        </span>
+                        <span style={{ overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', fontWeight: 800, color: '#0F172A' }}>
+                          {u.unitName}
+                        </span>
+                      </div>
+                      <div style={{ display: 'flex', alignItems: 'center', gap: '0.4rem', flexShrink: 0, fontWeight: 900 }}>
+                        <span style={{ color: '#0284C7' }}>F: {u.frequencyRate.toFixed(1)}</span>
+                        <span style={{ color: '#F59E0B' }}>G: {u.severityRate.toFixed(0)}</span>
+                      </div>
+                    </div>
+                  ))}
+              </div>
+            </div>
+          </div>
+
+          {/* Bottom Banner: Parecer Técnico e Fórmulas */}
+          <div style={{ display: 'grid', gridTemplateColumns: '1.4fr 1fr', gap: '0.75rem', background: '#FFF', border: '1px solid #E2E8F0', borderLeft: '4px solid #0284C7', borderRadius: '8px', padding: '0.45rem 0.85rem' }}>
+            <div>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '0.4rem', marginBottom: '2px' }}>
+                <ShieldCheck size={14} color="#0284C7" />
+                <span style={{ fontSize: '0.65rem', fontWeight: 900, color: '#0F172A', textTransform: 'uppercase' }}>Parecer Técnico Regulamentar (NBR 14280 / OIT)</span>
+              </div>
+              <p style={{ fontSize: '0.58rem', color: '#475569', margin: 0, lineHeight: 1.3 }}>
+                {freqStory}
+              </p>
+            </div>
+            <div style={{ borderLeft: '1px solid #E2E8F0', paddingLeft: '0.75rem', fontSize: '0.56rem', color: '#64748B', display: 'flex', flexDirection: 'column', justifyContent: 'center' }}>
+              <div><strong>Metas Oficiais OIT:</strong> Frequência F ≤ 20,00 (Muito Boa) • Gravidade G ≤ 500,00 (Muito Boa)</div>
+              <div><strong>Fórmulas Ponderadas:</strong> F = (N × 1.000.000) / HHT • G = (T × 1.000.000) / HHT</div>
+            </div>
+          </div>
+        </div>
+
+        <footer style={{ display: 'flex', justifyContent: 'space-between', borderTop: '1px solid #E2E8F0', paddingTop: '0.4rem', fontSize: '0.55rem', color: '#94A3B8', fontWeight: 800, marginTop: 'auto' }}>
+          <span>QUADRO DE GESTÃO À VISTA — GRUPO AÇOTUBO</span>
+          <span>SISTEMA DE SEGURANÇA E MEDICINA DO TRABALHO (SESMT)</span>
+        </footer>
+      </div>
+
+      {/* PAGE 5: Breakdown de Causas */}
       <div className="a4-landscape">
         {/* Header */}
         <header style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', borderBottom: '2px solid #8B5CF6', paddingBottom: '0.4rem' }}>
@@ -681,7 +984,7 @@ export const LandscapePrintView: React.FC<LandscapePrintViewProps> = ({
           </div>
           <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
             <img src={LOGO_BASE64} alt="Açotubo" style={{ height: '22px' }} />
-            <span style={{ fontSize: '0.65rem', fontWeight: 900, background: '#F1F5F9', padding: '3px 8px', borderRadius: '4px', color: '#475569' }}>FOLHA 04 / {String(totalPages).padStart(2, '0')}</span>
+            <span style={{ fontSize: '0.65rem', fontWeight: 900, background: '#F1F5F9', padding: '3px 8px', borderRadius: '4px', color: '#475569' }}>FOLHA 05 / {String(totalPages).padStart(2, '0')}</span>
           </div>
         </header>
 
@@ -691,45 +994,45 @@ export const LandscapePrintView: React.FC<LandscapePrintViewProps> = ({
           <main className="content-area">
             {/* Causal Indicators Panels */}
             {page4Stats && (
-              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(5, 1fr)', gap: '0.75rem', height: '115px' }}>
+              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(5, 1fr)', gap: '0.5rem', height: '85px' }}>
                 {[
-                  { label: 'Ato Inseguro', value: page4Stats.unsafeAct, icon: <AlertCircle size={22} />, color: '#EF4444' },
-                  { label: 'Defic. M/E', value: page4Stats.machineDeficiency, icon: <Activity size={22} />, color: '#F59E0B' },
-                  { label: 'Desvio Função', value: page4Stats.functionDeviation, icon: <ShieldCheck size={22} />, color: '#3B82F6' },
-                  { label: 'Treinado', value: page4Stats.hadTraining, icon: <GraduationCap size={22} />, color: '#10B981' },
-                  { label: 'Uso EPI', value: page4Stats.usedEPI, icon: <HardHat size={22} />, color: '#8B5CF6' }
+                  { label: 'Ato Inseguro', value: page4Stats.unsafeAct, icon: <AlertCircle size={14} />, color: '#EF4444' },
+                  { label: 'Defic. M/E', value: page4Stats.machineDeficiency, icon: <Activity size={14} />, color: '#F59E0B' },
+                  { label: 'Desvio Função', value: page4Stats.functionDeviation, icon: <ShieldCheck size={14} />, color: '#3B82F6' },
+                  { label: 'Treinado', value: page4Stats.hadTraining, icon: <GraduationCap size={14} />, color: '#10B981' },
+                  { label: 'Uso EPI', value: page4Stats.usedEPI, icon: <HardHat size={14} />, color: '#8B5CF6' }
                 ].map((item, idx) => (
-                  <div key={idx} className="panel-premium" style={{ padding: '0.6rem', textAlign: 'center', display: 'flex', flexDirection: 'column', justifyContent: 'center' }}>
-                    <div style={{ color: item.color, marginBottom: '6px', display: 'flex', justifyContent: 'center' }}>{item.icon}</div>
-                    <div style={{ fontSize: '1.4rem', fontWeight: 900, color: '#0F172A', lineHeight: 1.1 }}>{item.value?.toFixed(0)}%</div>
-                    <div style={{ fontSize: '0.55rem', fontWeight: 800, color: '#64748B', textTransform: 'uppercase', marginTop: '6px', lineHeight: 1.1 }}>{item.label}</div>
+                  <div key={idx} className="panel-premium" style={{ padding: '0.4rem', textAlign: 'center', display: 'flex', flexDirection: 'column', justifyContent: 'center' }}>
+                    <div style={{ color: item.color, marginBottom: '2px', display: 'flex', justifyContent: 'center' }}>{item.icon}</div>
+                    <div style={{ fontSize: '0.95rem', fontWeight: 900, color: '#0F172A', lineHeight: 1.1 }}>{item.value?.toFixed(0)}%</div>
+                    <div style={{ fontSize: '0.5rem', fontWeight: 800, color: '#64748B', textTransform: 'uppercase', marginTop: '2px', whiteSpace: 'nowrap' }}>{item.label}</div>
                   </div>
                 ))}
               </div>
             )}
 
             {/* Recorrência e Média por Área */}
-            <div style={{ display: 'grid', gridTemplateColumns: '1.2fr 0.8fr', gap: '0.75rem', flex: 1, minHeight: 0 }}>
+            <div style={{ display: 'grid', gridTemplateColumns: '1.2fr 0.8fr', gap: '0.75rem', height: '390px' }}>
               {/* Recorrência Colaborador */}
               <div className="panel-premium" style={{ display: 'flex', flexDirection: 'column' }}>
-                <h3 style={{ fontSize: '0.8rem', fontWeight: 900, margin: '0 0 1rem 0', display: 'flex', alignItems: 'center', gap: '8px' }}>
-                  <Users size={18} color="var(--primary)" /> Recorrência por Colaborador
+                <h3 style={{ fontSize: '0.85rem', fontWeight: 900, margin: '0 0 0.8rem 0', display: 'flex', alignItems: 'center', gap: '6px' }}>
+                  <Users size={16} color="var(--primary)" /> Recorrência por Colaborador
                 </h3>
-                <div style={{ display: 'flex', flexDirection: 'column', gap: '0.85rem', flex: 1, overflow: 'hidden' }}>
+                <div style={{ display: 'flex', flexDirection: 'column', gap: '0.6rem', flex: 1, overflow: 'hidden' }}>
                   {employeeRanking.length === 0 ? (
-                    <div style={{ textAlign: 'center', fontSize: '0.8rem', padding: '2rem', color: '#64748B', fontWeight: 700 }}>Nenhum colaborador com recorrência.</div>
+                    <div style={{ textAlign: 'center', fontSize: '0.75rem', padding: '2rem', color: '#64748B', fontWeight: 700 }}>Nenhum colaborador com recorrência.</div>
                   ) : (
                     employeeRanking.slice(0, 4).map(([name, data], idx) => (
-                      <div key={name} style={{ display: 'flex', alignItems: 'center', gap: '0.85rem', padding: '0.8rem 1rem', background: '#F8FAFC', borderRadius: '12px', border: '1px solid #E2E8F0' }}>
-                        <div style={{ width: '28px', height: '28px', background: idx === 0 ? 'var(--primary)' : '#E2E8F0', color: idx === 0 ? 'white' : '#64748B', borderRadius: '50%', display: 'flex', alignItems: 'center', justifyContent: 'center', fontWeight: 900, fontSize: '0.85rem' }}>
+                      <div key={name} style={{ display: 'flex', alignItems: 'center', gap: '0.75rem', padding: '0.6rem 0.8rem', background: '#F8FAFC', borderRadius: '10px', border: '1px solid #E2E8F0' }}>
+                        <div style={{ width: '22px', height: '22px', background: idx === 0 ? 'var(--primary)' : '#E2E8F0', color: idx === 0 ? 'white' : '#64748B', borderRadius: '50%', display: 'flex', alignItems: 'center', justifyContent: 'center', fontWeight: 900, fontSize: '0.75rem' }}>
                           {idx + 1}
                         </div>
                         <div style={{ flex: 1, minWidth: 0 }}>
-                          <div style={{ fontWeight: 800, fontSize: '0.75rem', color: '#0F172A', lineHeight: 1.2 }}>{name}</div>
-                          <div style={{ fontSize: '0.65rem', color: '#64748B', fontWeight: 700, marginTop: '2px' }}>{data.division} • RE: {data.re}</div>
+                          <div style={{ fontWeight: 800, fontSize: '0.8rem', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', color: '#0F172A' }}>{name}</div>
+                          <div style={{ fontSize: '0.65rem', color: '#64748B', fontWeight: 700 }}>{data.division} • RE: {data.re}</div>
                         </div>
-                        <div style={{ fontWeight: 900, color: 'var(--primary)', fontSize: '0.85rem', whiteSpace: 'nowrap' }}>
-                          {data.count} acd.
+                        <div style={{ fontWeight: 900, color: 'var(--primary)', fontSize: '0.75rem', whiteSpace: 'nowrap' }}>
+                          {data.count} acidentes
                         </div>
                       </div>
                     ))
@@ -739,17 +1042,17 @@ export const LandscapePrintView: React.FC<LandscapePrintViewProps> = ({
 
               {/* Experiência por Área */}
               <div className="panel-premium" style={{ display: 'flex', flexDirection: 'column' }}>
-                <h3 style={{ fontSize: '0.8rem', fontWeight: 900, margin: '0 0 1rem 0', display: 'flex', alignItems: 'center', gap: '8px' }}>
-                  <Clock size={18} color="var(--primary)" /> Média Exp. por Área
+                <h3 style={{ fontSize: '0.85rem', fontWeight: 900, margin: '0 0 0.8rem 0', display: 'flex', alignItems: 'center', gap: '6px' }}>
+                  <Clock size={16} color="var(--primary)" /> Média Experiência por Área
                 </h3>
-                <div style={{ display: 'flex', flexDirection: 'column', gap: '1rem', flex: 1, overflow: 'hidden' }}>
+                <div style={{ display: 'flex', flexDirection: 'column', gap: '0.7rem', flex: 1, overflow: 'hidden' }}>
                   {experienceRanking.slice(0, 5).map(({ area, avgExp }) => (
                     <div key={area}>
-                      <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '0.75rem', fontWeight: 800, marginBottom: '5px' }}>
-                        <span style={{ overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', maxWidth: '140px' }}>{area}</span>
+                      <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '0.7rem', fontWeight: 800, marginBottom: '3px' }}>
+                        <span style={{ overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', maxWidth: '120px' }}>{area}</span>
                         <span style={{ color: avgExp < 1 ? '#EF4444' : '#475569', fontWeight: 900 }}>{avgExp.toFixed(1)}a</span>
                       </div>
-                      <div style={{ height: '8px', background: '#F1F5F9', borderRadius: '4px', overflow: 'hidden' }}>
+                      <div style={{ height: '6px', background: '#F1F5F9', borderRadius: '3px', overflow: 'hidden' }}>
                         <div style={{ width: `${Math.min(100, (avgExp / 10) * 100)}%`, height: '100%', background: avgExp < 1 ? '#EF4444' : 'var(--primary)' }}></div>
                       </div>
                     </div>
@@ -759,7 +1062,7 @@ export const LandscapePrintView: React.FC<LandscapePrintViewProps> = ({
             </div>
           </main>
 
-          {renderRightSidebar('Detalhes de', 'Causas', 'Fatores causais e perfil de experiência', breakdownInsights, 4)}
+          {renderRightSidebar('Detalhes de', 'Causas', 'Fatores causais e perfil de experiência', breakdownInsights)}
         </div>
 
         <footer style={{ display: 'flex', justifyContent: 'space-between', borderTop: '1px solid #E2E8F0', paddingTop: '0.4rem', fontSize: '0.55rem', color: '#94A3B8', fontWeight: 800 }}>
@@ -768,9 +1071,9 @@ export const LandscapePrintView: React.FC<LandscapePrintViewProps> = ({
         </footer>
       </div>
 
-      {/* Dynamic PAGE 5+: Detalhamento Geral de Ocorrências */}
+      {/* Dynamic PAGE 6+: Detalhamento Geral de Ocorrências */}
       {occurrenceChunks.map((chunk, chunkIdx) => {
-        const pageNum = 5 + chunkIdx;
+        const pageNum = 6 + chunkIdx;
         const pageLabel = `FOLHA ${String(pageNum).padStart(2, '0')} / ${String(totalPages).padStart(2, '0')}`;
         
         return (
@@ -792,25 +1095,28 @@ export const LandscapePrintView: React.FC<LandscapePrintViewProps> = ({
               </div>
             </header>
 
-            <div style={{ flex: 1, display: 'flex', flexDirection: 'column', height: 'calc(100% - 60px)', marginTop: '0.65rem' }}>
-              <main style={{ flex: 1, display: 'flex', flexDirection: 'column' }}>
-                <div className="panel-premium" style={{ flex: 1, display: 'flex', flexDirection: 'column' }}>
+            <div className="grid-main">
+              {renderLeftSidebar()}
+
+              <main className="content-area">
+                <div className="panel-premium" style={{ height: '490px', display: 'flex', flexDirection: 'column' }}>
                   <h3 style={{ fontSize: '0.85rem', fontWeight: 900, margin: '0 0 0.6rem 0' }}>Detalhamento de Acidentes e Afastamentos (Parte {chunkIdx + 1})</h3>
                   <div style={{ flex: 1, overflow: 'hidden' }}>
                     <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '0.75rem', whiteSpace: 'nowrap' }}>
                       <thead>
                         <tr style={{ textAlign: 'left', background: '#F8FAFC', borderBottom: '1px solid #E2E8F0' }}>
-                          <th style={{ padding: '6px 8px', fontWeight: 900, width: '90px' }}>DATA</th>
+                          <th style={{ padding: '6px 8px', fontWeight: 900, width: '75px' }}>DATA</th>
                           <th style={{ padding: '6px 8px', fontWeight: 900 }}>COLABORADOR</th>
                           <th style={{ padding: '6px 8px', fontWeight: 900 }}>CARGO</th>
                           <th style={{ padding: '6px 8px', fontWeight: 900 }}>ÁREA</th>
-                          <th style={{ padding: '6px 8px', fontWeight: 900, width: '75px', textAlign: 'center' }}>DIAS AFAST.</th>
+                          <th style={{ padding: '6px 8px', fontWeight: 900 }}>TIPO</th>
+                          <th style={{ padding: '6px 8px', fontWeight: 900, width: '50px', textAlign: 'center' }}>AFAS.</th>
                         </tr>
                       </thead>
                       <tbody>
                         {chunk.length === 0 ? (
                           <tr>
-                            <td colSpan={5} style={{ textAlign: 'center', padding: '2rem', color: '#64748B' }}>Nenhum evento registrado.</td>
+                            <td colSpan={6} style={{ textAlign: 'center', padding: '2rem', color: '#64748B' }}>Nenhum evento registrado.</td>
                           </tr>
                         ) : (
                           chunk.map((a, idx) => (
@@ -826,6 +1132,7 @@ export const LandscapePrintView: React.FC<LandscapePrintViewProps> = ({
                               </td>
                               <td style={{ padding: '4px 8px', color: '#475569' }}>{a.role}</td>
                               <td style={{ padding: '4px 8px', color: '#475569' }}>{a.area}</td>
+                              <td style={{ padding: '4px 8px' }}>{a.type}</td>
                               <td style={{ padding: '4px 8px', textAlign: 'center', fontWeight: 900, color: a.lostDays > 0 ? '#B91C1C' : '#475569' }}>
                                 {a.lostDays > 0 ? `${a.lostDays}d` : '0d'}
                               </td>
@@ -837,6 +1144,8 @@ export const LandscapePrintView: React.FC<LandscapePrintViewProps> = ({
                   </div>
                 </div>
               </main>
+
+              {renderRightSidebar('Detalhamento de', 'Casos', 'Resumo de dias de afastamento e gravidade', occurrenceInsights)}
             </div>
 
             <footer style={{ display: 'flex', justifyContent: 'space-between', borderTop: '1px solid #E2E8F0', paddingTop: '0.4rem', fontSize: '0.55rem', color: '#94A3B8', fontWeight: 800 }}>
