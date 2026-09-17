@@ -948,8 +948,8 @@ export const LandscapePrintView: React.FC<LandscapePrintViewProps> = ({
             </div>
           </div>
 
-          {/* Main Area: 2 Columns -> Left: Stacked Charts (F & G) | Right: Unit Ranking */}
-          <div style={{ display: 'grid', gridTemplateColumns: '2.05fr 1fr', gap: '0.75rem', flex: 1, minHeight: 0 }}>
+          {/* Main Area: 2 Columns -> Left: Stacked Charts (F & G) | Right: Unit Ranking (Expanded) */}
+          <div style={{ display: 'grid', gridTemplateColumns: '1.32fr 1fr', gap: '0.75rem', flex: 1, minHeight: 0 }}>
             {/* Left Column: Stacked Charts (Frequência em cima, Gravidade embaixo - Jan a Dez) */}
             <div style={{ display: 'flex', flexDirection: 'column', gap: '0.65rem', minHeight: 0, height: '100%' }}>
               
@@ -985,7 +985,7 @@ export const LandscapePrintView: React.FC<LandscapePrintViewProps> = ({
                         dataKey="frequencyRate" 
                         fill="#0284C7" 
                         radius={[3, 3, 0, 0]} 
-                        barSize={18} 
+                        barSize={16} 
                         label={{ 
                           position: 'top', 
                           fill: '#0284C7', 
@@ -1031,7 +1031,7 @@ export const LandscapePrintView: React.FC<LandscapePrintViewProps> = ({
                         dataKey="severityRate" 
                         fill="#F59E0B" 
                         radius={[3, 3, 0, 0]} 
-                        barSize={18} 
+                        barSize={16} 
                         label={{ 
                           position: 'top', 
                           fill: '#D97706', 
@@ -1047,17 +1047,17 @@ export const LandscapePrintView: React.FC<LandscapePrintViewProps> = ({
             </div>
 
             {/* Right Column: Ranking Crítico por Unidade */}
-            <div className="panel-premium" style={{ display: 'flex', flexDirection: 'column', padding: '0.75rem 0.85rem', minHeight: 0, height: '100%' }}>
-              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '0.15rem' }}>
-                <h3 style={{ fontSize: '0.78rem', fontWeight: 900, margin: 0, color: '#0F172A', textTransform: 'uppercase', letterSpacing: '0.3px', whiteSpace: 'nowrap' }}>
+            <div className="panel-premium" style={{ display: 'flex', flexDirection: 'column', padding: '0.75rem 0.9rem', minHeight: 0, height: '100%', boxSizing: 'border-box' }}>
+              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '0.2rem', minWidth: 0 }}>
+                <h3 style={{ fontSize: '0.8rem', fontWeight: 900, margin: 0, color: '#0F172A', textTransform: 'uppercase', letterSpacing: '0.3px', whiteSpace: 'nowrap' }}>
                   Ranking por Unidade
                 </h3>
-                <span style={{ fontSize: '0.58rem', fontWeight: 800, color: '#475569', background: '#F1F5F9', padding: '2px 6px', borderRadius: '4px', whiteSpace: 'nowrap' }}>
+                <span style={{ fontSize: '0.6rem', fontWeight: 800, color: '#475569', background: '#F1F5F9', padding: '2px 8px', borderRadius: '4px', whiteSpace: 'nowrap' }}>
                   {freqOverview.unitRecords.filter(u => u.accidents > 0).length} C/ OCORRÊNCIA
                 </span>
               </div>
-              <p style={{ fontSize: '0.58rem', color: '#64748B', margin: '0 0 0.5rem 0' }}>
-                Classificação por severidade e taxa no período
+              <p style={{ fontSize: '0.58rem', color: '#64748B', margin: '0 0 0.45rem 0', whiteSpace: 'nowrap' }}>
+                Classificação por severidade e taxa acumulada no período
               </p>
 
               <div style={{ display: 'flex', flexDirection: 'column', gap: '0.35rem', flex: 1, overflow: 'hidden' }}>
@@ -1070,18 +1070,18 @@ export const LandscapePrintView: React.FC<LandscapePrintViewProps> = ({
                       style={{ 
                         display: 'flex', 
                         flexDirection: 'column', 
-                        padding: '0.35rem 0.55rem', 
+                        padding: '0.35rem 0.65rem', 
                         background: idx < 2 && u.accidents > 0 ? '#FEF2F2' : '#F8FAFC', 
                         borderRadius: '6px', 
                         border: idx < 2 && u.accidents > 0 ? '1px solid #FECACA' : '1px solid #E2E8F0',
                         fontSize: '0.62rem'
                       }}
                     >
-                      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '2px' }}>
-                        <div style={{ display: 'flex', alignItems: 'center', gap: '0.4rem', minWidth: 0 }}>
+                      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '3px', minWidth: 0 }}>
+                        <div style={{ display: 'flex', alignItems: 'center', gap: '0.45rem', minWidth: 0 }}>
                           <span style={{ 
-                            width: '17px', 
-                            height: '17px', 
+                            width: '18px', 
+                            height: '18px', 
                             borderRadius: '50%', 
                             background: idx < 2 && u.accidents > 0 ? '#B91C1C' : '#475569', 
                             color: 'white', 
@@ -1089,32 +1089,32 @@ export const LandscapePrintView: React.FC<LandscapePrintViewProps> = ({
                             alignItems: 'center', 
                             justifyContent: 'center', 
                             fontWeight: 900, 
-                            fontSize: '0.6rem', 
+                            fontSize: '0.62rem', 
                             flexShrink: 0 
                           }}>
                             {idx + 1}
                           </span>
-                          <span style={{ overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', fontWeight: 800, color: '#0F172A', fontSize: '0.65rem' }}>
+                          <span style={{ whiteSpace: 'nowrap', fontWeight: 800, color: '#0F172A', fontSize: '0.68rem' }}>
                             {u.unitName}
                           </span>
                         </div>
                         <div style={{ display: 'flex', alignItems: 'center', gap: '0.3rem', flexShrink: 0, fontWeight: 800 }}>
-                          <span style={{ color: '#64748B', fontSize: '0.58rem', whiteSpace: 'nowrap' }}>
+                          <span style={{ color: '#475569', fontSize: '0.58rem', whiteSpace: 'nowrap', background: '#F1F5F9', padding: '1px 6px', borderRadius: '3px', border: '1px solid #E2E8F0' }}>
                             {u.accidents} acd • {u.lostDays} d
                           </span>
                         </div>
                       </div>
                       
                       <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginTop: '1px' }}>
-                        <div style={{ display: 'flex', gap: '0.35rem', alignItems: 'center' }}>
-                          <span style={{ fontSize: '0.56rem', fontWeight: 800, color: '#0284C7', background: '#F0F9FF', padding: '1px 5px', borderRadius: '3px', border: '1px solid #BAE6FD', whiteSpace: 'nowrap' }}>
+                        <div style={{ display: 'flex', gap: '0.4rem', alignItems: 'center' }}>
+                          <span style={{ fontSize: '0.58rem', fontWeight: 800, color: '#0284C7', background: '#F0F9FF', padding: '1px 6px', borderRadius: '3px', border: '1px solid #BAE6FD', whiteSpace: 'nowrap' }}>
                             F: {u.frequencyRate.toLocaleString('pt-BR', { minimumFractionDigits: 1, maximumFractionDigits: 1 })}
                           </span>
-                          <span style={{ fontSize: '0.56rem', fontWeight: 800, color: '#D97706', background: '#FFFBEB', padding: '1px 5px', borderRadius: '3px', border: '1px solid #FDE68A', whiteSpace: 'nowrap' }}>
+                          <span style={{ fontSize: '0.58rem', fontWeight: 800, color: '#D97706', background: '#FFFBEB', padding: '1px 6px', borderRadius: '3px', border: '1px solid #FDE68A', whiteSpace: 'nowrap' }}>
                             G: {u.severityRate.toLocaleString('pt-BR', { maximumFractionDigits: 0 })}
                           </span>
                         </div>
-                        <span style={{ fontSize: '0.55rem', fontWeight: 800, color: getOITStatusColor(u.frequencyStatus), whiteSpace: 'nowrap' }}>
+                        <span style={{ fontSize: '0.56rem', fontWeight: 900, color: getOITStatusColor(u.frequencyStatus), background: getOITStatusBg(u.frequencyStatus), padding: '1px 6px', borderRadius: '3px', whiteSpace: 'nowrap' }}>
                           {u.frequencyStatus}
                         </span>
                       </div>
