@@ -822,7 +822,7 @@ export const LandscapePrintView: React.FC<LandscapePrintViewProps> = ({
           </div>
         </header>
 
-        <div style={{ display: 'flex', flexDirection: 'column', gap: '0.65rem', height: 'calc(100% - 60px)', marginTop: '0.65rem' }}>
+        <div className="slide4-container" style={{ display: 'flex', flexDirection: 'column', gap: '0.65rem', height: 'calc(100% - 60px)', marginTop: '0.65rem' }}>
           {/* Top Row: 4 KPI Cards */}
           <div style={{ display: 'flex', gap: '0.75rem' }}>
             {/* Card 1: Frequência */}
@@ -949,25 +949,25 @@ export const LandscapePrintView: React.FC<LandscapePrintViewProps> = ({
           </div>
 
           {/* Main Area: 2 Columns -> Left: Stacked Charts (F & G) | Right: Unit Ranking (Expanded) */}
-          <div style={{ display: 'grid', gridTemplateColumns: '1.32fr 1fr', gap: '0.75rem', flex: 1, minHeight: 0 }}>
+          <div className="slide4-grid" style={{ display: 'grid', gridTemplateColumns: 'minmax(0, 1.15fr) minmax(0, 1fr)', gap: '0.75rem', flex: 1, minHeight: 0, width: '100%' }}>
             {/* Left Column: Stacked Charts (Frequência em cima, Gravidade embaixo - Jan a Dez) */}
-            <div style={{ display: 'flex', flexDirection: 'column', gap: '0.65rem', minHeight: 0, height: '100%' }}>
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '0.65rem', minHeight: 0, minWidth: 0, height: '100%', overflow: 'hidden' }}>
               
               {/* Gráfico Superior: Frequência Mensal (F) */}
-              <div className="panel-premium" style={{ flex: 1, display: 'flex', flexDirection: 'column', padding: '0.65rem 0.85rem', minHeight: 0 }}>
-                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '0.2rem' }}>
-                  <div style={{ display: 'flex', alignItems: 'center', gap: '0.45rem' }}>
-                    <div style={{ width: '8px', height: '8px', borderRadius: '50%', background: '#0284C7' }}></div>
+              <div className="panel-premium" style={{ flex: 1, display: 'flex', flexDirection: 'column', padding: '0.55rem 0.85rem', minHeight: 0, minWidth: 0 }}>
+                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '0.15rem' }}>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '0.4rem', minWidth: 0 }}>
+                    <div style={{ width: '8px', height: '8px', borderRadius: '50%', background: '#0284C7', flexShrink: 0 }}></div>
                     <h3 style={{ fontSize: '0.78rem', fontWeight: 900, margin: 0, color: '#0F172A', textTransform: 'uppercase', letterSpacing: '0.3px', whiteSpace: 'nowrap' }}>
                       Evolução Mensal da Taxa de Frequência (F)
                     </h3>
-                    <span style={{ fontSize: '0.6rem', color: '#64748B', fontWeight: 600, whiteSpace: 'nowrap' }}>
-                      • Acidentados por milhão de HH (Jan a Dez)
-                    </span>
                   </div>
-                  <span style={{ fontSize: '0.62rem', fontWeight: 800, color: '#0284C7', background: '#F0F9FF', padding: '2px 8px', borderRadius: '4px', border: '1px solid #BAE6FD', whiteSpace: 'nowrap' }}>
+                  <span style={{ fontSize: '0.6rem', fontWeight: 800, color: '#0284C7', background: '#F0F9FF', padding: '1px 7px', borderRadius: '4px', border: '1px solid #BAE6FD', whiteSpace: 'nowrap', flexShrink: 0 }}>
                     F = (N × 10⁶) / HHT
                   </span>
+                </div>
+                <div style={{ fontSize: '0.58rem', color: '#64748B', fontWeight: 600, margin: '0 0 0.25rem 0.85rem' }}>
+                  Acidentados por milhão de horas trabalhadas • Janeiro a Dezembro
                 </div>
                 <div style={{ flex: 1, minHeight: 0 }}>
                   <ResponsiveContainer width="100%" height="100%">
@@ -1000,20 +1000,20 @@ export const LandscapePrintView: React.FC<LandscapePrintViewProps> = ({
               </div>
 
               {/* Gráfico Inferior: Gravidade Mensal (G) */}
-              <div className="panel-premium" style={{ flex: 1, display: 'flex', flexDirection: 'column', padding: '0.65rem 0.85rem', minHeight: 0 }}>
-                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '0.2rem' }}>
-                  <div style={{ display: 'flex', alignItems: 'center', gap: '0.45rem' }}>
-                    <div style={{ width: '8px', height: '8px', borderRadius: '50%', background: '#F59E0B' }}></div>
+              <div className="panel-premium" style={{ flex: 1, display: 'flex', flexDirection: 'column', padding: '0.55rem 0.85rem', minHeight: 0, minWidth: 0 }}>
+                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '0.15rem' }}>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '0.4rem', minWidth: 0 }}>
+                    <div style={{ width: '8px', height: '8px', borderRadius: '50%', background: '#F59E0B', flexShrink: 0 }}></div>
                     <h3 style={{ fontSize: '0.78rem', fontWeight: 900, margin: 0, color: '#0F172A', textTransform: 'uppercase', letterSpacing: '0.3px', whiteSpace: 'nowrap' }}>
                       Evolução Mensal da Taxa de Gravidade (G)
                     </h3>
-                    <span style={{ fontSize: '0.6rem', color: '#64748B', fontWeight: 600, whiteSpace: 'nowrap' }}>
-                      • Dias perdidos por milhão de HH (Jan a Dez)
-                    </span>
                   </div>
-                  <span style={{ fontSize: '0.62rem', fontWeight: 800, color: '#D97706', background: '#FFFBEB', padding: '2px 8px', borderRadius: '4px', border: '1px solid #FDE68A', whiteSpace: 'nowrap' }}>
+                  <span style={{ fontSize: '0.6rem', fontWeight: 800, color: '#D97706', background: '#FFFBEB', padding: '1px 7px', borderRadius: '4px', border: '1px solid #FDE68A', whiteSpace: 'nowrap', flexShrink: 0 }}>
                     G = (T × 10⁶) / HHT
                   </span>
+                </div>
+                <div style={{ fontSize: '0.58rem', color: '#64748B', fontWeight: 600, margin: '0 0 0.25rem 0.85rem' }}>
+                  Dias perdidos por milhão de horas trabalhadas • Janeiro a Dezembro
                 </div>
                 <div style={{ flex: 1, minHeight: 0 }}>
                   <ResponsiveContainer width="100%" height="100%">
@@ -1047,17 +1047,17 @@ export const LandscapePrintView: React.FC<LandscapePrintViewProps> = ({
             </div>
 
             {/* Right Column: Ranking Crítico por Unidade */}
-            <div className="panel-premium" style={{ display: 'flex', flexDirection: 'column', padding: '0.75rem 0.9rem', minHeight: 0, height: '100%', boxSizing: 'border-box' }}>
-              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '0.2rem', minWidth: 0 }}>
+            <div className="panel-premium" style={{ display: 'flex', flexDirection: 'column', padding: '0.65rem 0.85rem', minHeight: 0, minWidth: 0, height: '100%', boxSizing: 'border-box' }}>
+              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '0.15rem', minWidth: 0 }}>
                 <h3 style={{ fontSize: '0.8rem', fontWeight: 900, margin: 0, color: '#0F172A', textTransform: 'uppercase', letterSpacing: '0.3px', whiteSpace: 'nowrap' }}>
                   Ranking por Unidade
                 </h3>
-                <span style={{ fontSize: '0.6rem', fontWeight: 800, color: '#475569', background: '#F1F5F9', padding: '2px 8px', borderRadius: '4px', whiteSpace: 'nowrap' }}>
+                <span style={{ fontSize: '0.58rem', fontWeight: 800, color: '#475569', background: '#F1F5F9', padding: '2px 8px', borderRadius: '4px', whiteSpace: 'nowrap', border: '1px solid #E2E8F0' }}>
                   {freqOverview.unitRecords.filter(u => u.accidents > 0).length} C/ OCORRÊNCIA
                 </span>
               </div>
-              <p style={{ fontSize: '0.58rem', color: '#64748B', margin: '0 0 0.45rem 0', whiteSpace: 'nowrap' }}>
-                Classificação por severidade e taxa acumulada no período
+              <p style={{ fontSize: '0.58rem', color: '#64748B', margin: '0 0 0.4rem 0' }}>
+                Classificação por severidade e taxas no período
               </p>
 
               <div style={{ display: 'flex', flexDirection: 'column', gap: '0.35rem', flex: 1, overflow: 'hidden' }}>
@@ -1077,8 +1077,8 @@ export const LandscapePrintView: React.FC<LandscapePrintViewProps> = ({
                         fontSize: '0.62rem'
                       }}
                     >
-                      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '3px', minWidth: 0 }}>
-                        <div style={{ display: 'flex', alignItems: 'center', gap: '0.45rem', minWidth: 0 }}>
+                      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: '0.5rem', marginBottom: '2px' }}>
+                        <div style={{ display: 'flex', alignItems: 'center', gap: '0.45rem', minWidth: 0, flex: 1 }}>
                           <span style={{ 
                             width: '18px', 
                             height: '18px', 
@@ -1098,8 +1098,8 @@ export const LandscapePrintView: React.FC<LandscapePrintViewProps> = ({
                             {u.unitName}
                           </span>
                         </div>
-                        <div style={{ display: 'flex', alignItems: 'center', gap: '0.3rem', flexShrink: 0, fontWeight: 800 }}>
-                          <span style={{ color: '#475569', fontSize: '0.58rem', whiteSpace: 'nowrap', background: '#F1F5F9', padding: '1px 6px', borderRadius: '3px', border: '1px solid #E2E8F0' }}>
+                        <div style={{ flexShrink: 0 }}>
+                          <span style={{ color: '#475569', fontSize: '0.58rem', fontWeight: 800, whiteSpace: 'nowrap', background: '#F1F5F9', padding: '1px 6px', borderRadius: '3px', border: '1px solid #E2E8F0' }}>
                             {u.accidents} acd • {u.lostDays} d
                           </span>
                         </div>

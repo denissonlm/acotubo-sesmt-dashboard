@@ -940,6 +940,33 @@ body {
   margin-bottom: 0.7rem !important;
 }
 
+/* Folha 04: Indicadores Regulamentares (Frequência, Gravidade e Ranking) */
+.a4-landscape .slide4-container .panel-premium {
+  padding: 0.55rem 0.85rem !important;
+  border-radius: 10px !important;
+}
+
+.a4-landscape .slide4-container .panel-premium h2,
+.a4-landscape .slide4-container .panel-premium h3 {
+  font-size: 0.78rem !important;
+  margin-bottom: 0.15rem !important;
+  font-weight: 850 !important;
+}
+
+.a4-landscape .slide4-container .panel-premium p {
+  font-size: 0.58rem !important;
+  margin-bottom: 0.35rem !important;
+}
+
+.a4-landscape .slide4-grid {
+  display: grid !important;
+  grid-template-columns: minmax(0, 1.2fr) minmax(0, 1fr) !important;
+  gap: 0.75rem !important;
+  flex: 1 !important;
+  min-height: 0 !important;
+  width: 100% !important;
+}
+
 .a4-landscape .insights-panel {
   gap: 0.8rem !important;
 }
