@@ -952,144 +952,6 @@ export const FrequencySeverityTab: React.FC<FrequencySeverityTabProps> = ({
         </div>
       </div>
 
-      {/* Painel Executivo de Fundamentação Regulamentar e Gradações (NBR 14280 / OIT) */}
-      <div 
-        className="panel-premium"
-        style={{
-          background: "linear-gradient(135deg, #FFFFFF 0%, #F8FAFC 60%, #F0FDF4 100%)",
-          border: "1px solid #E2E8F0",
-          borderLeft: "6px solid #10B981",
-          borderRadius: "16px",
-          padding: "1.5rem 1.75rem",
-          boxShadow: "0 4px 20px -2px rgba(0,0,0,0.04)"
-        }}
-      >
-        <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", flexWrap: "wrap", gap: "1rem", marginBottom: "1rem" }}>
-          <div>
-            <div style={{ display: "flex", alignItems: "center", gap: "0.6rem" }}>
-              <div style={{ background: "#ECFDF5", border: "1px solid #A7F3D0", color: "#059669", padding: "0.4rem", borderRadius: "8px", display: "flex", alignItems: "center" }}>
-                <ShieldCheck size={20} />
-              </div>
-              <h3 style={{ fontSize: "1.1rem", fontWeight: 900, color: "#0F172A", margin: 0, textTransform: "uppercase", letterSpacing: "0.3px" }}>
-                Guia de Parâmetros e Gradações Regulamentares (NBR 14280)
-              </h3>
-            </div>
-            <p style={{ fontSize: "0.82rem", color: "#64748B", margin: "0.35rem 0 0 0" }}>
-              Entenda como calcular, quais os limites referenciais de engenharia de segurança e a fundamentação técnica das taxas na Açotubo.
-            </p>
-          </div>
-          <div style={{ display: "flex", gap: "0.5rem" }}>
-            <span style={{ fontSize: "0.72rem", fontWeight: 800, background: "#ECFDF5", color: "#059669", border: "1px solid #A7F3D0", padding: "4px 10px", borderRadius: "6px" }}>
-              🟢 Verde: Muito Bom / Bom
-            </span>
-            <span style={{ fontSize: "0.72rem", fontWeight: 800, background: "#FEFCE8", color: "#D97706", border: "1px solid #FEF08A", padding: "4px 10px", borderRadius: "6px" }}>
-              🟡 Amarelo: Ruim
-            </span>
-            <span style={{ fontSize: "0.72rem", fontWeight: 800, background: "#FEF2F2", color: "#EF4444", border: "1px solid #FECACA", padding: "4px 10px", borderRadius: "6px" }}>
-              🔴 Vermelho: Péssima
-            </span>
-          </div>
-        </div>
-
-        {/* Nota Técnica Importante (Subsídio Fornecido) */}
-        <div style={{
-          background: "#FFFBEB",
-          border: "1px solid #FDE68A",
-          borderLeft: "4px solid #F59E0B",
-          borderRadius: "10px",
-          padding: "0.85rem 1.15rem",
-          marginBottom: "1.25rem",
-          fontSize: "0.78rem",
-          color: "#78350F",
-          lineHeight: 1.5
-        }}>
-          <strong>Importante:</strong> Sobre os parâmetros para a Taxa de Frequência e Taxa de Gravidade, vale reforçar que os valores utilizados como referência não foram estipulados pela OIT. Outro ponto importante a ser considerado é que ambientes de trabalho, mesmo em segmentos similares, não são iguais e isso torna a padronização não eficiente. A Açotubo adota o rigor metodológico da NBR 14280 para direcionar seus planos de prevenção e metas internas.
-        </div>
-
-        {/* Grid com Parâmetros de Frequência e Gravidade */}
-        <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "1.25rem" }}>
-          {/* Card Esquerdo: Frequência */}
-          <div style={{ background: "white", border: "1px solid #E2E8F0", borderRadius: "12px", padding: "1.1rem" }}>
-            <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "0.5rem" }}>
-              <span style={{ fontWeight: 900, fontSize: "0.85rem", color: "#0F172A", textTransform: "uppercase" }}>
-                Quais os parâmetros e como calcular a Taxa de Frequência?
-              </span>
-            </div>
-            <p style={{ fontSize: "0.76rem", color: "#475569", margin: "0 0 0.6rem 0", lineHeight: 1.45 }}>
-              A Taxa de Frequência (TF) mensura a proporção de acidentados por milhão de horas trabalhadas de exposição ao risco:
-            </p>
-
-            <div style={{ background: "#F8FAFC", padding: "0.5rem 0.85rem", borderRadius: "8px", border: "1px solid #E2E8F0", fontFamily: "monospace", fontWeight: 800, fontSize: "0.88rem", color: "#0F172A", marginBottom: "0.75rem" }}>
-              TF = (Nº acidentes × 1.000.000) / HHT
-            </div>
-
-            <div style={{ fontSize: "0.74rem", fontWeight: 800, color: "#334155", marginBottom: "0.4rem" }}>
-              Parâmetros da Taxa de Frequência:
-            </div>
-            <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "0.4rem", marginBottom: "0.75rem", fontSize: "0.72rem" }}>
-              <div style={{ display: "flex", justifyContent: "space-between", padding: "4px 8px", background: "#ECFDF5", borderRadius: "6px", border: "1px solid #A7F3D0", color: "#065F46" }}>
-                <span>Até 20,00:</span> <strong>Muito bom (Verde)</strong>
-              </div>
-              <div style={{ display: "flex", justifyContent: "space-between", padding: "4px 8px", background: "#ECFDF5", borderRadius: "6px", border: "1px solid #A7F3D0", color: "#065F46" }}>
-                <span>20,1 a 40,0:</span> <strong>Bom (Verde)</strong>
-              </div>
-              <div style={{ display: "flex", justifyContent: "space-between", padding: "4px 8px", background: "#FEFCE8", borderRadius: "6px", border: "1px solid #FEF08A", color: "#854D0E" }}>
-                <span>40,1 a 60,0:</span> <strong>Ruim (Amarelo)</strong>
-              </div>
-              <div style={{ display: "flex", justifyContent: "space-between", padding: "4px 8px", background: "#FEF2F2", borderRadius: "6px", border: "1px solid #FECACA", color: "#991B1B" }}>
-                <span>Acima de 60,0:</span> <strong>Péssima (Vermelho)</strong>
-              </div>
-            </div>
-
-            <div style={{ fontSize: "0.72rem", color: "#475569", lineHeight: 1.45, borderTop: "1px solid #F1F5F9", paddingTop: "0.6rem" }}>
-              <div><strong>Exemplo Prático:</strong> 2 acidentes × 1.000.000 / 33.000 h (150 func.) ➔ <strong>TF = 60,60</strong> (Péssima).</div>
-              <div style={{ marginTop: "0.25rem" }}><strong>Cálculo com dias sem afastamento:</strong> TF = (Nº com afast. + Nº sem afast.) × 1.000.000 / HHT.</div>
-              <div style={{ marginTop: "0.25rem", color: "#64748B", fontStyle: "italic" }}>* Cabe mencionar que a NBR 14280 recomenda que os acidentes com e sem afastamento não sejam calculados juntos.</div>
-            </div>
-          </div>
-
-          {/* Card Direito: Gravidade */}
-          <div style={{ background: "white", border: "1px solid #E2E8F0", borderRadius: "12px", padding: "1.1rem" }}>
-            <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "0.5rem" }}>
-              <span style={{ fontWeight: 900, fontSize: "0.85rem", color: "#0F172A", textTransform: "uppercase" }}>
-                Quais os parâmetros e como calcular a Taxa de Gravidade?
-              </span>
-            </div>
-            <p style={{ fontSize: "0.76rem", color: "#475569", margin: "0 0 0.6rem 0", lineHeight: 1.45 }}>
-              A Taxa de Gravidade (TG) avalia a intensidade e o tempo computado por milhão de horas de exposição:
-            </p>
-
-            <div style={{ background: "#F8FAFC", padding: "0.5rem 0.85rem", borderRadius: "8px", border: "1px solid #E2E8F0", fontFamily: "monospace", fontWeight: 800, fontSize: "0.88rem", color: "#0F172A", marginBottom: "0.75rem" }}>
-              TG = (Nº dias perdidos + dias debitados) × 1.000.000 / HHT
-            </div>
-
-            <div style={{ fontSize: "0.74rem", fontWeight: 800, color: "#334155", marginBottom: "0.4rem" }}>
-              Parâmetros da Taxa de Gravidade:
-            </div>
-            <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "0.4rem", marginBottom: "0.75rem", fontSize: "0.72rem" }}>
-              <div style={{ display: "flex", justifyContent: "space-between", padding: "4px 8px", background: "#ECFDF5", borderRadius: "6px", border: "1px solid #A7F3D0", color: "#065F46" }}>
-                <span>Até 500,00:</span> <strong>Muito bom (Verde)</strong>
-              </div>
-              <div style={{ display: "flex", justifyContent: "space-between", padding: "4px 8px", background: "#ECFDF5", borderRadius: "6px", border: "1px solid #A7F3D0", color: "#065F46" }}>
-                <span>500,1 a 1.000,0:</span> <strong>Bom (Verde)</strong>
-              </div>
-              <div style={{ display: "flex", justifyContent: "space-between", padding: "4px 8px", background: "#FEFCE8", borderRadius: "6px", border: "1px solid #FEF08A", color: "#854D0E" }}>
-                <span>1.000,1 a 2.000,0:</span> <strong>Ruim (Amarelo)</strong>
-              </div>
-              <div style={{ display: "flex", justifyContent: "space-between", padding: "4px 8px", background: "#FEF2F2", borderRadius: "6px", border: "1px solid #FECACA", color: "#991B1B" }}>
-                <span>Acima de 2.000,0:</span> <strong>Péssima (Vermelho)</strong>
-              </div>
-            </div>
-
-            <div style={{ fontSize: "0.72rem", color: "#475569", lineHeight: 1.45, borderTop: "1px solid #F1F5F9", paddingTop: "0.6rem" }}>
-              <div><strong>Dias computados e debitados:</strong> Soma-se os dias perdidos aos dias debitados por incapacidade permanente ou morte (NBR 14280).</div>
-              <div style={{ marginTop: "0.25rem" }}><strong>Exemplos de Débito Normativo:</strong> Morte = 6.000 dias • Amputação da mão = 3.000 dias debitados.</div>
-              <div style={{ marginTop: "0.25rem", color: "#64748B", fontStyle: "italic" }}>* Exemplo: (100 dias perdidos + 10 debitados) × 1.000.000 / HHT total apurado.</div>
-            </div>
-          </div>
-        </div>
-      </div>
-
       {/* Charts Section: Monthly F and G - Perfect Symmetry and Alignment */}
       <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "1.5rem", alignItems: "stretch" }}>
         
@@ -1534,7 +1396,7 @@ export const FrequencySeverityTab: React.FC<FrequencySeverityTabProps> = ({
               Fórmulas ponderadas oficiais: F = (N × 1.000.000) / HH e G = (T × 1.000.000) / HH
             </p>
           </div>
-          <div style={{ fontSize: "0.75rem", fontWeight: 700, color: "var(--primary)", background: "var(--primary-light)", padding: "0.3rem 0.75rem", borderRadius: "6px" }}>
+          <div style={{ fontSize: "0.75rem", fontWeight: 700, color: "#0284C7", background: "#F0F9FF", border: "1px solid #BAE6FD", padding: "0.3rem 0.75rem", borderRadius: "6px" }}>
             * Base oficial: Campo "HH" das planilhas mensais
           </div>
         </div>
@@ -1564,7 +1426,7 @@ export const FrequencySeverityTab: React.FC<FrequencySeverityTabProps> = ({
                 >
                   <td style={{ padding: "0.75rem 1rem", fontWeight: 700, color: "var(--text)" }}>{row.monthName}</td>
                   <td style={{ padding: "0.75rem 1rem", textAlign: "center", fontWeight: 700 }}>{row.accidents}</td>
-                  <td style={{ padding: "0.75rem 1rem", textAlign: "right", fontFamily: "monospace", fontWeight: 800, color: "var(--primary)" }}>{fmtNumber(row.hht)}</td>
+                  <td style={{ padding: "0.75rem 1rem", textAlign: "right", fontFamily: "monospace", fontWeight: 800, color: "#0284C7" }}>{fmtNumber(row.hht)}</td>
                   <td style={{ padding: "0.75rem 1rem", textAlign: "center", fontWeight: 700 }}>{row.lostDays}</td>
                   <td style={{ padding: "0.75rem 1rem", textAlign: "right", fontWeight: 800, color: getStatusColor(row.frequencyStatus) }}>{fmtNumber(row.frequencyRate)}</td>
                   <td style={{ padding: "0.75rem 1rem", textAlign: "center" }}>
@@ -1642,7 +1504,7 @@ export const FrequencySeverityTab: React.FC<FrequencySeverityTabProps> = ({
               Acompanhamento detalhado por Unidade (16 unidades de fonte, com AÇOTUBO - Carbono e Matriz unificadas)
             </p>
           </div>
-          <div style={{ fontSize: "0.8rem", color: "var(--text-muted)", fontWeight: 700 }}>
+          <div style={{ fontSize: "0.8rem", color: "#0284C7", fontWeight: 800, background: "#F0F9FF", border: "1px solid #BAE6FD", padding: "0.3rem 0.75rem", borderRadius: "6px" }}>
             Horas Trabalhadas (HH): {fmtNumber(overview.totalHHT)} h
           </div>
         </div>
@@ -1672,7 +1534,7 @@ export const FrequencySeverityTab: React.FC<FrequencySeverityTabProps> = ({
                 >
                   <td style={{ padding: "0.75rem 1rem", fontWeight: 700, color: "var(--text)" }}>{unit.unitName}</td>
                   <td style={{ padding: "0.75rem 1rem", textAlign: "center", fontWeight: 700 }}>{unit.accidents}</td>
-                  <td style={{ padding: "0.75rem 1rem", textAlign: "right", fontFamily: "monospace", fontWeight: 800, color: "var(--primary)" }}>{fmtNumber(unit.hht)}</td>
+                  <td style={{ padding: "0.75rem 1rem", textAlign: "right", fontFamily: "monospace", fontWeight: 800, color: "#0284C7" }}>{fmtNumber(unit.hht)}</td>
                   <td style={{ padding: "0.75rem 1rem", textAlign: "center", fontWeight: 700 }}>{unit.lostDays}</td>
                   <td style={{ padding: "0.75rem 1rem", textAlign: "right", fontWeight: 800, color: getStatusColor(unit.frequencyStatus) }}>{fmtNumber(unit.frequencyRate)}</td>
                   <td style={{ padding: "0.75rem 1rem", textAlign: "center" }}>
