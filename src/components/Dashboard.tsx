@@ -251,35 +251,11 @@ export const Dashboard: React.FC<DashboardProps> = ({
           </button>
           <button 
             onClick={onLandscapePrint} 
-            className="btn-action landscape" 
-            title="Gerar Quadro de Gestão à Vista (A4 Paisagem)"
-            style={{
-              background: 'linear-gradient(135deg, #10B981 0%, #059669 100%)',
-              height: '42px',
-              padding: '0 1.15rem',
-              display: 'flex',
-              alignItems: 'center',
-              gap: '0.6rem',
-              borderRadius: '12px',
-              border: 'none',
-              color: '#FFFFFF',
-              fontWeight: 800,
-              fontSize: '0.85rem',
-              cursor: 'pointer',
-              boxShadow: '0 4px 14px rgba(16, 185, 129, 0.35)',
-              transition: 'all 0.2s cubic-bezier(0.4, 0, 0.2, 1)'
-            }}
-            onMouseOver={e => {
-              e.currentTarget.style.transform = 'translateY(-2px) scale(1.03)';
-              e.currentTarget.style.boxShadow = '0 6px 20px rgba(16, 185, 129, 0.55)';
-            }}
-            onMouseOut={e => {
-              e.currentTarget.style.transform = 'translateY(0) scale(1)';
-              e.currentTarget.style.boxShadow = '0 4px 14px rgba(16, 185, 129, 0.35)';
-            }}
+            className="btn-pdf" 
+            title="Gerar Quadro Paisagem (Gestão à Vista)"
+            style={{ background: '#10B981', width: '42px', height: '42px', padding: 0, display: 'flex', alignItems: 'center', justifyContent: 'center', borderRadius: '12px' }}
           >
-            <Monitor size={20} />
-            <span>Quadro de Gestão à Vista</span>
+            <Monitor size={22} />
           </button>
         </div>
       </header>

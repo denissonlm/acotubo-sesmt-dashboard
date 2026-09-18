@@ -248,12 +248,12 @@ export const LandscapePrintView: React.FC<LandscapePrintViewProps> = ({
   }, [filteredAccidents]);
 
   const getHeatmapColor = (count: number) => {
-    if (count === 0) return '#F8FAFC';
-    if (count <= 1) return '#FEE2E2';
-    if (count <= 2) return '#FCA5A5';
-    if (count <= 4) return '#F87171';
+    if (count === 0) return '#F1F5F9';
+    if (count <= 2) return '#FEE2E2';
+    if (count <= 4) return '#FCA5A5';
     if (count <= 6) return '#EF4444';
-    return '#B91C1C';
+    if (count <= 8) return '#B91C1C';
+    return '#7F1D1D';
   };
 
   // Recharts specific formatters & maps
@@ -485,50 +485,64 @@ export const LandscapePrintView: React.FC<LandscapePrintViewProps> = ({
               </div>
             </div>
 
-            {/* Mapa de Calor */}
+            {/* Mapa de Intensidade */}
             <div className="panel-premium" style={{ display: 'flex', flexDirection: 'column', padding: '0.75rem' }}>
-              <h2 style={{ fontSize: '0.85rem', fontWeight: 900, color: 'var(--text)', margin: '0 0 0.15rem 0', textAlign: 'center' }}>Mapa de Calor de Ocorrências</h2>
-              <p style={{ fontSize: '0.58rem', color: 'var(--text-muted)', margin: '0 0 0.35rem 0', textAlign: 'center' }}>Frequência por Unidade e Mês</p>
+              <h2 style={{ fontSize: '0.85rem', fontWeight: 900, color: 'var(--text)', margin: '0 0 0.15rem 0', textAlign: 'center' }}>
+                Mapa de <span style={{ color: 'var(--primary)' }}>Intensidade</span>
+              </h2>
+              <p style={{ fontSize: '0.58rem', color: 'var(--text-muted)', margin: '0 0 0.35rem 0', textAlign: 'center' }}>
+                Frequência mensal de ocorrências (Mapa de Calor)
+              </p>
               <div style={{ flex: 1, minHeight: 0, display: 'flex', flexDirection: 'column', justifyContent: 'center' }}>
-                <table style={{ width: '100%', borderCollapse: 'separate', borderSpacing: '2px', fontSize: '7px' }}>
+                <table className="heatmap-table" style={{ width: '100%', borderCollapse: 'separate', borderSpacing: '3px' }}>
                   <thead>
                     <tr>
-                      <th style={{ textAlign: 'left', color: '#64748B', fontWeight: 800, padding: '1px 3px' }}>Unidade</th>
+                      <th style={{ width: '42px', minWidth: '42px', fontSize: '8px', fontWeight: 800, color: '#64748B', textAlign: 'center' }}></th>
                       {MONTH_NAMES.map(m => (
-                        <th key={m} style={{ textAlign: 'center', color: '#64748B', fontWeight: 800, padding: '1px' }}>{m}</th>
+                        <th key={m} style={{ fontSize: '8px', fontWeight: 800, color: '#64748B', textAlign: 'center', padding: '1px' }}>
+                          {m.toUpperCase()}
+                        </th>
                       ))}
                     </tr>
                   </thead>
                   <tbody>
-                    {Array.from(new Set(filteredAccidents.map(a => a.division))).slice(0, 7).map(div => (
-                      <tr key={div}>
-                        <td style={{ fontWeight: 800, color: '#334155', maxWidth: '85px', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', padding: '1px 3px' }}>{div}</td>
-                        {MONTH_NAMES.map((_, mIdx) => {
-                          const count = filteredAccidents.filter(a => a.division === div && a.month === (mIdx + 1)).length;
-                          return (
+                    {selectedYears.map(year => {
+                      const s = stats[year];
+                      if (!s) return null;
+                      return (
+                        <tr key={year}>
+                          <td style={{ fontSize: '9px', fontWeight: 900, color: '#334155', verticalAlign: 'middle', textAlign: 'center', padding: '2px 0', width: '42px', minWidth: '42px' }}>
+                            {year}
+                          </td>
+                          {s.monthly.map((m, i) => (
                             <td 
-                              key={mIdx} 
+                              key={i} 
                               style={{ 
-                                backgroundColor: getHeatmapColor(count), 
-                                height: '14px', 
-                                borderRadius: '2px', 
-                                textAlign: 'center', 
-                                color: count > 3 ? '#FFF' : '#334155', 
-                                fontWeight: 800 
+                                background: getHeatmapColor(m.count), 
+                                color: m.count > 5 ? '#FFFFFF' : (m.count > 0 ? '#B91C1C' : '#94A3B8'),
+                                height: '22px',
+                                borderRadius: '4px',
+                                fontSize: '9px',
+                                fontWeight: 900,
+                                textAlign: 'center',
+                                verticalAlign: 'middle'
                               }}
                             >
-                              {count > 0 ? count : ''}
+                              <div>{m.count > 0 ? m.count : '-'}</div>
                             </td>
-                          );
-                        })}
-                      </tr>
-                    ))}
+                          ))}
+                        </tr>
+                      );
+                    })}
                   </tbody>
                 </table>
-                <div style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', gap: '6px', marginTop: '0.4rem', fontSize: '7px', color: 'var(--text-muted)', fontWeight: 800 }}>
-                  <span>Menos acidentes</span>
-                  {[0, 1, 2, 4, 6].map(c => <div key={c} style={{ width: 14, height: 7, borderRadius: 1.5, backgroundColor: getHeatmapColor(c) }}></div>)}
-                  <span>Mais acidentes</span>
+                <div style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', gap: '8px', marginTop: '0.4rem', fontSize: '7.5px', color: 'var(--text-muted)', fontWeight: 700 }}>
+                  <span>Menos</span>
+                  {[0, 2, 4, 6, 8, 10].map(c => (
+                    <div key={c} style={{ width: 16, height: 8, borderRadius: 2, backgroundColor: getHeatmapColor(c) }}></div>
+                  ))}
+                  <span>Mais</span>
+                  <span style={{ marginLeft: 12 }}>— fora do período</span>
                 </div>
               </div>
             </div>
