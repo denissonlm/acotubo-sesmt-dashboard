@@ -10,14 +10,21 @@ export interface LandscapeFilterValues {
   years: number[];
   division: string;
   manager: string;
-  area: string;
+  areas: string[];
+  area?: string;
 }
 
 interface LandscapeFilterModalProps {
   isOpen: boolean;
   onClose: () => void;
   accidents: Accident[];
-  initialFilters: LandscapeFilterValues;
+  initialFilters: {
+    years: number[];
+    division: string;
+    manager: string;
+    area?: string;
+    areas?: string[];
+  };
   onConfirm: (filters: LandscapeFilterValues) => void;
 }
 
@@ -47,7 +54,7 @@ export const LandscapeFilterModal: React.FC<LandscapeFilterModalProps> = ({
   const [selectedYears, setSelectedYears] = useState<number[]>([]);
   const [selectedDivision, setSelectedDivision] = useState<string>('ALL');
   const [selectedManager, setSelectedManager] = useState<string>('ALL');
-  const [selectedArea, setSelectedArea] = useState<string>('ALL');
+  const [selectedAreas, setSelectedAreas] = useState<string[]>(['ALL']);
 
   useEffect(() => {
     if (isOpen) {
@@ -57,9 +64,18 @@ export const LandscapeFilterModal: React.FC<LandscapeFilterModalProps> = ({
       setSelectedYears(validYears);
       setSelectedDivision(initialFilters.division || 'ALL');
       setSelectedManager(initialFilters.manager || 'ALL');
-      setSelectedArea(initialFilters.area || 'ALL');
+      
+      if (initialFilters.areas && initialFilters.areas.length > 0) {
+        setSelectedAreas(initialFilters.areas);
+      } else if (initialFilters.area && initialFilters.area !== 'ALL') {
+        setSelectedAreas([initialFilters.area]);
+      } else {
+        setSelectedAreas(['ALL']);
+      }
     }
   }, [isOpen, initialFilters, allYears]);
+
+  const isAllAreas = selectedAreas.length === 0 || selectedAreas.includes('ALL');
 
   // Cálculo em tempo real dos acidentes correspondentes
   const matchingAccidents = useMemo(() => {
@@ -67,10 +83,10 @@ export const LandscapeFilterModal: React.FC<LandscapeFilterModalProps> = ({
       const matchYear = selectedYears.includes(a.year);
       const matchDiv = selectedDivision === 'ALL' || a.division === selectedDivision;
       const matchMgr = selectedManager === 'ALL' || a.manager === selectedManager;
-      const matchArea = selectedArea === 'ALL' || a.area === selectedArea;
+      const matchArea = isAllAreas || selectedAreas.includes(a.area);
       return matchYear && matchDiv && matchMgr && matchArea;
     });
-  }, [accidents, selectedYears, selectedDivision, selectedManager, selectedArea]);
+  }, [accidents, selectedYears, selectedDivision, selectedManager, selectedAreas, isAllAreas]);
 
   const totalMatching = matchingAccidents.length;
   const totalLostDays = useMemo(() => matchingAccidents.reduce((s, a) => s + (a.lostDays || 0), 0), [matchingAccidents]);
@@ -90,11 +106,38 @@ export const LandscapeFilterModal: React.FC<LandscapeFilterModalProps> = ({
     setSelectedYears([...allYears].sort((a, b) => a - b));
   };
 
+  const handleToggleArea = (area: string) => {
+    if (isAllAreas) {
+      // Ao clicar em uma área individual, seleciona apenas ela
+      setSelectedAreas([area]);
+    } else {
+      if (selectedAreas.includes(area)) {
+        const next = selectedAreas.filter(a => a !== area);
+        if (next.length === 0) {
+          setSelectedAreas(['ALL']);
+        } else {
+          setSelectedAreas(next);
+        }
+      } else {
+        const next = [...selectedAreas, area];
+        if (next.length === allAreas.length) {
+          setSelectedAreas(['ALL']);
+        } else {
+          setSelectedAreas(next);
+        }
+      }
+    }
+  };
+
+  const handleSelectAllAreas = () => {
+    setSelectedAreas(['ALL']);
+  };
+
   const handleResetFilters = () => {
     setSelectedYears([...allYears].sort((a, b) => a - b));
     setSelectedDivision('ALL');
     setSelectedManager('ALL');
-    setSelectedArea('ALL');
+    setSelectedAreas(['ALL']);
   };
 
   const handleConfirm = () => {
@@ -102,7 +145,8 @@ export const LandscapeFilterModal: React.FC<LandscapeFilterModalProps> = ({
       years: selectedYears.length > 0 ? selectedYears : allYears,
       division: selectedDivision,
       manager: selectedManager,
-      area: selectedArea
+      areas: selectedAreas,
+      area: selectedAreas.length === 1 ? selectedAreas[0] : (isAllAreas ? 'ALL' : selectedAreas.join(', '))
     });
   };
 
@@ -174,7 +218,7 @@ export const LandscapeFilterModal: React.FC<LandscapeFilterModalProps> = ({
                 Quadro de Gestão à Vista
               </h2>
               <p style={{ margin: '0.15rem 0 0 0', fontSize: '0.8rem', color: '#94A3B8', fontWeight: 600 }}>
-                Selecione os filtros para a emissão em A4 Paisagem
+                Selecione os filtros e áreas simultâneas para emissão em A4 Paisagem
               </p>
             </div>
           </div>
@@ -206,11 +250,11 @@ export const LandscapeFilterModal: React.FC<LandscapeFilterModalProps> = ({
         </div>
 
         {/* Form Body */}
-        <div style={{ padding: '1.75rem', display: 'flex', flexDirection: 'column', gap: '1.35rem', maxHeight: '72vh', overflowY: 'auto' }}>
+        <div style={{ padding: '1.5rem 1.75rem', display: 'flex', flexDirection: 'column', gap: '1.2rem', maxHeight: '72vh', overflowY: 'auto' }}>
           
           {/* 1. Anos / Período */}
           <div>
-            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '0.6rem' }}>
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '0.5rem' }}>
               <label style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', fontSize: '0.85rem', fontWeight: 800, color: '#1E293B' }}>
                 <Calendar size={16} color="#10B981" />
                 Período de Análise (Anos)
@@ -242,21 +286,21 @@ export const LandscapeFilterModal: React.FC<LandscapeFilterModalProps> = ({
                     type="button"
                     onClick={() => handleToggleYear(year)}
                     style={{
-                      padding: '0.55rem 1.25rem',
-                      borderRadius: '12px',
+                      padding: '0.45rem 1.15rem',
+                      borderRadius: '10px',
                       border: isSelected ? '1.5px solid #10B981' : '1.5px solid #CBD5E1',
                       background: isSelected 
                         ? 'linear-gradient(135deg, #10B981 0%, #059669 100%)' 
                         : '#F8FAFC',
                       color: isSelected ? '#FFFFFF' : '#475569',
                       fontWeight: 800,
-                      fontSize: '0.9rem',
+                      fontSize: '0.88rem',
                       cursor: 'pointer',
                       display: 'flex',
                       alignItems: 'center',
                       gap: '0.45rem',
                       transition: 'all 0.18s ease',
-                      boxShadow: isSelected ? '0 4px 12px rgba(16, 185, 129, 0.3)' : 'none'
+                      boxShadow: isSelected ? '0 3px 10px rgba(16, 185, 129, 0.25)' : 'none'
                     }}
                   >
                     {isSelected && <CheckCircle2 size={15} color="#FFFFFF" />}
@@ -267,11 +311,10 @@ export const LandscapeFilterModal: React.FC<LandscapeFilterModalProps> = ({
             </div>
           </div>
 
-          {/* 2. Filtros em 3 Linhas Elegantes */}
-          <div style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
-            
+          {/* 2. Unidade e Superior Direto (Lado a Lado) */}
+          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1rem' }}>
             {/* Unidade */}
-            <div style={{ display: 'flex', flexDirection: 'column', gap: '0.4rem' }}>
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '0.35rem' }}>
               <label style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', fontSize: '0.85rem', fontWeight: 800, color: '#1E293B' }}>
                 <Building2 size={16} color="#3B82F6" />
                 Unidade Fabril
@@ -281,20 +324,19 @@ export const LandscapeFilterModal: React.FC<LandscapeFilterModalProps> = ({
                 onChange={e => setSelectedDivision(e.target.value)}
                 style={{
                   width: '100%',
-                  padding: '0.65rem 0.9rem',
+                  padding: '0.6rem 0.8rem',
                   borderRadius: '10px',
                   border: '1.5px solid #CBD5E1',
                   background: '#FFFFFF',
                   color: '#0F172A',
-                  fontSize: '0.88rem',
+                  fontSize: '0.85rem',
                   fontWeight: 600,
                   outline: 'none',
                   cursor: 'pointer',
-                  transition: 'border-color 0.2s',
                   boxShadow: '0 1px 3px rgba(0,0,0,0.05)'
                 }}
               >
-                <option value="ALL">Todas as Unidades (Consolidado Grupo Açotubo)</option>
+                <option value="ALL">Todas as Unidades (Geral)</option>
                 {allDivisions.map(d => (
                   <option key={d} value={d}>{d}</option>
                 ))}
@@ -302,80 +344,150 @@ export const LandscapeFilterModal: React.FC<LandscapeFilterModalProps> = ({
             </div>
 
             {/* Superior Direto */}
-            <div style={{ display: 'flex', flexDirection: 'column', gap: '0.4rem' }}>
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '0.35rem' }}>
               <label style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', fontSize: '0.85rem', fontWeight: 800, color: '#1E293B' }}>
                 <UserCheck size={16} color="#10B981" />
-                Superior Direto (Liderança)
+                Superior Direto
               </label>
               <select
                 value={selectedManager}
                 onChange={e => setSelectedManager(e.target.value)}
                 style={{
                   width: '100%',
-                  padding: '0.65rem 0.9rem',
+                  padding: '0.6rem 0.8rem',
                   borderRadius: '10px',
                   border: '1.5px solid #CBD5E1',
                   background: '#FFFFFF',
                   color: '#0F172A',
-                  fontSize: '0.88rem',
+                  fontSize: '0.85rem',
                   fontWeight: 600,
                   outline: 'none',
                   cursor: 'pointer',
-                  transition: 'border-color 0.2s',
                   boxShadow: '0 1px 3px rgba(0,0,0,0.05)'
                 }}
               >
-                <option value="ALL">Todos os Superiores Diretos (Geral)</option>
+                <option value="ALL">Todos os Superiores (Geral)</option>
                 {allManagers.map(m => (
                   <option key={m} value={m}>{m}</option>
                 ))}
               </select>
             </div>
+          </div>
 
-            {/* Área / Setor */}
-            <div style={{ display: 'flex', flexDirection: 'column', gap: '0.4rem' }}>
+          {/* 3. Área / Setor Operacional (Seleção Múltipla Simultânea) */}
+          <div style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem' }}>
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
               <label style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', fontSize: '0.85rem', fontWeight: 800, color: '#1E293B' }}>
                 <Briefcase size={16} color="#F59E0B" />
-                Área / Setor Operacional
+                Áreas Operacionais
+                <span style={{ 
+                  fontSize: '0.72rem', 
+                  fontWeight: 800, 
+                  color: isAllAreas ? '#64748B' : '#B45309',
+                  background: isAllAreas ? '#F1F5F9' : '#FEF3C7',
+                  padding: '2px 8px',
+                  borderRadius: '6px'
+                }}>
+                  {isAllAreas ? 'Todas as Áreas' : `${selectedAreas.length} área${selectedAreas.length > 1 ? 's' : ''} simultânea${selectedAreas.length > 1 ? 's' : ''}`}
+                </span>
               </label>
-              <select
-                value={selectedArea}
-                onChange={e => setSelectedArea(e.target.value)}
+              <button
+                type="button"
+                onClick={handleSelectAllAreas}
                 style={{
-                  width: '100%',
-                  padding: '0.65rem 0.9rem',
-                  borderRadius: '10px',
-                  border: '1.5px solid #CBD5E1',
-                  background: '#FFFFFF',
-                  color: '#0F172A',
-                  fontSize: '0.88rem',
-                  fontWeight: 600,
-                  outline: 'none',
+                  background: 'none',
+                  border: 'none',
+                  color: '#F59E0B',
+                  fontSize: '0.75rem',
+                  fontWeight: 800,
                   cursor: 'pointer',
-                  transition: 'border-color 0.2s',
-                  boxShadow: '0 1px 3px rgba(0,0,0,0.05)'
+                  padding: '2px 6px',
+                  borderRadius: '4px',
+                  textDecoration: isAllAreas ? 'none' : 'underline'
                 }}
               >
-                <option value="ALL">Todas as Áreas / Setores</option>
-                {allAreas.map(a => (
-                  <option key={a} value={a}>{a}</option>
-                ))}
-              </select>
+                {isAllAreas ? '✓ Todas as Áreas' : 'Selecionar Todas'}
+              </button>
+            </div>
+
+            {/* Badges / Chips de Seleção Múltipla de Áreas */}
+            <div style={{
+              display: 'flex',
+              gap: '0.45rem',
+              flexWrap: 'wrap',
+              background: '#F8FAFC',
+              border: '1.5px solid #CBD5E1',
+              borderRadius: '12px',
+              padding: '0.75rem',
+              maxHeight: '135px',
+              overflowY: 'auto'
+            }}>
+              <button
+                type="button"
+                onClick={handleSelectAllAreas}
+                style={{
+                  padding: '0.35rem 0.75rem',
+                  borderRadius: '8px',
+                  border: isAllAreas ? '1.5px solid #F59E0B' : '1px solid #CBD5E1',
+                  background: isAllAreas ? 'linear-gradient(135deg, #F59E0B 0%, #D97706 100%)' : '#FFFFFF',
+                  color: isAllAreas ? '#FFFFFF' : '#475569',
+                  fontSize: '0.78rem',
+                  fontWeight: 800,
+                  cursor: 'pointer',
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: '0.35rem',
+                  transition: 'all 0.15s ease',
+                  boxShadow: isAllAreas ? '0 2px 6px rgba(245, 158, 11, 0.3)' : 'none'
+                }}
+              >
+                {isAllAreas && <CheckCircle2 size={13} color="#FFFFFF" />}
+                Todas as Áreas
+              </button>
+
+              {allAreas.map(area => {
+                const isSelected = !isAllAreas && selectedAreas.includes(area);
+                return (
+                  <button
+                    key={area}
+                    type="button"
+                    onClick={() => handleToggleArea(area)}
+                    style={{
+                      padding: '0.35rem 0.75rem',
+                      borderRadius: '8px',
+                      border: isSelected ? '1.5px solid #F59E0B' : '1px solid #CBD5E1',
+                      background: isSelected ? 'linear-gradient(135deg, #F59E0B 0%, #D97706 100%)' : '#FFFFFF',
+                      color: isSelected ? '#FFFFFF' : '#475569',
+                      fontSize: '0.78rem',
+                      fontWeight: isSelected ? 800 : 600,
+                      cursor: 'pointer',
+                      display: 'flex',
+                      alignItems: 'center',
+                      gap: '0.35rem',
+                      transition: 'all 0.15s ease',
+                      boxShadow: isSelected ? '0 2px 6px rgba(245, 158, 11, 0.3)' : 'none'
+                    }}
+                  >
+                    {isSelected && <CheckCircle2 size={13} color="#FFFFFF" />}
+                    {area}
+                  </button>
+                );
+              })}
             </div>
           </div>
 
-          {/* 3. Card de Resumo em Tempo Real */}
+          {/* 4. Card de Resumo em Tempo Real */}
           <div style={{
             background: '#F8FAFC',
             border: '1px solid #E2E8F0',
             borderRadius: '16px',
-            padding: '1rem 1.25rem',
+            padding: '0.9rem 1.15rem',
             display: 'flex',
             flexDirection: 'column',
-            gap: '0.8rem'
+            gap: '0.75rem'
           }}>
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-              <span style={{ fontSize: '0.78rem', fontWeight: 800, color: '#64748B', textTransform: 'uppercase', letterSpacing: '0.5px' }}>
+              <span style={{ fontSize: '0.75rem', fontWeight: 800, color: '#64748B', textTransform: 'uppercase', letterSpacing: '0.5px' }}>
                 Resumo do Recorte em Tempo Real
               </span>
               <button
@@ -403,14 +515,14 @@ export const LandscapeFilterModal: React.FC<LandscapeFilterModalProps> = ({
               <div style={{
                 background: '#FFFFFF',
                 borderRadius: '10px',
-                padding: '0.6rem 0.8rem',
+                padding: '0.55rem 0.8rem',
                 border: '1px solid #E2E8F0',
                 borderLeft: '4px solid #10B981'
               }}>
                 <div style={{ fontSize: '0.68rem', fontWeight: 800, color: '#64748B', textTransform: 'uppercase' }}>
                   Acidentes
                 </div>
-                <div style={{ fontSize: '1.4rem', fontWeight: 900, color: '#0F172A', lineHeight: 1.1, marginTop: '2px' }}>
+                <div style={{ fontSize: '1.35rem', fontWeight: 900, color: '#0F172A', lineHeight: 1.1, marginTop: '2px' }}>
                   {totalMatching}
                 </div>
               </div>
@@ -418,14 +530,14 @@ export const LandscapeFilterModal: React.FC<LandscapeFilterModalProps> = ({
               <div style={{
                 background: '#FFFFFF',
                 borderRadius: '10px',
-                padding: '0.6rem 0.8rem',
+                padding: '0.55rem 0.8rem',
                 border: '1px solid #E2E8F0',
                 borderLeft: '4px solid #F59E0B'
               }}>
                 <div style={{ fontSize: '0.68rem', fontWeight: 800, color: '#64748B', textTransform: 'uppercase' }}>
                   Dias Perdidos
                 </div>
-                <div style={{ fontSize: '1.4rem', fontWeight: 900, color: '#0F172A', lineHeight: 1.1, marginTop: '2px' }}>
+                <div style={{ fontSize: '1.35rem', fontWeight: 900, color: '#0F172A', lineHeight: 1.1, marginTop: '2px' }}>
                   {totalLostDays}
                 </div>
               </div>
@@ -433,14 +545,14 @@ export const LandscapeFilterModal: React.FC<LandscapeFilterModalProps> = ({
               <div style={{
                 background: '#FFFFFF',
                 borderRadius: '10px',
-                padding: '0.6rem 0.8rem',
+                padding: '0.55rem 0.8rem',
                 border: '1px solid #E2E8F0',
                 borderLeft: '4px solid #EF4444'
               }}>
                 <div style={{ fontSize: '0.68rem', fontWeight: 800, color: '#64748B', textTransform: 'uppercase' }}>
                   Com Afastamento
                 </div>
-                <div style={{ fontSize: '1.4rem', fontWeight: 900, color: '#0F172A', lineHeight: 1.1, marginTop: '2px' }}>
+                <div style={{ fontSize: '1.35rem', fontWeight: 900, color: '#0F172A', lineHeight: 1.1, marginTop: '2px' }}>
                   {withLeaveCount}
                 </div>
               </div>
@@ -468,7 +580,7 @@ export const LandscapeFilterModal: React.FC<LandscapeFilterModalProps> = ({
 
         {/* Footer */}
         <div style={{
-          padding: '1.25rem 1.75rem',
+          padding: '1.15rem 1.75rem',
           background: '#F8FAFC',
           borderTop: '1px solid #E2E8F0',
           display: 'flex',
@@ -525,7 +637,7 @@ export const LandscapeFilterModal: React.FC<LandscapeFilterModalProps> = ({
             }}
           >
             <Monitor size={18} />
-            <span>Gerar Quadro de Gestão à Vista</span>
+            <span>Gerar Quadro ({totalMatching} ocorrência{totalMatching === 1 ? '' : 's'})</span>
           </button>
         </div>
       </motion.div>

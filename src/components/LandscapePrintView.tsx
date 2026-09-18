@@ -33,7 +33,8 @@ interface LandscapePrintViewProps {
   selectedYears: number[];
   filterDivision: string;
   filterManager: string;
-  filterArea: string;
+  filterArea?: string;
+  filterAreas?: string[];
   onBack: () => void;
 }
 
@@ -45,18 +46,28 @@ export const LandscapePrintView: React.FC<LandscapePrintViewProps> = ({
   filterDivision,
   filterManager,
   filterArea,
+  filterAreas,
   onBack
 }) => {
+  const activeAreas = useMemo(() => {
+    if (filterAreas && filterAreas.length > 0) {
+      if (filterAreas.includes('ALL')) return [];
+      return filterAreas;
+    }
+    if (filterArea && filterArea !== 'ALL') return [filterArea];
+    return [];
+  }, [filterAreas, filterArea]);
+
   // 1. Filtered Accidents (only print those matching filters, as requested in users first request)
   const filteredAccidents = useMemo(() => {
     return accidents.filter(a => {
       const matchesYear = selectedYears.includes(a.year);
       const matchesDivision = filterDivision === 'ALL' || a.division === filterDivision;
       const matchesManager = filterManager === 'ALL' || a.manager === filterManager;
-      const matchesArea = filterArea === 'ALL' || a.area === filterArea;
+      const matchesArea = activeAreas.length === 0 || activeAreas.includes(a.area);
       return matchesYear && matchesDivision && matchesManager && matchesArea;
     });
-  }, [accidents, selectedYears, filterDivision, filterManager, filterArea]);
+  }, [accidents, selectedYears, filterDivision, filterManager, activeAreas]);
 
   // 2. Calculations
   const stats = useMemo(() => calculateStats(filteredAccidents, selectedYears), [filteredAccidents, selectedYears]);
@@ -159,11 +170,19 @@ export const LandscapePrintView: React.FC<LandscapePrintViewProps> = ({
   const filterSubtitle = useMemo(() => {
     const parts: string[] = [];
     parts.push(filterDivision === 'ALL' ? 'Grupo Açotubo' : filterDivision);
-    if (filterArea !== 'ALL') parts.push(filterArea);
+    if (activeAreas.length > 0) {
+      if (activeAreas.length <= 3) {
+        parts.push(`Áreas: ${activeAreas.join(', ')}`);
+      } else {
+        parts.push(`${activeAreas.length} Áreas Selecionadas`);
+      }
+    } else {
+      parts.push('Todas as Áreas');
+    }
     if (filterManager !== 'ALL') parts.push(`Sup: ${filterManager}`);
     parts.push(`Anos: ${selectedYears.join(', ')}`);
     return parts.join(' • ');
-  }, [filterDivision, filterArea, filterManager, selectedYears]);
+  }, [filterDivision, activeAreas, filterManager, selectedYears]);
 
   const availableMonths = useMemo(() => {
     const yearObj = hhtStore[primaryYear] || {};
@@ -174,8 +193,9 @@ export const LandscapePrintView: React.FC<LandscapePrintViewProps> = ({
   const unitForRates = useMemo(() => {
     if (filterDivision === 'ALL') return 'ALL';
     if (SOURCE_UNITS.includes(filterDivision)) return filterDivision;
-    return matchAccidentToSourceUnit(filterDivision, filterArea) || 'ALL';
-  }, [filterDivision, filterArea]);
+    const firstArea = activeAreas.length === 1 ? activeAreas[0] : undefined;
+    return matchAccidentToSourceUnit(filterDivision, firstArea) || 'ALL';
+  }, [filterDivision, activeAreas]);
 
   const freqOverview = useMemo(() => {
     return processFrequencyAndSeverity(filteredAccidents, primaryYear, availableMonths, unitForRates, hhtStore);

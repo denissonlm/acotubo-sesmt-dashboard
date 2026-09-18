@@ -17,7 +17,7 @@ function App() {
     years: [2024, 2025, 2026],
     division: 'ALL',
     manager: 'ALL',
-    area: 'ALL'
+    areas: ['ALL']
   })
   
   // Filtros ativos no painel principal
@@ -66,7 +66,7 @@ function App() {
         selectedYears={landscapeFilters.years} 
         filterDivision={landscapeFilters.division} 
         filterManager={landscapeFilters.manager} 
-        filterArea={landscapeFilters.area} 
+        filterAreas={landscapeFilters.areas} 
         onBack={() => setIsLandscapePrinting(false)} 
       />
     )
@@ -96,7 +96,7 @@ function App() {
           years: selectedYears,
           division: filterDivision,
           manager: filterManager,
-          area: filterArea
+          areas: filterArea !== 'ALL' ? [filterArea] : ['ALL']
         }}
         onConfirm={(filters) => {
           setLandscapeFilters(filters);
