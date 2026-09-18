@@ -755,53 +755,99 @@ export const LandscapePrintView: React.FC<LandscapePrintViewProps> = ({
               const s = stats[year];
               if (!s) return null;
               return (
-                <div key={year} className="panel-premium" style={{ flex: 1, minWidth: 0, display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '0.4rem 0.65rem', borderLeft: '3.5px solid var(--primary)', background: '#FFF' }}>
-                  <div style={{ minWidth: 0 }}>
-                    <h3 style={{ margin: 0, color: '#64748B', fontWeight: 800, fontSize: '0.66rem', letterSpacing: '0.2px' }}>ANO {year}</h3>
-                    <div style={{ fontSize: '0.52rem', fontWeight: 800, color: '#94A3B8', textTransform: 'uppercase' }}>acidentes</div>
+                <div 
+                  key={year} 
+                  className="panel-premium safety-top-card" 
+                  style={{ 
+                    flex: 1, 
+                    minWidth: 0, 
+                    display: 'flex', 
+                    flexDirection: 'column', 
+                    justifyContent: 'space-between', 
+                    borderLeft: '4px solid var(--primary)', 
+                    background: '#FFF' 
+                  }}
+                >
+                  <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', width: '100%' }}>
+                    <span style={{ fontWeight: 900, color: '#1E293B', fontSize: '0.8rem', lineHeight: 1 }}>{year}</span>
+                    <span style={{ fontSize: '0.56rem', fontWeight: 800, color: '#64748B' }}>{s.avgPerMonth}/mês</span>
                   </div>
-                  <div style={{ display: 'flex', alignItems: 'baseline', gap: '0.25rem', flexShrink: 0, marginLeft: '0.25rem' }}>
-                    <span style={{ fontSize: '1.35rem', fontWeight: 900, color: '#0F172A', lineHeight: 1 }}>{s.total}</span>
-                    <span style={{ fontSize: '0.56rem', fontWeight: 800, color: '#475569' }}>({s.avgPerMonth}/m)</span>
+                  <div style={{ display: 'flex', alignItems: 'baseline', justifyContent: 'space-between', width: '100%' }}>
+                    <span style={{ fontSize: '1.4rem', fontWeight: 900, color: '#0F172A', lineHeight: 1 }}>{s.total}</span>
+                    <span style={{ fontSize: '0.55rem', fontWeight: 800, color: '#94A3B8', textTransform: 'uppercase' }}>acidentes</span>
                   </div>
                 </div>
               );
             })}
 
             {/* KPI 1 */}
-            <div className="panel-premium" style={{ flex: 1, minWidth: 0, background: 'linear-gradient(135deg, #0F172A 0%, #1E293B 100%)', border: 'none', color: 'white', display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '0.4rem 0.65rem' }}>
-              <div style={{ minWidth: 0 }}>
-                <div style={{ fontSize: '0.64rem', fontWeight: 900, color: '#10B981', display: 'flex', alignItems: 'center', gap: '3px', whiteSpace: 'nowrap' }}>
-                  <Target size={11} color="#10B981" style={{ flexShrink: 0 }} /> <span>Sem Ocorrências</span>
-                </div>
-                <div style={{ fontSize: '0.52rem', fontWeight: 800, color: '#94A3B8', textTransform: 'uppercase', marginTop: '1px' }}>dias atuais</div>
+            <div 
+              className="panel-premium safety-top-card" 
+              style={{ 
+                flex: 1, 
+                minWidth: 0, 
+                background: 'linear-gradient(135deg, #0F172A 0%, #1E293B 100%)', 
+                border: 'none', 
+                color: 'white', 
+                display: 'flex', 
+                flexDirection: 'column', 
+                justifyContent: 'space-between' 
+              }}
+            >
+              <div style={{ display: 'flex', alignItems: 'center', gap: '4px', width: '100%', color: '#10B981', fontSize: '0.64rem', fontWeight: 900, whiteSpace: 'nowrap' }}>
+                <Target size={12} color="#10B981" style={{ flexShrink: 0 }} /> <span>Sem Ocorrências</span>
               </div>
-              <div style={{ fontSize: '1.35rem', fontWeight: 900, color: '#10B981', lineHeight: 1, flexShrink: 0, marginLeft: '0.35rem' }}>{safetyRecords.currentStreak}</div>
+              <div style={{ display: 'flex', alignItems: 'baseline', justifyContent: 'space-between', width: '100%' }}>
+                <span style={{ fontSize: '1.4rem', fontWeight: 900, color: '#10B981', lineHeight: 1 }}>{safetyRecords.currentStreak}</span>
+                <span style={{ fontSize: '0.55rem', fontWeight: 800, color: '#94A3B8', textTransform: 'uppercase' }}>dias atuais</span>
+              </div>
             </div>
 
             {/* KPI 2 */}
-            <div className="panel-premium" style={{ flex: 1, minWidth: 0, display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '0.4rem 0.65rem', background: '#FFF' }}>
-              <div style={{ minWidth: 0 }}>
-                <div style={{ fontSize: '0.64rem', fontWeight: 900, color: '#F59E0B', display: 'flex', alignItems: 'center', gap: '3px', whiteSpace: 'nowrap' }}>
-                  <Trophy size={11} color="#F59E0B" style={{ flexShrink: 0 }} /> <span>Recorde DSA</span>
-                </div>
-                <div style={{ fontSize: '0.52rem', fontWeight: 800, color: '#94A3B8', textTransform: 'uppercase', marginTop: '1px' }}>histórico</div>
+            <div 
+              className="panel-premium safety-top-card" 
+              style={{ 
+                flex: 1, 
+                minWidth: 0, 
+                display: 'flex', 
+                flexDirection: 'column', 
+                justifyContent: 'space-between', 
+                borderLeft: '4px solid #F59E0B', 
+                background: '#FFF' 
+              }}
+            >
+              <div style={{ display: 'flex', alignItems: 'center', gap: '4px', width: '100%', color: '#F59E0B', fontSize: '0.64rem', fontWeight: 900, whiteSpace: 'nowrap' }}>
+                <Trophy size={12} color="#F59E0B" style={{ flexShrink: 0 }} /> <span>Recorde DSA</span>
               </div>
-              <div style={{ fontSize: '1.35rem', fontWeight: 900, color: '#0F172A', lineHeight: 1, flexShrink: 0, marginLeft: '0.35rem' }}>{safetyRecords.historicalRecord}</div>
+              <div style={{ display: 'flex', alignItems: 'baseline', justifyContent: 'space-between', width: '100%' }}>
+                <span style={{ fontSize: '1.4rem', fontWeight: 900, color: '#0F172A', lineHeight: 1 }}>{safetyRecords.historicalRecord}</span>
+                <span style={{ fontSize: '0.55rem', fontWeight: 800, color: '#94A3B8', textTransform: 'uppercase' }}>histórico</span>
+              </div>
             </div>
 
             {/* KPI 3 */}
-            <div className="panel-premium" style={{ flex: 1, minWidth: 0, display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '0.4rem 0.65rem', background: '#FFF' }}>
-              <div style={{ minWidth: 0 }}>
-                <div style={{ fontSize: '0.64rem', fontWeight: 900, color: '#3B82F6', display: 'flex', alignItems: 'center', gap: '3px', whiteSpace: 'nowrap' }}>
-                  <Calendar size={11} color="#3B82F6" style={{ flexShrink: 0 }} /> <span>Intervalo DSA</span>
-                </div>
-                <div style={{ fontSize: '0.52rem', fontWeight: 800, color: '#94A3B8', textTransform: 'uppercase', marginTop: '1px' }}>média dias</div>
+            <div 
+              className="panel-premium safety-top-card" 
+              style={{ 
+                flex: 1, 
+                minWidth: 0, 
+                display: 'flex', 
+                flexDirection: 'column', 
+                justifyContent: 'space-between', 
+                borderLeft: '4px solid #3B82F6', 
+                background: '#FFF' 
+              }}
+            >
+              <div style={{ display: 'flex', alignItems: 'center', gap: '4px', width: '100%', color: '#3B82F6', fontSize: '0.64rem', fontWeight: 900, whiteSpace: 'nowrap' }}>
+                <Calendar size={12} color="#3B82F6" style={{ flexShrink: 0 }} /> <span>Intervalo DSA</span>
               </div>
-              <div style={{ fontSize: '1.35rem', fontWeight: 900, color: '#0F172A', lineHeight: 1, flexShrink: 0, marginLeft: '0.35rem' }}>
-                {safetyRecords.intervals.length > 0 
-                  ? Math.round(safetyRecords.intervals.reduce((sum, item) => sum + item.days, 0) / safetyRecords.intervals.length)
-                  : '-'}
+              <div style={{ display: 'flex', alignItems: 'baseline', justifyContent: 'space-between', width: '100%' }}>
+                <span style={{ fontSize: '1.4rem', fontWeight: 900, color: '#0F172A', lineHeight: 1 }}>
+                  {safetyRecords.intervals.length > 0 
+                    ? Math.round(safetyRecords.intervals.reduce((sum, item) => sum + item.days, 0) / safetyRecords.intervals.length)
+                    : '-'}
+                </span>
+                <span style={{ fontSize: '0.55rem', fontWeight: 800, color: '#94A3B8', textTransform: 'uppercase' }}>média dias</span>
               </div>
             </div>
           </div>

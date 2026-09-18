@@ -940,6 +940,19 @@ body {
   margin-bottom: 0.7rem !important;
 }
 
+/* Folha 03: Gestão de Segurança (Cartões Topo) */
+.a4-landscape .safety-top-card {
+  padding: 0.45rem 0.65rem !important;
+  border-radius: 10px !important;
+  min-width: 0 !important;
+  height: 52px !important;
+  box-sizing: border-box !important;
+}
+
+.a4-landscape .safety-top-card::before {
+  display: none !important;
+}
+
 /* Folha 04: Indicadores Regulamentares (Frequência, Gravidade e Ranking) */
 .a4-landscape .slide4-container .panel-premium {
   padding: 0.55rem 0.85rem !important;
