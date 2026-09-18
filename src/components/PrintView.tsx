@@ -103,9 +103,13 @@ export const PrintView: React.FC<PrintViewProps> = ({
 
   const availableMonths = useMemo(() => {
     const yearObj = hhtStore[primaryYear] || {};
-    const months = Object.keys(yearObj).map(Number).sort((a, b) => a - b);
-    return months.length > 0 ? months : [1, 2, 3, 4, 5, 6, 7, 8];
-  }, [hhtStore, primaryYear]);
+    const hhtMonths = Object.keys(yearObj).map(Number);
+    const accidentMonths = accidents
+      .filter(a => a.year === primaryYear)
+      .map(a => a.month);
+    const allMonths = Array.from(new Set([...hhtMonths, ...accidentMonths])).sort((a, b) => a - b);
+    return allMonths.length > 0 ? allMonths : [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12];
+  }, [hhtStore, primaryYear, accidents]);
 
   const unitForRates = useMemo(() => {
     if (filterDivision === 'ALL') return 'ALL';

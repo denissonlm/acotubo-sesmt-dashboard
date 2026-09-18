@@ -264,7 +264,7 @@ export const FrequencySeverityTab: React.FC<FrequencySeverityTabProps> = ({
   // Estado da base multi-ano de HHT persistida no LocalStorage
   const [hhtStore, setHhtStore] = useState<MultiYearHHTStore>(() => loadHHTStore());
   const [selectedYear, setSelectedYear] = useState<number>(2026);
-  const [selectedMonths, setSelectedMonths] = useState<number[]>([1, 2, 3, 4, 5, 6, 7, 8]);
+  const [selectedMonths, setSelectedMonths] = useState<number[]>([1, 2, 3, 4, 5, 6, 7, 8, 9]);
   const [selectedUnit, setSelectedUnit] = useState<string>("ALL");
   const [fViewMode, setFViewMode] = useState<"monthly" | "ranking">("monthly");
   const [gViewMode, setGViewMode] = useState<"monthly" | "ranking">("monthly");
@@ -299,20 +299,22 @@ export const FrequencySeverityTab: React.FC<FrequencySeverityTabProps> = ({
     return Array.from(yearsSet).sort((a, b) => b - a);
   }, [availableYears, hhtStore]);
 
-  // Meses disponíveis para o ano selecionado
+  // Meses disponíveis para o ano selecionado (HHT + ocorrências registradas)
   const availableMonthsForYear = useMemo(() => {
     const yearData = hhtStore[selectedYear];
-    if (yearData && Object.keys(yearData).length > 0) {
-      return Object.keys(yearData).map(Number).sort((a, b) => a - b);
-    }
-    // Padrão se não houver dados específicos de HHT para aquele ano ainda
-    return [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12];
-  }, [hhtStore, selectedYear]);
+    const hhtMonths = yearData && Object.keys(yearData).length > 0
+      ? Object.keys(yearData).map(Number)
+      : [];
+    const accidentMonths = accidents
+      .filter(a => a.year === selectedYear)
+      .map(a => a.month);
+    const allMonths = Array.from(new Set([...hhtMonths, ...accidentMonths])).sort((a, b) => a - b);
+    return allMonths.length > 0 ? allMonths : [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12];
+  }, [hhtStore, selectedYear, accidents]);
 
   // Ajustar meses selecionados ao trocar de ano
   useEffect(() => {
-    const validMonths = availableMonthsForYear.filter(m => m <= (selectedYear === 2026 ? 8 : 12));
-    setSelectedMonths(validMonths.length > 0 ? validMonths : [1]);
+    setSelectedMonths([...availableMonthsForYear]);
   }, [selectedYear, availableMonthsForYear]);
 
   // Toggle de mês individual no filtro
