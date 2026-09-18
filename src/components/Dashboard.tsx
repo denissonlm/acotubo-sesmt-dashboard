@@ -2,7 +2,7 @@ import React, { useMemo, useState } from 'react';
 import { 
   BarChart, Bar, XAxis, YAxis, Tooltip, Legend, ResponsiveContainer
 } from 'recharts';
-import { AlertCircle, TrendingUp, Calendar, Printer, ShieldCheck, Layers, Upload, Monitor, Gauge, FileSpreadsheet } from 'lucide-react';
+import { AlertCircle, TrendingUp, Calendar, ShieldCheck, Upload, Monitor, Gauge, FileSpreadsheet } from 'lucide-react';
 import type { Accident } from '../types';
 import { calculateStats, generateInsights, generateTemporalInsights } from '../utils/dataLoader';
 import { motion } from 'framer-motion';
@@ -24,9 +24,7 @@ interface DashboardProps {
   filterArea: string;
   onAreaChange: (val: string) => void;
   onReset: () => void;
-  onPrint: () => void;
   onLandscapePrint: () => void;
-  onBatchPrint: () => void;
 }
 
 const MONTH_NAMES = ['Jan', 'Fev', 'Mar', 'Abr', 'Mai', 'Jun', 'Jul', 'Ago', 'Set', 'Out', 'Nov', 'Dez'];
@@ -42,9 +40,7 @@ export const Dashboard: React.FC<DashboardProps> = ({
   filterArea,
   onAreaChange,
   onReset, 
-  onPrint, 
-  onLandscapePrint,
-  onBatchPrint 
+  onLandscapePrint
 }) => {
   const [activeTab, setActiveTab] = useState<'monthly' | 'temporal' | 'safety' | 'breakdown' | 'frequency_severity'>('monthly');
   const [isBreakdownModalOpen, setIsBreakdownModalOpen] = useState(false);
@@ -254,28 +250,36 @@ export const Dashboard: React.FC<DashboardProps> = ({
             <Upload size={20} />
           </button>
           <button 
-            onClick={onBatchPrint}
-            className="btn-pdf" 
-            title="Relatórios em Massa"
-            style={{ background: '#3B82F6', width: '42px', height: '42px', padding: 0, display: 'flex', alignItems: 'center', justifyContent: 'center', borderRadius: '12px' }}
-          >
-            <Layers size={22} />
-          </button>
-          <button 
             onClick={onLandscapePrint} 
-            className="btn-pdf" 
-            title="Gerar Quadro Paisagem (Gestão à Vista)"
-            style={{ background: '#10B981', width: '42px', height: '42px', padding: 0, display: 'flex', alignItems: 'center', justifyContent: 'center', borderRadius: '12px' }}
+            className="btn-action landscape" 
+            title="Gerar Quadro de Gestão à Vista (A4 Paisagem)"
+            style={{
+              background: 'linear-gradient(135deg, #10B981 0%, #059669 100%)',
+              height: '42px',
+              padding: '0 1.15rem',
+              display: 'flex',
+              alignItems: 'center',
+              gap: '0.6rem',
+              borderRadius: '12px',
+              border: 'none',
+              color: '#FFFFFF',
+              fontWeight: 800,
+              fontSize: '0.85rem',
+              cursor: 'pointer',
+              boxShadow: '0 4px 14px rgba(16, 185, 129, 0.35)',
+              transition: 'all 0.2s cubic-bezier(0.4, 0, 0.2, 1)'
+            }}
+            onMouseOver={e => {
+              e.currentTarget.style.transform = 'translateY(-2px) scale(1.03)';
+              e.currentTarget.style.boxShadow = '0 6px 20px rgba(16, 185, 129, 0.55)';
+            }}
+            onMouseOut={e => {
+              e.currentTarget.style.transform = 'translateY(0) scale(1)';
+              e.currentTarget.style.boxShadow = '0 4px 14px rgba(16, 185, 129, 0.35)';
+            }}
           >
-            <Monitor size={22} />
-          </button>
-          <button 
-            onClick={onPrint} 
-            className="btn-pdf" 
-            title="Gerar Relatório PDF (Retrato)"
-            style={{ background: 'var(--primary)', width: '42px', height: '42px', padding: 0, display: 'flex', alignItems: 'center', justifyContent: 'center', borderRadius: '12px' }}
-          >
-            <Printer size={22} />
+            <Monitor size={20} />
+            <span>Quadro de Gestão à Vista</span>
           </button>
         </div>
       </header>

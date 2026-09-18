@@ -3,20 +3,24 @@ import { loadAccidentData } from './utils/dataLoader'
 import type { Accident } from './types'
 import { Dashboard } from './components/Dashboard'
 import { UploadSection } from './components/UploadSection'
-import { PrintView } from './components/PrintView'
 import { LandscapePrintView } from './components/LandscapePrintView'
-import { BatchSelector } from './components/BatchSelector'
-import { BatchPrintView } from './components/BatchPrintView'
+import { LandscapeFilterModal, type LandscapeFilterValues } from './components/LandscapeFilterModal'
 import { Loader2 } from 'lucide-react'
 
 function App() {
   const [accidents, setAccidents] = useState<Accident[]>([])
   const [loading, setLoading] = useState(true)
   const [showUpload, setShowUpload] = useState(false)
-  const [isPrinting, setIsPrinting] = useState(false)
   const [isLandscapePrinting, setIsLandscapePrinting] = useState(false)
-  const [isBatchSelecting, setIsBatchSelecting] = useState(false)
-  const [batchConfigs, setBatchConfigs] = useState<{ years: number[], unit: string, area: string }[]>([])
+  const [isLandscapeModalOpen, setIsLandscapeModalOpen] = useState(false)
+  const [landscapeFilters, setLandscapeFilters] = useState<LandscapeFilterValues>({
+    years: [2024, 2025, 2026],
+    division: 'ALL',
+    manager: 'ALL',
+    area: 'ALL'
+  })
+  
+  // Filtros ativos no painel principal
   const [selectedYears, setSelectedYears] = useState<number[]>([2024, 2025, 2026])
   const [filterDivision, setFilterDivision] = useState('ALL')
   const [filterManager, setFilterManager] = useState('ALL')
@@ -55,38 +59,15 @@ function App() {
     )
   }
 
-  if (isPrinting) {
-    return (
-      <PrintView 
-        accidents={accidents} 
-        selectedYears={selectedYears} 
-        filterDivision={filterDivision}
-        filterManager={filterManager}
-        filterArea={filterArea}
-        onBack={() => setIsPrinting(false)} 
-      />
-    )
-  }
-
   if (isLandscapePrinting) {
     return (
       <LandscapePrintView 
         accidents={accidents} 
-        selectedYears={selectedYears} 
-        filterDivision={filterDivision}
-        filterManager={filterManager}
-        filterArea={filterArea}
+        selectedYears={landscapeFilters.years} 
+        filterDivision={landscapeFilters.division} 
+        filterManager={landscapeFilters.manager} 
+        filterArea={landscapeFilters.area} 
         onBack={() => setIsLandscapePrinting(false)} 
-      />
-    )
-  }
-
-  if (batchConfigs.length > 0) {
-    return (
-      <BatchPrintView 
-        accidents={accidents} 
-        configs={batchConfigs} 
-        onBack={() => setBatchConfigs([])} 
       />
     )
   }
@@ -104,42 +85,25 @@ function App() {
         filterArea={filterArea}
         onAreaChange={setFilterArea}
         onReset={() => setShowUpload(true)}
-        onPrint={() => setIsPrinting(true)}
-        onLandscapePrint={() => setIsLandscapePrinting(true)}
-        onBatchPrint={() => setIsBatchSelecting(true)}
+        onLandscapePrint={() => setIsLandscapeModalOpen(true)}
       />
-      {isBatchSelecting && (
-        <BatchSelector 
-          accidents={accidents}
-          onCancel={() => setIsBatchSelecting(false)}
-          onGenerate={(years, units, areas) => {
-            const configs: { years: number[], unit: string, area: string }[] = [];
-            
-            // If no units/areas selected, generate for 'ALL'
-            const targetUnits = units.length > 0 ? units : ['ALL'];
-            const targetAreas = areas.length > 0 ? areas : ['ALL'];
 
-            targetUnits.forEach(u => {
-              targetAreas.forEach(a => {
-                // Only add config if there are actual accidents in this combination
-                const hasData = accidents.some(acc => {
-                  const matchesYear = years.includes(acc.year);
-                  const matchesUnit = u === 'ALL' || acc.division === u;
-                  const matchesArea = a === 'ALL' || acc.area === a;
-                  return matchesYear && matchesUnit && matchesArea;
-                });
-
-                if (hasData) {
-                  configs.push({ years, unit: u, area: a });
-                }
-              });
-            });
-
-            setBatchConfigs(configs);
-            setIsBatchSelecting(false);
-          }}
-        />
-      )}
+      <LandscapeFilterModal 
+        isOpen={isLandscapeModalOpen}
+        onClose={() => setIsLandscapeModalOpen(false)}
+        accidents={accidents}
+        initialFilters={{
+          years: selectedYears,
+          division: filterDivision,
+          manager: filterManager,
+          area: filterArea
+        }}
+        onConfirm={(filters) => {
+          setLandscapeFilters(filters);
+          setIsLandscapeModalOpen(false);
+          setIsLandscapePrinting(true);
+        }}
+      />
     </>
   )
 }

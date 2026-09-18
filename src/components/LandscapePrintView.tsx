@@ -147,12 +147,23 @@ export const LandscapePrintView: React.FC<LandscapePrintViewProps> = ({
   const hhtStore = useMemo(() => loadHHTStore(), []);
 
   const primaryYear = useMemo(() => {
+    if (selectedYears.length === 1) return selectedYears[0];
     const storeYears = Object.keys(hhtStore).map(Number);
     const matched = selectedYears.filter(y => storeYears.includes(y));
     if (matched.length > 0) return Math.max(...matched);
+    if (selectedYears.length > 0) return Math.max(...selectedYears);
     if (storeYears.length > 0) return Math.max(...storeYears);
     return 2026;
   }, [hhtStore, selectedYears]);
+
+  const filterSubtitle = useMemo(() => {
+    const parts: string[] = [];
+    parts.push(filterDivision === 'ALL' ? 'Grupo Açotubo' : filterDivision);
+    if (filterArea !== 'ALL') parts.push(filterArea);
+    if (filterManager !== 'ALL') parts.push(`Sup: ${filterManager}`);
+    parts.push(`Anos: ${selectedYears.join(', ')}`);
+    return parts.join(' • ');
+  }, [filterDivision, filterArea, filterManager, selectedYears]);
 
   const availableMonths = useMemo(() => {
     const yearObj = hhtStore[primaryYear] || {};
@@ -167,8 +178,8 @@ export const LandscapePrintView: React.FC<LandscapePrintViewProps> = ({
   }, [filterDivision, filterArea]);
 
   const freqOverview = useMemo(() => {
-    return processFrequencyAndSeverity(accidents, primaryYear, availableMonths, unitForRates, hhtStore);
-  }, [accidents, primaryYear, availableMonths, unitForRates, hhtStore]);
+    return processFrequencyAndSeverity(filteredAccidents, primaryYear, availableMonths, unitForRates, hhtStore);
+  }, [filteredAccidents, primaryYear, availableMonths, unitForRates, hhtStore]);
 
   const freqStory = useMemo(() => {
     return generateFrequencySeverityStory(freqOverview, primaryYear);
@@ -408,7 +419,7 @@ export const LandscapePrintView: React.FC<LandscapePrintViewProps> = ({
             <div>
               <h1 style={{ color: '#0F172A', fontSize: '1.15rem', fontWeight: 900, textTransform: 'uppercase', margin: 0, letterSpacing: '0.5px' }}>{reportTitle} — Panorama Geral</h1>
               <div style={{ fontSize: '0.65rem', color: '#64748B', fontWeight: 700 }}>
-                {filterDivision === 'ALL' ? 'Grupo Açotubo' : filterDivision} • {filterArea === 'ALL' ? 'Todas as Áreas' : filterArea} • Anos: {selectedYears.join(', ')}
+                {filterSubtitle}
               </div>
             </div>
           </div>
@@ -458,15 +469,14 @@ export const LandscapePrintView: React.FC<LandscapePrintViewProps> = ({
                     />
                     <Legend verticalAlign="top" align="center" iconType="circle" wrapperStyle={{ fontSize: 8, paddingBottom: 3 }} />
                     {selectedYears.map((year, idx) => {
-                      const colors = ['#B91C1C', '#94A3B8', '#0F172A', '#3B82F6', '#10B981'];
+                      const colors = ['#B91C1C', '#3B82F6', '#10B981', '#F59E0B'];
                       return (
                         <Bar 
-                          key={year}
-                          dataKey={String(year)} 
+                          key={year} 
+                          dataKey={year} 
+                          name={String(year)} 
                           fill={colors[idx % colors.length]} 
                           radius={[3, 3, 0, 0]} 
-                          barSize={selectedYears.length > 3 ? 8 : 12}
-                          label={{ position: 'top', fill: '#64748B', fontSize: 8, fontWeight: 700 }}
                         />
                       );
                     })}
@@ -476,38 +486,41 @@ export const LandscapePrintView: React.FC<LandscapePrintViewProps> = ({
             </div>
 
             {/* Mapa de Calor */}
-            <div className="panel-premium heatmap-panel" style={{ display: 'flex', flexDirection: 'column', padding: '0.75rem' }}>
-              <h2 style={{ fontSize: '0.85rem', fontWeight: 900, color: 'var(--text)', margin: '0 0 0.15rem 0', textAlign: 'center' }}>Mapa de Calor (Intensidade)</h2>
-              <p style={{ fontSize: '0.58rem', color: 'var(--text-muted)', margin: '0 0 0.35rem 0', textAlign: 'center' }}>Concentração temporal de ocorrências por mês/ano</p>
-              <div style={{ flex: 1, display: 'flex', flexDirection: 'column', justifyContent: 'center' }}>
-                <table className="heatmap-table" style={{ width: '100%', borderCollapse: 'separate', borderSpacing: '2px' }}>
+            <div className="panel-premium" style={{ display: 'flex', flexDirection: 'column', padding: '0.75rem' }}>
+              <h2 style={{ fontSize: '0.85rem', fontWeight: 900, color: 'var(--text)', margin: '0 0 0.15rem 0', textAlign: 'center' }}>Mapa de Calor de Ocorrências</h2>
+              <p style={{ fontSize: '0.58rem', color: 'var(--text-muted)', margin: '0 0 0.35rem 0', textAlign: 'center' }}>Frequência por Unidade e Mês</p>
+              <div style={{ flex: 1, minHeight: 0, display: 'flex', flexDirection: 'column', justifyContent: 'center' }}>
+                <table style={{ width: '100%', borderCollapse: 'separate', borderSpacing: '2px', fontSize: '7px' }}>
                   <thead>
                     <tr>
-                      <th style={{ width: '38px', minWidth: '38px' }}></th>
-                      {MONTH_NAMES.map(m => <th key={m} style={{ fontSize: '8px', fontWeight: 800, color: '#64748B' }}>{m.toUpperCase()}</th>)}
+                      <th style={{ textAlign: 'left', color: '#64748B', fontWeight: 800, padding: '1px 3px' }}>Unidade</th>
+                      {MONTH_NAMES.map(m => (
+                        <th key={m} style={{ textAlign: 'center', color: '#64748B', fontWeight: 800, padding: '1px' }}>{m}</th>
+                      ))}
                     </tr>
                   </thead>
                   <tbody>
-                    {selectedYears.map(year => (
-                      <tr key={year}>
-                        <td style={{ fontSize: '9px', fontWeight: 900, color: '#334155', verticalAlign: 'middle', textAlign: 'center', padding: '2px 0', width: '38px', minWidth: '38px' }}>{year}</td>
-                        {stats[year]?.monthly.map((m, i) => (
-                          <td 
-                            key={i} 
-                            style={{ 
-                              background: getHeatmapColor(m.count), 
-                              color: m.count > 0 ? '#B91C1C' : '#94A3B8',
-                              height: '20px',
-                              borderRadius: '3px',
-                              fontSize: '9px',
-                              fontWeight: 900,
-                              textAlign: 'center',
-                              verticalAlign: 'middle'
-                            }}
-                          >
-                            {m.count > 0 ? m.count : '-'}
-                          </td>
-                        ))}
+                    {Array.from(new Set(filteredAccidents.map(a => a.division))).slice(0, 7).map(div => (
+                      <tr key={div}>
+                        <td style={{ fontWeight: 800, color: '#334155', maxWidth: '85px', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', padding: '1px 3px' }}>{div}</td>
+                        {MONTH_NAMES.map((_, mIdx) => {
+                          const count = filteredAccidents.filter(a => a.division === div && a.month === (mIdx + 1)).length;
+                          return (
+                            <td 
+                              key={mIdx} 
+                              style={{ 
+                                backgroundColor: getHeatmapColor(count), 
+                                height: '14px', 
+                                borderRadius: '2px', 
+                                textAlign: 'center', 
+                                color: count > 3 ? '#FFF' : '#334155', 
+                                fontWeight: 800 
+                              }}
+                            >
+                              {count > 0 ? count : ''}
+                            </td>
+                          );
+                        })}
                       </tr>
                     ))}
                   </tbody>
@@ -535,14 +548,15 @@ export const LandscapePrintView: React.FC<LandscapePrintViewProps> = ({
                   success: { bg: '#D1FAE5', text: '#10B981', icon: <ShieldCheck color="#10B981" size={16} /> }
                 };
                 const config = colors[insight.type];
+
                 return (
-                  <div key={idx} className="insight-card" style={{ flex: 1, display: 'flex', alignItems: 'center', gap: '0.6rem', padding: '0.45rem 0.75rem', borderLeft: `4px solid ${config.text}`, background: '#FFF' }}>
-                    <div className="insight-icon" style={{ backgroundColor: config.bg, width: '26px', height: '26px', display: 'flex', alignItems: 'center', justifyContent: 'center', borderRadius: '50%', flexShrink: 0 }}>
+                  <div key={idx} className="panel-premium" style={{ flex: 1, display: 'flex', gap: '0.6rem', padding: '0.45rem 0.65rem', borderLeft: `4px solid ${config.text}`, background: '#FFF' }}>
+                    <div style={{ backgroundColor: config.bg, width: '28px', height: '28px', borderRadius: '6px', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
                       {config.icon}
                     </div>
-                    <div className="insight-content" style={{ minWidth: 0 }}>
-                      <h4 style={{ fontSize: '0.72rem', fontWeight: 900, margin: 0, color: '#0F172A' }}>{insight.title}</h4>
-                      <p style={{ fontSize: '0.62rem', margin: '2px 0 0 0', color: '#64748B', lineHeight: 1.2 }}>{insight.text}</p>
+                    <div style={{ display: 'flex', flexDirection: 'column', justifyContent: 'center' }}>
+                      <h4 style={{ margin: 0, fontSize: '0.65rem', fontWeight: 900, color: '#0F172A' }}>{insight.title}</h4>
+                      <p style={{ margin: '1px 0 0 0', fontSize: '0.55rem', color: 'var(--text-muted)', lineHeight: 1.2 }}>{insight.text}</p>
                     </div>
                   </div>
                 );
@@ -567,7 +581,9 @@ export const LandscapePrintView: React.FC<LandscapePrintViewProps> = ({
             </div>
             <div>
               <h1 style={{ color: '#0F172A', fontSize: '1.15rem', fontWeight: 900, textTransform: 'uppercase', margin: 0, letterSpacing: '0.5px' }}>{reportTitle} — Análise Temporal</h1>
-              <div style={{ fontSize: '0.65rem', color: '#64748B', fontWeight: 700 }}>Identificação de Padrões por Período, Dia e Horários</div>
+              <div style={{ fontSize: '0.65rem', color: '#64748B', fontWeight: 700 }}>
+                Identificação de Padrões por Período, Dia e Horários • {filterSubtitle}
+              </div>
             </div>
           </div>
           <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
@@ -688,7 +704,7 @@ export const LandscapePrintView: React.FC<LandscapePrintViewProps> = ({
             </div>
             <div>
               <h1 style={{ color: '#0F172A', fontSize: '1.15rem', fontWeight: 900, textTransform: 'uppercase', margin: 0, letterSpacing: '0.5px' }}>{reportTitle} — Gestão de Segurança</h1>
-              <div style={{ fontSize: '0.65rem', color: '#64748B', fontWeight: 700 }}>Recordes de Dias Sem Acidentes e Cronologia de Incidentes</div>
+              <div style={{ fontSize: '0.65rem', color: '#64748B', fontWeight: 700 }}>Recordes de Dias Sem Acidentes e Cronologia de Incidentes • {filterSubtitle}</div>
             </div>
           </div>
           <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
@@ -830,7 +846,7 @@ export const LandscapePrintView: React.FC<LandscapePrintViewProps> = ({
             </div>
             <div>
               <h1 style={{ color: '#0F172A', fontSize: '1.15rem', fontWeight: 900, textTransform: 'uppercase', margin: 0, letterSpacing: '0.5px' }}>{reportTitle} — Indicadores Regulamentares (NBR 14280 / OIT)</h1>
-              <div style={{ fontSize: '0.65rem', color: '#64748B', fontWeight: 700 }}>Taxas Oficiais de Frequência (F) e Gravidade (G) • Exercício {primaryYear} • Grupo Açotubo</div>
+              <div style={{ fontSize: '0.65rem', color: '#64748B', fontWeight: 700 }}>Taxas Oficiais de Frequência (F) e Gravidade (G) • Exercício {primaryYear} • {filterSubtitle}</div>
             </div>
           </div>
           <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
@@ -1207,7 +1223,7 @@ export const LandscapePrintView: React.FC<LandscapePrintViewProps> = ({
             </div>
             <div>
               <h1 style={{ color: '#0F172A', fontSize: '1.15rem', fontWeight: 900, textTransform: 'uppercase', margin: 0, letterSpacing: '0.5px' }}>{reportTitle} — Breakdown de Causas</h1>
-              <div style={{ fontSize: '0.65rem', color: '#64748B', fontWeight: 700 }}>Análise Comportamental, Capacitação e Perfil das Ocorrências</div>
+              <div style={{ fontSize: '0.65rem', color: '#64748B', fontWeight: 700 }}>Análise Comportamental, Capacitação e Perfil das Ocorrências • {filterSubtitle}</div>
             </div>
           </div>
           <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
@@ -1314,7 +1330,7 @@ export const LandscapePrintView: React.FC<LandscapePrintViewProps> = ({
                 </div>
                 <div>
                   <h1 style={{ color: '#0F172A', fontSize: '1.15rem', fontWeight: 900, textTransform: 'uppercase', margin: 0, letterSpacing: '0.5px' }}>{reportTitle} — Cronologia Geral</h1>
-                  <div style={{ fontSize: '0.65rem', color: '#64748B', fontWeight: 700 }}>Detalhamento Geral de Ocorrências Registradas</div>
+                  <div style={{ fontSize: '0.65rem', color: '#64748B', fontWeight: 700 }}>Detalhamento Geral de Ocorrências Registradas • {filterSubtitle}</div>
                 </div>
               </div>
               <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>

@@ -424,7 +424,7 @@ export const processFrequencyAndSeverity = (
 ): FrequencySeverityOverview => {
   const rawStore = multiYearStore || loadHHTStore(config);
   const store = applyGroupingToStore(rawStore, config);
-  const yearHHT = store[year] || {};
+  const yearHHT = store[year] || store[2026] || {};
 
   const yearAccidents = accidents.filter(a => a.year === year && selectedMonths.includes(a.month));
 
