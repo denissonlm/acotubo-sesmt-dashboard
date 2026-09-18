@@ -134,7 +134,7 @@ export const getFrequencyStatus = (f: number): OITClassification => {
   if (f <= 0) return "MUITO BOA";
   if (f <= 20) return "MUITO BOA";
   if (f <= 40) return "BOA";
-  if (f <= 60) return "REGULAR";
+  if (f <= 60) return "RUIM";
   return "PÉSSIMA";
 };
 
@@ -142,8 +142,60 @@ export const getSeverityStatus = (g: number): OITClassification => {
   if (g <= 0) return "MUITO BOA";
   if (g <= 500) return "MUITO BOA";
   if (g <= 1000) return "BOA";
-  if (g <= 2000) return "REGULAR";
+  if (g <= 2000) return "RUIM";
   return "PÉSSIMA";
+};
+
+export const getFrequencyRateColor = (f: number): string => {
+  if (f <= 20) return "#10B981"; // Muito Boa (Verde)
+  if (f <= 40) return "#10B981"; // Boa (Verde também)
+  if (f <= 60) return "#EAB308"; // Ruim (Amarelo)
+  return "#EF4444";              // Péssima (Vermelho)
+};
+
+export const getSeverityRateColor = (g: number): string => {
+  if (g <= 500) return "#10B981";  // Muito Boa (Verde)
+  if (g <= 1000) return "#10B981"; // Boa (Verde também)
+  if (g <= 2000) return "#EAB308"; // Ruim (Amarelo)
+  return "#EF4444";               // Péssima (Vermelho)
+};
+
+export const getClassificationColor = (status: OITClassification | string): string => {
+  switch (status) {
+    case "MUITO BOA":
+    case "MUITO BOM":
+      return "#10B981"; // Verde
+    case "BOA":
+    case "BOM":
+      return "#10B981"; // Verde também
+    case "RUIM":
+    case "REGULAR":
+      return "#EAB308"; // Amarelo
+    case "PÉSSIMA":
+    case "PÉSSIMO":
+      return "#EF4444"; // Vermelho
+    default:
+      return "#64748B";
+  }
+};
+
+export const getClassificationBg = (status: OITClassification | string): string => {
+  switch (status) {
+    case "MUITO BOA":
+    case "MUITO BOM":
+      return "rgba(16, 185, 129, 0.12)";
+    case "BOA":
+    case "BOM":
+      return "rgba(16, 185, 129, 0.12)";
+    case "RUIM":
+    case "REGULAR":
+      return "rgba(234, 179, 8, 0.15)";
+    case "PÉSSIMA":
+    case "PÉSSIMO":
+      return "rgba(239, 68, 68, 0.15)";
+    default:
+      return "rgba(100, 116, 139, 0.12)";
+  }
 };
 
 /**

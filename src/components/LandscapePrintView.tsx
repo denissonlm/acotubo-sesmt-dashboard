@@ -23,6 +23,8 @@ import {
   generateFrequencySeverityStory, 
   loadHHTStore,
   matchAccidentToSourceUnit,
+  getFrequencyRateColor,
+  getSeverityRateColor,
   SOURCE_UNITS
 } from '../utils/frequencySeverityLoader';
 
@@ -192,23 +194,38 @@ export const LandscapePrintView: React.FC<LandscapePrintViewProps> = ({
 
   const getOITStatusColor = (status: string): string => {
     switch (status) {
-      case 'MUITO BOA': return '#10B981';
-      case 'BOA': return '#0284C7';
-      case 'REGULAR': return '#F59E0B';
-      case 'RUIM': return '#F97316';
-      case 'PÉSSIMA': return '#EF4444';
-      default: return '#64748B';
+      case 'MUITO BOA':
+      case 'MUITO BOM':
+        return '#10B981'; // Muito boa = Verde
+      case 'BOA':
+      case 'BOM':
+        return '#10B981'; // Boa = Verde também
+      case 'RUIM':
+      case 'REGULAR':
+        return '#D97706'; // Ruim = Amarelo
+      case 'PÉSSIMA':
+      case 'PÉSSIMO':
+        return '#EF4444'; // Péssima = Vermelho
+      default:
+        return '#64748B';
     }
   };
 
   const getOITStatusBg = (status: string): string => {
     switch (status) {
-      case 'MUITO BOA': return '#ECFDF5';
-      case 'BOA': return '#F0F9FF';
-      case 'REGULAR': return '#FFFBEB';
-      case 'RUIM': return '#FFF7ED';
-      case 'PÉSSIMA': return '#FEF2F2';
-      default: return '#F1F5F9';
+      case 'MUITO BOA':
+      case 'MUITO BOM':
+      case 'BOA':
+      case 'BOM':
+        return '#ECFDF5';
+      case 'RUIM':
+      case 'REGULAR':
+        return '#FEFCE8';
+      case 'PÉSSIMA':
+      case 'PÉSSIMO':
+        return '#FEF2F2';
+      default:
+        return '#F1F5F9';
     }
   };
 
@@ -983,17 +1000,20 @@ export const LandscapePrintView: React.FC<LandscapePrintViewProps> = ({
                       />
                       <Bar 
                         dataKey="frequencyRate" 
-                        fill="#0284C7" 
                         radius={[3, 3, 0, 0]} 
                         barSize={16} 
                         label={{ 
                           position: 'top', 
-                          fill: '#0284C7', 
+                          fill: '#334155', 
                           fontSize: 8, 
                           fontWeight: 800, 
                           formatter: (v: any) => Number(v) > 0 ? Number(v).toFixed(1) : '' 
                         }} 
-                      />
+                      >
+                        {monthlyFreqRates12.map((m, idx) => (
+                          <Cell key={`f-cell-${idx}`} fill={getFrequencyRateColor(m.frequencyRate)} />
+                        ))}
+                      </Bar>
                     </BarChart>
                   </ResponsiveContainer>
                 </div>
@@ -1003,7 +1023,7 @@ export const LandscapePrintView: React.FC<LandscapePrintViewProps> = ({
               <div className="panel-premium" style={{ flex: 1, display: 'flex', flexDirection: 'column', padding: '0.55rem 0.85rem', minHeight: 0, minWidth: 0 }}>
                 <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '0.15rem' }}>
                   <div style={{ display: 'flex', alignItems: 'center', gap: '0.4rem', minWidth: 0 }}>
-                    <div style={{ width: '8px', height: '8px', borderRadius: '50%', background: '#F59E0B', flexShrink: 0 }}></div>
+                    <div style={{ width: '8px', height: '8px', borderRadius: '50%', background: '#D97706', flexShrink: 0 }}></div>
                     <h3 style={{ fontSize: '0.78rem', fontWeight: 900, margin: 0, color: '#0F172A', textTransform: 'uppercase', letterSpacing: '0.3px', whiteSpace: 'nowrap' }}>
                       Evolução Mensal da Taxa de Gravidade (G)
                     </h3>
@@ -1029,17 +1049,20 @@ export const LandscapePrintView: React.FC<LandscapePrintViewProps> = ({
                       />
                       <Bar 
                         dataKey="severityRate" 
-                        fill="#F59E0B" 
                         radius={[3, 3, 0, 0]} 
                         barSize={16} 
                         label={{ 
                           position: 'top', 
-                          fill: '#D97706', 
+                          fill: '#334155', 
                           fontSize: 8, 
                           fontWeight: 800, 
                           formatter: (v: any) => Number(v) > 0 ? Number(v).toFixed(0) : '' 
                         }} 
-                      />
+                      >
+                        {monthlyFreqRates12.map((m, idx) => (
+                          <Cell key={`g-cell-${idx}`} fill={getSeverityRateColor(m.severityRate)} />
+                        ))}
+                      </Bar>
                     </BarChart>
                   </ResponsiveContainer>
                 </div>
@@ -1124,20 +1147,46 @@ export const LandscapePrintView: React.FC<LandscapePrintViewProps> = ({
             </div>
           </div>
 
-          {/* Bottom Banner: Parecer Técnico e Fórmulas */}
-          <div style={{ display: 'grid', gridTemplateColumns: '1.4fr 1fr', gap: '0.75rem', background: '#FFF', border: '1px solid #E2E8F0', borderLeft: '4px solid #0284C7', borderRadius: '8px', padding: '0.45rem 0.85rem' }}>
+          {/* Bottom Banner: Parecer Técnico e Gradações Regulamentares (NBR 14280) */}
+          <div style={{ display: 'grid', gridTemplateColumns: '1.05fr 1.35fr', gap: '0.65rem', background: '#FFF', border: '1px solid #E2E8F0', borderLeft: '4px solid #10B981', borderRadius: '8px', padding: '0.4rem 0.75rem', alignItems: 'center' }}>
             <div>
               <div style={{ display: 'flex', alignItems: 'center', gap: '0.4rem', marginBottom: '2px' }}>
-                <ShieldCheck size={14} color="#0284C7" />
-                <span style={{ fontSize: '0.65rem', fontWeight: 900, color: '#0F172A', textTransform: 'uppercase' }}>Parecer Técnico Regulamentar (NBR 14280 / OIT)</span>
+                <ShieldCheck size={13} color="#10B981" />
+                <span style={{ fontSize: '0.64rem', fontWeight: 900, color: '#0F172A', textTransform: 'uppercase' }}>Parecer Técnico Regulamentar (NBR 14280)</span>
               </div>
-              <p style={{ fontSize: '0.58rem', color: '#475569', margin: 0, lineHeight: 1.3 }}>
+              <p style={{ fontSize: '0.56rem', color: '#475569', margin: '0 0 2px 0', lineHeight: 1.25 }}>
                 {freqStory}
               </p>
+              <div style={{ fontSize: '0.51rem', color: '#64748B', lineHeight: 1.2, fontStyle: 'italic' }}>
+                * Ref.: NBR 14280 (parâmetros referenciais não estipulados pela OIT; ambientes laborais variam mesmo em segmentos similares). Fórmulas: TF = (N × 10⁶) / HHT | TG = (T + Débitos) × 10⁶ / HHT.
+              </div>
             </div>
-            <div style={{ borderLeft: '1px solid #E2E8F0', paddingLeft: '0.75rem', fontSize: '0.56rem', color: '#64748B', display: 'flex', flexDirection: 'column', justifyContent: 'center' }}>
-              <div><strong>Metas Oficiais OIT:</strong> Frequência F ≤ 20,00 (Muito Boa) • Gravidade G ≤ 500,00 (Muito Boa)</div>
-              <div><strong>Fórmulas Ponderadas:</strong> F = (N × 1.000.000) / HHT • G = (T × 1.000.000) / HHT</div>
+
+            <div style={{ borderLeft: '1px solid #E2E8F0', paddingLeft: '0.65rem' }}>
+              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '2px' }}>
+                <span style={{ fontWeight: 900, fontSize: '0.58rem', color: '#0F172A', textTransform: 'uppercase' }}>Limites de Graduação e Cores Regulamentares:</span>
+                <span style={{ fontSize: '0.52rem', fontWeight: 700, color: '#64748B' }}>Barras & Tabelas</span>
+              </div>
+              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '0.4rem', background: '#F8FAFC', padding: '3px 6px', borderRadius: '6px', border: '1px solid #E2E8F0' }}>
+                <div>
+                  <div style={{ fontSize: '0.54rem', fontWeight: 800, color: '#0284C7', marginBottom: '1px' }}>TAXA DE FREQUÊNCIA (TF):</div>
+                  <div style={{ display: 'flex', flexDirection: 'column', gap: '1px', fontSize: '0.51rem' }}>
+                    <div style={{ display: 'flex', justifyContent: 'space-between' }}><span>• Até 20,00:</span> <strong style={{ color: '#10B981' }}>Muito bom (Verde)</strong></div>
+                    <div style={{ display: 'flex', justifyContent: 'space-between' }}><span>• 20,1 a 40,0:</span> <strong style={{ color: '#10B981' }}>Bom (Verde)</strong></div>
+                    <div style={{ display: 'flex', justifyContent: 'space-between' }}><span>• 40,1 a 60,0:</span> <strong style={{ color: '#D97706' }}>Ruim (Amarelo)</strong></div>
+                    <div style={{ display: 'flex', justifyContent: 'space-between' }}><span>• &gt; 60,0:</span> <strong style={{ color: '#EF4444' }}>Péssima (Vermelho)</strong></div>
+                  </div>
+                </div>
+                <div style={{ borderLeft: '1px solid #E2E8F0', paddingLeft: '0.4rem' }}>
+                  <div style={{ fontSize: '0.54rem', fontWeight: 800, color: '#D97706', marginBottom: '1px' }}>TAXA DE GRAVIDADE (TG):</div>
+                  <div style={{ display: 'flex', flexDirection: 'column', gap: '1px', fontSize: '0.51rem' }}>
+                    <div style={{ display: 'flex', justifyContent: 'space-between' }}><span>• Até 500:</span> <strong style={{ color: '#10B981' }}>Muito bom (Verde)</strong></div>
+                    <div style={{ display: 'flex', justifyContent: 'space-between' }}><span>• 500,1 a 1.000:</span> <strong style={{ color: '#10B981' }}>Bom (Verde)</strong></div>
+                    <div style={{ display: 'flex', justifyContent: 'space-between' }}><span>• 1.000,1 a 2.000:</span> <strong style={{ color: '#D97706' }}>Ruim (Amarelo)</strong></div>
+                    <div style={{ display: 'flex', justifyContent: 'space-between' }}><span>• &gt; 2.000:</span> <strong style={{ color: '#EF4444' }}>Péssima (Vermelho)</strong></div>
+                  </div>
+                </div>
+              </div>
             </div>
           </div>
         </div>

@@ -16,6 +16,8 @@ import {
   loadHHTStore,
   saveHHTStoreToLocalStorage,
   resetHHTStoreLocalStorage,
+  getFrequencyRateColor,
+  getSeverityRateColor,
   SOURCE_UNITS,
   type MultiYearHHTStore
 } from "../utils/frequencySeverityLoader";
@@ -28,11 +30,11 @@ interface FrequencySeverityTabProps {
 
 const getStatusColor = (status: OITClassification): string => {
   switch (status) {
-    case "MUITO BOA": return "#10B981"; // Verde
-    case "BOA": return "#0284C7";       // Azul
-    case "REGULAR": return "#F59E0B";   // Âmbar
-    case "RUIM": return "#F97316";      // Laranja
-    case "PÉSSIMA": return "#EF4444";   // Vermelho
+    case "MUITO BOA": return "#10B981"; // Muito boa = Verde
+    case "BOA": return "#10B981";       // Boa = Verde também
+    case "RUIM":
+    case "REGULAR": return "#D97706";   // Ruim = Amarelo (Dourado de alto contraste)
+    case "PÉSSIMA": return "#EF4444";   // Péssimo = Vermelho
     default: return "#64748B";
   }
 };
@@ -40,9 +42,9 @@ const getStatusColor = (status: OITClassification): string => {
 const getStatusBg = (status: OITClassification): string => {
   switch (status) {
     case "MUITO BOA": return "rgba(16, 185, 129, 0.12)";
-    case "BOA": return "rgba(2, 132, 199, 0.12)";
-    case "REGULAR": return "rgba(245, 158, 11, 0.12)";
-    case "RUIM": return "rgba(249, 115, 22, 0.12)";
+    case "BOA": return "rgba(16, 185, 129, 0.12)";
+    case "RUIM":
+    case "REGULAR": return "rgba(234, 179, 8, 0.15)";
     case "PÉSSIMA": return "rgba(239, 68, 68, 0.12)";
     default: return "rgba(100, 116, 139, 0.12)";
   }
@@ -950,6 +952,144 @@ export const FrequencySeverityTab: React.FC<FrequencySeverityTabProps> = ({
         </div>
       </div>
 
+      {/* Painel Executivo de Fundamentação Regulamentar e Gradações (NBR 14280 / OIT) */}
+      <div 
+        className="panel-premium"
+        style={{
+          background: "linear-gradient(135deg, #FFFFFF 0%, #F8FAFC 60%, #F0FDF4 100%)",
+          border: "1px solid #E2E8F0",
+          borderLeft: "6px solid #10B981",
+          borderRadius: "16px",
+          padding: "1.5rem 1.75rem",
+          boxShadow: "0 4px 20px -2px rgba(0,0,0,0.04)"
+        }}
+      >
+        <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", flexWrap: "wrap", gap: "1rem", marginBottom: "1rem" }}>
+          <div>
+            <div style={{ display: "flex", alignItems: "center", gap: "0.6rem" }}>
+              <div style={{ background: "#ECFDF5", border: "1px solid #A7F3D0", color: "#059669", padding: "0.4rem", borderRadius: "8px", display: "flex", alignItems: "center" }}>
+                <ShieldCheck size={20} />
+              </div>
+              <h3 style={{ fontSize: "1.1rem", fontWeight: 900, color: "#0F172A", margin: 0, textTransform: "uppercase", letterSpacing: "0.3px" }}>
+                Guia de Parâmetros e Gradações Regulamentares (NBR 14280)
+              </h3>
+            </div>
+            <p style={{ fontSize: "0.82rem", color: "#64748B", margin: "0.35rem 0 0 0" }}>
+              Entenda como calcular, quais os limites referenciais de engenharia de segurança e a fundamentação técnica das taxas na Açotubo.
+            </p>
+          </div>
+          <div style={{ display: "flex", gap: "0.5rem" }}>
+            <span style={{ fontSize: "0.72rem", fontWeight: 800, background: "#ECFDF5", color: "#059669", border: "1px solid #A7F3D0", padding: "4px 10px", borderRadius: "6px" }}>
+              🟢 Verde: Muito Bom / Bom
+            </span>
+            <span style={{ fontSize: "0.72rem", fontWeight: 800, background: "#FEFCE8", color: "#D97706", border: "1px solid #FEF08A", padding: "4px 10px", borderRadius: "6px" }}>
+              🟡 Amarelo: Ruim
+            </span>
+            <span style={{ fontSize: "0.72rem", fontWeight: 800, background: "#FEF2F2", color: "#EF4444", border: "1px solid #FECACA", padding: "4px 10px", borderRadius: "6px" }}>
+              🔴 Vermelho: Péssima
+            </span>
+          </div>
+        </div>
+
+        {/* Nota Técnica Importante (Subsídio Fornecido) */}
+        <div style={{
+          background: "#FFFBEB",
+          border: "1px solid #FDE68A",
+          borderLeft: "4px solid #F59E0B",
+          borderRadius: "10px",
+          padding: "0.85rem 1.15rem",
+          marginBottom: "1.25rem",
+          fontSize: "0.78rem",
+          color: "#78350F",
+          lineHeight: 1.5
+        }}>
+          <strong>Importante:</strong> Sobre os parâmetros para a Taxa de Frequência e Taxa de Gravidade, vale reforçar que os valores utilizados como referência não foram estipulados pela OIT. Outro ponto importante a ser considerado é que ambientes de trabalho, mesmo em segmentos similares, não são iguais e isso torna a padronização não eficiente. A Açotubo adota o rigor metodológico da NBR 14280 para direcionar seus planos de prevenção e metas internas.
+        </div>
+
+        {/* Grid com Parâmetros de Frequência e Gravidade */}
+        <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "1.25rem" }}>
+          {/* Card Esquerdo: Frequência */}
+          <div style={{ background: "white", border: "1px solid #E2E8F0", borderRadius: "12px", padding: "1.1rem" }}>
+            <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "0.5rem" }}>
+              <span style={{ fontWeight: 900, fontSize: "0.85rem", color: "#0F172A", textTransform: "uppercase" }}>
+                Quais os parâmetros e como calcular a Taxa de Frequência?
+              </span>
+            </div>
+            <p style={{ fontSize: "0.76rem", color: "#475569", margin: "0 0 0.6rem 0", lineHeight: 1.45 }}>
+              A Taxa de Frequência (TF) mensura a proporção de acidentados por milhão de horas trabalhadas de exposição ao risco:
+            </p>
+
+            <div style={{ background: "#F8FAFC", padding: "0.5rem 0.85rem", borderRadius: "8px", border: "1px solid #E2E8F0", fontFamily: "monospace", fontWeight: 800, fontSize: "0.88rem", color: "#0F172A", marginBottom: "0.75rem" }}>
+              TF = (Nº acidentes × 1.000.000) / HHT
+            </div>
+
+            <div style={{ fontSize: "0.74rem", fontWeight: 800, color: "#334155", marginBottom: "0.4rem" }}>
+              Parâmetros da Taxa de Frequência:
+            </div>
+            <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "0.4rem", marginBottom: "0.75rem", fontSize: "0.72rem" }}>
+              <div style={{ display: "flex", justifyContent: "space-between", padding: "4px 8px", background: "#ECFDF5", borderRadius: "6px", border: "1px solid #A7F3D0", color: "#065F46" }}>
+                <span>Até 20,00:</span> <strong>Muito bom (Verde)</strong>
+              </div>
+              <div style={{ display: "flex", justifyContent: "space-between", padding: "4px 8px", background: "#ECFDF5", borderRadius: "6px", border: "1px solid #A7F3D0", color: "#065F46" }}>
+                <span>20,1 a 40,0:</span> <strong>Bom (Verde)</strong>
+              </div>
+              <div style={{ display: "flex", justifyContent: "space-between", padding: "4px 8px", background: "#FEFCE8", borderRadius: "6px", border: "1px solid #FEF08A", color: "#854D0E" }}>
+                <span>40,1 a 60,0:</span> <strong>Ruim (Amarelo)</strong>
+              </div>
+              <div style={{ display: "flex", justifyContent: "space-between", padding: "4px 8px", background: "#FEF2F2", borderRadius: "6px", border: "1px solid #FECACA", color: "#991B1B" }}>
+                <span>Acima de 60,0:</span> <strong>Péssima (Vermelho)</strong>
+              </div>
+            </div>
+
+            <div style={{ fontSize: "0.72rem", color: "#475569", lineHeight: 1.45, borderTop: "1px solid #F1F5F9", paddingTop: "0.6rem" }}>
+              <div><strong>Exemplo Prático:</strong> 2 acidentes × 1.000.000 / 33.000 h (150 func.) ➔ <strong>TF = 60,60</strong> (Péssima).</div>
+              <div style={{ marginTop: "0.25rem" }}><strong>Cálculo com dias sem afastamento:</strong> TF = (Nº com afast. + Nº sem afast.) × 1.000.000 / HHT.</div>
+              <div style={{ marginTop: "0.25rem", color: "#64748B", fontStyle: "italic" }}>* Cabe mencionar que a NBR 14280 recomenda que os acidentes com e sem afastamento não sejam calculados juntos.</div>
+            </div>
+          </div>
+
+          {/* Card Direito: Gravidade */}
+          <div style={{ background: "white", border: "1px solid #E2E8F0", borderRadius: "12px", padding: "1.1rem" }}>
+            <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "0.5rem" }}>
+              <span style={{ fontWeight: 900, fontSize: "0.85rem", color: "#0F172A", textTransform: "uppercase" }}>
+                Quais os parâmetros e como calcular a Taxa de Gravidade?
+              </span>
+            </div>
+            <p style={{ fontSize: "0.76rem", color: "#475569", margin: "0 0 0.6rem 0", lineHeight: 1.45 }}>
+              A Taxa de Gravidade (TG) avalia a intensidade e o tempo computado por milhão de horas de exposição:
+            </p>
+
+            <div style={{ background: "#F8FAFC", padding: "0.5rem 0.85rem", borderRadius: "8px", border: "1px solid #E2E8F0", fontFamily: "monospace", fontWeight: 800, fontSize: "0.88rem", color: "#0F172A", marginBottom: "0.75rem" }}>
+              TG = (Nº dias perdidos + dias debitados) × 1.000.000 / HHT
+            </div>
+
+            <div style={{ fontSize: "0.74rem", fontWeight: 800, color: "#334155", marginBottom: "0.4rem" }}>
+              Parâmetros da Taxa de Gravidade:
+            </div>
+            <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "0.4rem", marginBottom: "0.75rem", fontSize: "0.72rem" }}>
+              <div style={{ display: "flex", justifyContent: "space-between", padding: "4px 8px", background: "#ECFDF5", borderRadius: "6px", border: "1px solid #A7F3D0", color: "#065F46" }}>
+                <span>Até 500,00:</span> <strong>Muito bom (Verde)</strong>
+              </div>
+              <div style={{ display: "flex", justifyContent: "space-between", padding: "4px 8px", background: "#ECFDF5", borderRadius: "6px", border: "1px solid #A7F3D0", color: "#065F46" }}>
+                <span>500,1 a 1.000,0:</span> <strong>Bom (Verde)</strong>
+              </div>
+              <div style={{ display: "flex", justifyContent: "space-between", padding: "4px 8px", background: "#FEFCE8", borderRadius: "6px", border: "1px solid #FEF08A", color: "#854D0E" }}>
+                <span>1.000,1 a 2.000,0:</span> <strong>Ruim (Amarelo)</strong>
+              </div>
+              <div style={{ display: "flex", justifyContent: "space-between", padding: "4px 8px", background: "#FEF2F2", borderRadius: "6px", border: "1px solid #FECACA", color: "#991B1B" }}>
+                <span>Acima de 2.000,0:</span> <strong>Péssima (Vermelho)</strong>
+              </div>
+            </div>
+
+            <div style={{ fontSize: "0.72rem", color: "#475569", lineHeight: 1.45, borderTop: "1px solid #F1F5F9", paddingTop: "0.6rem" }}>
+              <div><strong>Dias computados e debitados:</strong> Soma-se os dias perdidos aos dias debitados por incapacidade permanente ou morte (NBR 14280).</div>
+              <div style={{ marginTop: "0.25rem" }}><strong>Exemplos de Débito Normativo:</strong> Morte = 6.000 dias • Amputação da mão = 3.000 dias debitados.</div>
+              <div style={{ marginTop: "0.25rem", color: "#64748B", fontStyle: "italic" }}>* Exemplo: (100 dias perdidos + 10 debitados) × 1.000.000 / HHT total apurado.</div>
+            </div>
+          </div>
+        </div>
+      </div>
+
       {/* Charts Section: Monthly F and G - Perfect Symmetry and Alignment */}
       <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "1.5rem", alignItems: "stretch" }}>
         
@@ -1044,7 +1184,7 @@ export const FrequencySeverityTab: React.FC<FrequencySeverityTabProps> = ({
                     <Tooltip content={<FrequencyCustomTooltip />} cursor={{ fill: "rgba(241, 245, 249, 0.6)" }} />
                     <Bar dataKey="frequencyRate" radius={[6, 6, 0, 0]}>
                       {overview.monthlyRecords.map((entry, index) => (
-                        <Cell key={`f-cell-${index}`} fill={getStatusColor(entry.frequencyStatus)} />
+                        <Cell key={`f-cell-${index}`} fill={getFrequencyRateColor(entry.frequencyRate)} />
                       ))}
                     </Bar>
                   </BarChart>
@@ -1068,7 +1208,7 @@ export const FrequencySeverityTab: React.FC<FrequencySeverityTabProps> = ({
                     <Tooltip content={<UnitFrequencyCustomTooltip />} cursor={{ fill: "rgba(241, 245, 249, 0.6)" }} />
                     <Bar dataKey="frequencyRate" radius={[6, 6, 0, 0]} barSize={28}>
                       {fUnitRanking.map((entry, index) => (
-                        <Cell key={`f-rank-cell-${index}`} fill={getStatusColor(entry.frequencyStatus)} />
+                        <Cell key={`f-rank-cell-${index}`} fill={getFrequencyRateColor(entry.frequencyRate)} />
                       ))}
                     </Bar>
                   </BarChart>
@@ -1093,47 +1233,77 @@ export const FrequencySeverityTab: React.FC<FrequencySeverityTabProps> = ({
           {/* Caixa Explicativa NBR 14280 / OIT - Frequência */}
           <div style={{ 
             marginTop: "1.25rem", 
-            padding: "1.1rem 1.25rem", 
+            padding: "1.15rem 1.25rem", 
             background: "#F8FAFC", 
-            borderRadius: "10px", 
+            borderRadius: "12px", 
             border: "1px solid #E2E8F0",
+            borderLeft: "4px solid #10B981",
             flex: 1,
-            minHeight: "220px",
             display: "flex",
             flexDirection: "column",
-            justifyContent: "space-between"
+            gap: "0.75rem"
           }}>
             <div>
-              <div style={{ fontWeight: 800, fontSize: "0.85rem", color: "var(--primary)", textTransform: "uppercase", letterSpacing: "0.5px", marginBottom: "0.4rem" }}>
-                TAXA DE FREQUÊNCIA (F)
+              <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "0.25rem" }}>
+                <span style={{ fontWeight: 900, fontSize: "0.85rem", color: "#0F172A", textTransform: "uppercase", letterSpacing: "0.5px" }}>
+                  TAXA DE FREQUÊNCIA (TF) • NBR 14280
+                </span>
+                <span style={{ fontSize: "0.68rem", fontWeight: 800, color: "#059669", background: "#ECFDF5", padding: "2px 8px", borderRadius: "6px", border: "1px solid #A7F3D0" }}>
+                  Fórmula NBR 14280
+                </span>
               </div>
-              <p style={{ margin: 0, fontSize: "0.78rem", color: "#475569", lineHeight: 1.45, minHeight: "44px" }}>
-                É o número de acidentados por milhão de horas trabalhadas de exposição ao risco, em determinado período.<br />
-                Essa taxa é calculada pela fórmula oficial:
+              <p style={{ margin: 0, fontSize: "0.76rem", color: "#475569", lineHeight: 1.4 }}>
+                Número de acidentados por milhão de horas trabalhadas de exposição ao risco (HHT):
               </p>
             </div>
 
+            {/* Fórmula em destaque */}
             <div style={{ 
-              alignSelf: "flex-start",
-              padding: "0.45rem 1.25rem", 
+              display: "flex", 
+              alignItems: "center", 
+              justifyContent: "space-between", 
+              padding: "0.45rem 1rem", 
               background: "white", 
-              border: "1.5px solid var(--primary)", 
+              border: "1px solid #CBD5E1", 
               borderRadius: "8px", 
-              fontWeight: 900, 
-              fontSize: "0.95rem", 
-              color: "var(--primary)", 
-              fontFamily: "monospace",
-              boxShadow: "0 2px 4px rgba(185, 28, 28, 0.08)",
-              margin: "0.5rem 0"
+              boxShadow: "0 2px 4px rgba(0,0,0,0.02)" 
             }}>
-              F = (N × 1.000.000) / HHT
+              <span style={{ fontFamily: "monospace", fontWeight: 900, fontSize: "0.92rem", color: "#0F172A" }}>
+                TF = (Nº acidentes × 1.000.000) / HHT
+              </span>
+              <span style={{ fontSize: "0.68rem", color: "#64748B", fontWeight: 600 }}>
+                HHT = Coluna HH
+              </span>
             </div>
 
-            <div style={{ fontSize: "0.75rem", color: "#64748B", lineHeight: 1.5, borderTop: "1px solid #E2E8F0", paddingTop: "0.5rem", minHeight: "72px" }}>
-              <strong>Onde:</strong><br />
-              <strong>F</strong> = Frequência de acidentados<br />
-              <strong>N</strong> = Número de acidentados<br />
-              <strong>HHT</strong> = Horas-Homem Trabalhadas líquidas (coluna HH)
+            {/* Parâmetros e Gradações */}
+            <div>
+              <div style={{ fontSize: "0.72rem", fontWeight: 800, color: "#334155", textTransform: "uppercase", marginBottom: "0.35rem", letterSpacing: "0.3px" }}>
+                Parâmetros e Limites de Graduação:
+              </div>
+              <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "0.4rem", fontSize: "0.72rem" }}>
+                <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", background: "white", padding: "4px 8px", borderRadius: "6px", border: "1px solid #E2E8F0" }}>
+                  <span style={{ color: "#475569" }}>Até 20,00</span>
+                  <span style={{ fontWeight: 800, color: "#10B981", background: "#ECFDF5", padding: "1px 6px", borderRadius: "4px" }}>Muito bom (Verde)</span>
+                </div>
+                <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", background: "white", padding: "4px 8px", borderRadius: "6px", border: "1px solid #E2E8F0" }}>
+                  <span style={{ color: "#475569" }}>20,1 a 40,0</span>
+                  <span style={{ fontWeight: 800, color: "#10B981", background: "#ECFDF5", padding: "1px 6px", borderRadius: "4px" }}>Bom (Verde)</span>
+                </div>
+                <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", background: "white", padding: "4px 8px", borderRadius: "6px", border: "1px solid #E2E8F0" }}>
+                  <span style={{ color: "#475569" }}>40,1 a 60,0</span>
+                  <span style={{ fontWeight: 800, color: "#D97706", background: "#FEFCE8", padding: "1px 6px", borderRadius: "4px" }}>Ruim (Amarelo)</span>
+                </div>
+                <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", background: "white", padding: "4px 8px", borderRadius: "6px", border: "1px solid #E2E8F0" }}>
+                  <span style={{ color: "#475569" }}>Acima de 60,0</span>
+                  <span style={{ fontWeight: 800, color: "#EF4444", background: "#FEF2F2", padding: "1px 6px", borderRadius: "4px" }}>Péssima (Vermelho)</span>
+                </div>
+              </div>
+            </div>
+
+            {/* Nota Técnica NBR 14280 */}
+            <div style={{ fontSize: "0.7rem", color: "#64748B", lineHeight: 1.4, borderTop: "1px solid #E2E8F0", paddingTop: "0.45rem" }}>
+              <strong>Nota Técnica NBR 14280:</strong> Recomenda que os acidentes de trabalho com e sem afastamento não sejam calculados juntos. Em caso de cálculo agregado com dias sem afastamento: <em>TF = (Nº c/ afastamento + Nº s/ afastamento) × 1.000.000 / HHT</em>.
             </div>
           </div>
         </div>
@@ -1229,7 +1399,7 @@ export const FrequencySeverityTab: React.FC<FrequencySeverityTabProps> = ({
                     <Tooltip content={<SeverityCustomTooltip />} cursor={{ fill: "rgba(241, 245, 249, 0.6)" }} />
                     <Bar dataKey="severityRate" radius={[6, 6, 0, 0]}>
                       {overview.monthlyRecords.map((entry, index) => (
-                        <Cell key={`g-cell-${index}`} fill={getStatusColor(entry.severityStatus)} />
+                        <Cell key={`g-cell-${index}`} fill={getSeverityRateColor(entry.severityRate)} />
                       ))}
                     </Bar>
                   </BarChart>
@@ -1253,7 +1423,7 @@ export const FrequencySeverityTab: React.FC<FrequencySeverityTabProps> = ({
                     <Tooltip content={<UnitSeverityCustomTooltip />} cursor={{ fill: "rgba(241, 245, 249, 0.6)" }} />
                     <Bar dataKey="severityRate" radius={[6, 6, 0, 0]} barSize={28}>
                       {gUnitRanking.map((entry, index) => (
-                        <Cell key={`g-rank-cell-${index}`} fill={getStatusColor(entry.severityStatus)} />
+                        <Cell key={`g-rank-cell-${index}`} fill={getSeverityRateColor(entry.severityRate)} />
                       ))}
                     </Bar>
                   </BarChart>
@@ -1278,47 +1448,77 @@ export const FrequencySeverityTab: React.FC<FrequencySeverityTabProps> = ({
           {/* Caixa Explicativa NBR 14280 / OIT - Gravidade */}
           <div style={{ 
             marginTop: "1.25rem", 
-            padding: "1.1rem 1.25rem", 
+            padding: "1.15rem 1.25rem", 
             background: "#F8FAFC", 
-            borderRadius: "10px", 
+            borderRadius: "12px", 
             border: "1px solid #E2E8F0",
+            borderLeft: "4px solid #0284C7",
             flex: 1,
-            minHeight: "220px",
             display: "flex",
             flexDirection: "column",
-            justifyContent: "space-between"
+            gap: "0.75rem"
           }}>
             <div>
-              <div style={{ fontWeight: 800, fontSize: "0.85rem", color: "#0284C7", textTransform: "uppercase", letterSpacing: "0.5px", marginBottom: "0.4rem" }}>
-                TAXA DE GRAVIDADE (G)
+              <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "0.25rem" }}>
+                <span style={{ fontWeight: 900, fontSize: "0.85rem", color: "#0F172A", textTransform: "uppercase", letterSpacing: "0.5px" }}>
+                  TAXA DE GRAVIDADE (TG) • NBR 14280
+                </span>
+                <span style={{ fontSize: "0.68rem", fontWeight: 800, color: "#0369A1", background: "#F0F9FF", padding: "2px 8px", borderRadius: "6px", border: "1px solid #BAE6FD" }}>
+                  Fórmula NBR 14280
+                </span>
               </div>
-              <p style={{ margin: 0, fontSize: "0.78rem", color: "#475569", lineHeight: 1.45, minHeight: "44px" }}>
-                É a quantidade de dias computados nos acidentes com afastamento por milhão de horas-homem trabalhadas.<br />
-                Essa taxa é calculada pela fórmula oficial:
+              <p style={{ margin: 0, fontSize: "0.76rem", color: "#475569", lineHeight: 1.4 }}>
+                Tempo computado (dias perdidos + dias debitados) por milhão de horas de exposição (HHT):
               </p>
             </div>
 
+            {/* Fórmula em destaque */}
             <div style={{ 
-              alignSelf: "flex-start",
-              padding: "0.45rem 1.25rem", 
+              display: "flex", 
+              alignItems: "center", 
+              justifyContent: "space-between", 
+              padding: "0.45rem 1rem", 
               background: "white", 
-              border: "1.5px solid #0284C7", 
+              border: "1px solid #CBD5E1", 
               borderRadius: "8px", 
-              fontWeight: 900, 
-              fontSize: "0.95rem", 
-              color: "#0284C7", 
-              fontFamily: "monospace",
-              boxShadow: "0 2px 4px rgba(2, 132, 199, 0.08)",
-              margin: "0.5rem 0"
+              boxShadow: "0 2px 4px rgba(0,0,0,0.02)" 
             }}>
-              G = (T × 1.000.000) / HHT
+              <span style={{ fontFamily: "monospace", fontWeight: 900, fontSize: "0.92rem", color: "#0F172A" }}>
+                TG = (Nº dias perdidos + dias debitados) × 1.000.000 / HHT
+              </span>
+              <span style={{ fontSize: "0.68rem", color: "#64748B", fontWeight: 600 }}>
+                HHT = Coluna HH
+              </span>
             </div>
 
-            <div style={{ fontSize: "0.75rem", color: "#64748B", lineHeight: 1.5, borderTop: "1px solid #E2E8F0", paddingTop: "0.5rem", minHeight: "72px" }}>
-              <strong>Onde:</strong><br />
-              <strong>G</strong> = Gravidade de acidentes<br />
-              <strong>T</strong> = Tempo computado (dias de afastamento)<br />
-              <strong>HHT</strong> = Horas-Homem Trabalhadas líquidas (coluna HH)
+            {/* Parâmetros e Gradações */}
+            <div>
+              <div style={{ fontSize: "0.72rem", fontWeight: 800, color: "#334155", textTransform: "uppercase", marginBottom: "0.35rem", letterSpacing: "0.3px" }}>
+                Parâmetros e Limites de Graduação:
+              </div>
+              <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "0.4rem", fontSize: "0.72rem" }}>
+                <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", background: "white", padding: "4px 8px", borderRadius: "6px", border: "1px solid #E2E8F0" }}>
+                  <span style={{ color: "#475569" }}>Até 500,00</span>
+                  <span style={{ fontWeight: 800, color: "#10B981", background: "#ECFDF5", padding: "1px 6px", borderRadius: "4px" }}>Muito bom (Verde)</span>
+                </div>
+                <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", background: "white", padding: "4px 8px", borderRadius: "6px", border: "1px solid #E2E8F0" }}>
+                  <span style={{ color: "#475569" }}>500,1 a 1.000,0</span>
+                  <span style={{ fontWeight: 800, color: "#10B981", background: "#ECFDF5", padding: "1px 6px", borderRadius: "4px" }}>Bom (Verde)</span>
+                </div>
+                <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", background: "white", padding: "4px 8px", borderRadius: "6px", border: "1px solid #E2E8F0" }}>
+                  <span style={{ color: "#475569" }}>1.000,1 a 2.000,0</span>
+                  <span style={{ fontWeight: 800, color: "#D97706", background: "#FEFCE8", padding: "1px 6px", borderRadius: "4px" }}>Ruim (Amarelo)</span>
+                </div>
+                <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", background: "white", padding: "4px 8px", borderRadius: "6px", border: "1px solid #E2E8F0" }}>
+                  <span style={{ color: "#475569" }}>Acima de 2.000,0</span>
+                  <span style={{ fontWeight: 800, color: "#EF4444", background: "#FEF2F2", padding: "1px 6px", borderRadius: "4px" }}>Péssima (Vermelho)</span>
+                </div>
+              </div>
+            </div>
+
+            {/* Nota Técnica NBR 14280 */}
+            <div style={{ fontSize: "0.7rem", color: "#64748B", lineHeight: 1.4, borderTop: "1px solid #E2E8F0", paddingTop: "0.45rem" }}>
+              <strong>Nota Técnica NBR 14280:</strong> Cada incapacidade permanente ou óbito gera débito normativo de dias (ex: morte = 6.000 dias, perda da mão = 3.000 dias).
             </div>
           </div>
         </div>

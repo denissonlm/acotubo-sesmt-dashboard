@@ -56,23 +56,38 @@ export const PrintView: React.FC<PrintViewProps> = ({
 
   const getOITStatusColor = (status: string): string => {
     switch (status) {
-      case 'MUITO BOA': return '#10B981';
-      case 'BOA': return '#0284C7';
-      case 'REGULAR': return '#F59E0B';
-      case 'RUIM': return '#F97316';
-      case 'PÉSSIMA': return '#EF4444';
-      default: return '#64748B';
+      case 'MUITO BOA':
+      case 'MUITO BOM':
+        return '#10B981'; // Muito boa = Verde
+      case 'BOA':
+      case 'BOM':
+        return '#10B981'; // Boa = Verde também
+      case 'RUIM':
+      case 'REGULAR':
+        return '#D97706'; // Ruim = Amarelo
+      case 'PÉSSIMA':
+      case 'PÉSSIMO':
+        return '#EF4444'; // Péssima = Vermelho
+      default:
+        return '#64748B';
     }
   };
 
   const getOITStatusBg = (status: string): string => {
     switch (status) {
-      case 'MUITO BOA': return '#ECFDF5';
-      case 'BOA': return '#F0F9FF';
-      case 'REGULAR': return '#FFFBEB';
-      case 'RUIM': return '#FFF7ED';
-      case 'PÉSSIMA': return '#FEF2F2';
-      default: return '#F1F5F9';
+      case 'MUITO BOA':
+      case 'MUITO BOM':
+      case 'BOA':
+      case 'BOM':
+        return '#ECFDF5';
+      case 'RUIM':
+      case 'REGULAR':
+        return '#FEFCE8';
+      case 'PÉSSIMA':
+      case 'PÉSSIMO':
+        return '#FEF2F2';
+      default:
+        return '#F1F5F9';
     }
   };
 
@@ -679,21 +694,27 @@ export const PrintView: React.FC<PrintViewProps> = ({
             </div>
           </div>
 
-          {/* Bottom Card: Fórmulas e Critérios OIT */}
-          <div style={{ background: '#F8FAFC', border: '1px solid #E2E8F0', borderRadius: '10px', padding: '0.65rem 0.85rem' }}>
-            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '0.75rem', fontSize: '0.6rem' }}>
+          {/* Bottom Card: Fórmulas e Critérios NBR 14280 */}
+          <div style={{ background: '#F8FAFC', border: '1px solid #E2E8F0', borderLeft: '4px solid #10B981', borderRadius: '10px', padding: '0.65rem 0.85rem' }}>
+            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1.2fr', gap: '0.75rem', fontSize: '0.6rem' }}>
               <div>
-                <strong style={{ color: '#0F172A', display: 'block', marginBottom: '1px' }}>FÓRMULAS OFICIAIS NBR 14280:</strong>
+                <strong style={{ color: '#0F172A', display: 'block', marginBottom: '2px' }}>FÓRMULAS NBR 14280:</strong>
                 <span style={{ color: '#475569', lineHeight: 1.35, display: 'block' }}>
-                  • <strong>Frequência:</strong> F = (N × 1.000.000) / HHT<br />
-                  • <strong>Gravidade:</strong> G = (T × 1.000.000) / HHT
+                  • <strong>TF:</strong> (Nº acidentes × 1.000.000) / HHT<br />
+                  • <strong>TG:</strong> (Dias perdidos + Dias debitados) × 1.000.000 / HHT<br />
+                  <span style={{ fontSize: '0.55rem', color: '#64748B', fontStyle: 'italic' }}>
+                    * Débito por morte = 6.000 d, amputação mão = 3.000 d.
+                  </span>
                 </span>
               </div>
-              <div>
-                <strong style={{ color: '#0F172A', display: 'block', marginBottom: '1px' }}>CRITÉRIOS OIT:</strong>
+              <div style={{ borderLeft: '1px solid #E2E8F0', paddingLeft: '0.65rem' }}>
+                <strong style={{ color: '#0F172A', display: 'block', marginBottom: '2px' }}>LIMITES DE GRADAÇÃO (NBR 14280):</strong>
                 <span style={{ color: '#475569', lineHeight: 1.35, display: 'block' }}>
-                  • <strong>Frequência:</strong> ≤ 20 (M. Boa) | 20-40 (Boa) | 40-60 (Reg.) | &gt; 60 (Péssima)<br />
-                  • <strong>Gravidade:</strong> ≤ 500 (M. Boa) | 500-1000 (Boa) | 1000-2000 (Reg.) | &gt; 2000 (Péssima)
+                  • <strong>TF:</strong> ≤ 20 (M. Bom 🟢) | 20,1-40 (Bom 🟢) | 40,1-60 (Ruim 🟡) | &gt; 60 (Péssima 🔴)<br />
+                  • <strong>TG:</strong> ≤ 500 (M. Bom 🟢) | 500,1-1.000 (Bom 🟢) | 1.000,1-2.000 (Ruim 🟡) | &gt; 2.000 (Péssima 🔴)<br />
+                  <span style={{ fontSize: '0.54rem', color: '#64748B', fontStyle: 'italic' }}>
+                    * Valores referenciais não estipulados pela OIT; ambientes laborais variam.
+                  </span>
                 </span>
               </div>
             </div>
