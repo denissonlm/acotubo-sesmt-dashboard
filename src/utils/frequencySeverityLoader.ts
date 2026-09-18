@@ -29,7 +29,43 @@ const LOCAL_STORAGE_KEY = "acotubo_sesmt_hht_store_v4";
 
 export const DEFAULT_HHT_STORE: MultiYearHHTStore = defaultHHTStoreRaw as unknown as MultiYearHHTStore;
 
-// 16 Unidades oficiais da fonte (AÇOTUBO - Carbono e Matriz unificadas)
+export interface UnitGroupingConfig {
+  groupMatrizCarbono: boolean; // default: true (unifica Matriz em Carbono)
+  customGroups?: Record<string, string>; // Unidade de Origem -> Unidade de Destino
+}
+
+export const DEFAULT_UNIT_GROUPING_CONFIG: UnitGroupingConfig = {
+  groupMatrizCarbono: true,
+  customGroups: {}
+};
+
+export const UNIT_GROUPING_CONFIG_KEY = "acotubo_sesmt_unit_grouping_config_v2";
+
+export const loadUnitGroupingConfig = (): UnitGroupingConfig => {
+  try {
+    const saved = localStorage.getItem(UNIT_GROUPING_CONFIG_KEY);
+    if (saved) {
+      const parsed = JSON.parse(saved);
+      return {
+        groupMatrizCarbono: parsed.groupMatrizCarbono !== undefined ? Boolean(parsed.groupMatrizCarbono) : true,
+        customGroups: parsed.customGroups || {}
+      };
+    }
+  } catch (e) {
+    console.warn("Erro ao carregar UnitGroupingConfig do localStorage:", e);
+  }
+  return { ...DEFAULT_UNIT_GROUPING_CONFIG };
+};
+
+export const saveUnitGroupingConfig = (config: UnitGroupingConfig): void => {
+  try {
+    localStorage.setItem(UNIT_GROUPING_CONFIG_KEY, JSON.stringify(config));
+  } catch (e) {
+    console.error("Erro ao salvar UnitGroupingConfig no localStorage:", e);
+  }
+};
+
+// 16 Unidades oficiais consolidadas (quando Matriz e Carbono estão agrupadas)
 export const SOURCE_UNITS = [
   "Açocred",
   "AÇOTUBO - Canoas",
@@ -49,60 +85,142 @@ export const SOURCE_UNITS = [
   "Incotep"
 ];
 
+// 17 Unidades completas (quando Matriz e Carbono operam separadas)
+export const ALL_POSSIBLE_UNITS = [
+  "Açocred",
+  "AÇOTUBO - Canoas",
+  "AÇOTUBO - Carbono",
+  "AÇOTUBO - Caxias do Sul",
+  "AÇOTUBO - Conexões",
+  "AÇOTUBO - Curitiba",
+  "AÇOTUBO - Inox",
+  "AÇOTUBO - Joinville",
+  "AÇOTUBO - Maringá",
+  "AÇOTUBO - Matriz",
+  "AÇOTUBO - Minas Gerais",
+  "AÇOTUBO - Piracicaba",
+  "AÇOTUBO - Rio de Janeiro",
+  "AÇOTUBO - Sertãozinho",
+  "AÇOTUBO - Soluções Integradas",
+  "Bassi",
+  "Incotep"
+];
+
+/**
+ * Retorna dinamicamente a lista de unidades ativas considerando as regras de agrupamento
+ */
+export const getUnitsList = (config: UnitGroupingConfig = DEFAULT_UNIT_GROUPING_CONFIG): string[] => {
+  let list = config.groupMatrizCarbono ? [...SOURCE_UNITS] : [...ALL_POSSIBLE_UNITS];
+  if (config.customGroups && Object.keys(config.customGroups).length > 0) {
+    const origins = new Set(Object.keys(config.customGroups));
+    list = list.filter(u => !origins.has(u));
+  }
+  return list;
+};
+
 const MONTH_NAMES_FULL = [
   "Janeiro", "Fevereiro", "Março", "Abril", "Maio", "Junho",
   "Julho", "Agosto", "Setembro", "Outubro", "Novembro", "Dezembro"
 ];
 
 /**
- * Carrega a base de HHT mesclando a base nativa com o LocalStorage,
- * assegurando que qualquer ocorrência de Matriz seja unificada em Carbono.
+ * Aplica as regras de agrupamento configuráveis à base de HHT de forma não destrutiva.
  */
-export const loadHHTStore = (): MultiYearHHTStore => {
+export const applyGroupingToStore = (
+  rawStore: MultiYearHHTStore,
+  config: UnitGroupingConfig = DEFAULT_UNIT_GROUPING_CONFIG
+): MultiYearHHTStore => {
+  const cloned: MultiYearHHTStore = JSON.parse(JSON.stringify(rawStore));
+
+  Object.keys(cloned).forEach(yStr => {
+    const y = Number(yStr);
+    Object.keys(cloned[y]).forEach(mStr => {
+      const m = Number(mStr);
+      const entry = cloned[y][m];
+      if (!entry || !entry.units) return;
+
+      // 1. Agrupamento Matriz -> Carbono
+      if (config.groupMatrizCarbono) {
+        if (entry.units["AÇOTUBO - Matriz"]) {
+          const mtz = entry.units["AÇOTUBO - Matriz"];
+          delete entry.units["AÇOTUBO - Matriz"];
+          if (!entry.units["AÇOTUBO - Carbono"]) {
+            entry.units["AÇOTUBO - Carbono"] = { ...mtz };
+          } else {
+            entry.units["AÇOTUBO - Carbono"].horas += mtz.horas;
+            entry.units["AÇOTUBO - Carbono"].previsto += mtz.previsto;
+            entry.units["AÇOTUBO - Carbono"].hhCol = 
+              (entry.units["AÇOTUBO - Carbono"].hhCol || 0) + 
+              (mtz.hhCol !== undefined ? mtz.hhCol : (mtz.previsto - mtz.horas));
+          }
+        }
+      } else {
+        // Se NÃO agrupar, mas o mês 8 veio com Matriz salva em Carbono (ex: cache legado):
+        if (y === 2026 && m === 8 && !entry.units["AÇOTUBO - Matriz"] && entry.units["AÇOTUBO - Carbono"]) {
+          const carb = entry.units["AÇOTUBO - Carbono"];
+          entry.units["AÇOTUBO - Matriz"] = { ...carb };
+          delete entry.units["AÇOTUBO - Carbono"];
+        }
+      }
+
+      // 2. Agrupamentos customizados (Origem -> Destino)
+      if (config.customGroups && Object.keys(config.customGroups).length > 0) {
+        Object.entries(config.customGroups).forEach(([sourceUnit, targetUnit]) => {
+          if (sourceUnit && targetUnit && sourceUnit !== targetUnit && entry.units[sourceUnit]) {
+            const src = entry.units[sourceUnit];
+            delete entry.units[sourceUnit];
+            if (!entry.units[targetUnit]) {
+              entry.units[targetUnit] = { ...src };
+            } else {
+              entry.units[targetUnit].horas += src.horas;
+              entry.units[targetUnit].previsto += src.previsto;
+              entry.units[targetUnit].hhCol = 
+                (entry.units[targetUnit].hhCol || 0) + 
+                (src.hhCol !== undefined ? src.hhCol : (src.previsto - src.horas));
+            }
+          }
+        });
+      }
+
+      // Garantir totalHH e hhCol consistentes
+      if (entry.totalHH === undefined) {
+        entry.totalHH = entry.totalPrevisto - entry.totalHoras;
+      }
+      Object.values(entry.units).forEach(u => {
+        if (u.hhCol === undefined) {
+          u.hhCol = u.previsto - u.horas;
+        }
+      });
+    });
+  });
+
+  return cloned;
+};
+
+/**
+ * Carrega a base de HHT bruta (mesclando nativa com LocalStorage)
+ * e aplica o agrupamento desejado.
+ */
+export const loadHHTStore = (config: UnitGroupingConfig = DEFAULT_UNIT_GROUPING_CONFIG): MultiYearHHTStore => {
+  let base: MultiYearHHTStore = JSON.parse(JSON.stringify(DEFAULT_HHT_STORE));
   try {
     const saved = localStorage.getItem(LOCAL_STORAGE_KEY);
     if (saved) {
       const parsed = JSON.parse(saved) as MultiYearHHTStore;
-      const merged: MultiYearHHTStore = JSON.parse(JSON.stringify(DEFAULT_HHT_STORE));
-      
       Object.keys(parsed).forEach(yStr => {
         const y = Number(yStr);
-        if (!merged[y]) merged[y] = {};
-        
+        if (!base[y]) base[y] = {};
         Object.keys(parsed[y]).forEach(mStr => {
           const m = Number(mStr);
-          const entry = parsed[y][m];
-          if (entry && entry.units) {
-            // Unificação preventiva de Matriz em Carbono caso venha de cache legado
-            if (entry.units["AÇOTUBO - Matriz"]) {
-              const mtz = entry.units["AÇOTUBO - Matriz"];
-              delete entry.units["AÇOTUBO - Matriz"];
-              if (!entry.units["AÇOTUBO - Carbono"]) {
-                entry.units["AÇOTUBO - Carbono"] = mtz;
-              } else {
-                entry.units["AÇOTUBO - Carbono"].horas += mtz.horas;
-                entry.units["AÇOTUBO - Carbono"].previsto += mtz.previsto;
-                entry.units["AÇOTUBO - Carbono"].hhCol = (entry.units["AÇOTUBO - Carbono"].hhCol || 0) + (mtz.hhCol || (mtz.previsto - mtz.horas));
-              }
-            }
-            if (entry.totalHH === undefined) {
-              entry.totalHH = entry.totalPrevisto - entry.totalHoras;
-            }
-            Object.values(entry.units).forEach(u => {
-              if (u.hhCol === undefined) {
-                u.hhCol = u.previsto - u.horas;
-              }
-            });
-          }
-          merged[y][m] = entry;
+          base[y][m] = parsed[y][m];
         });
       });
-      return merged;
     }
   } catch (err) {
     console.warn("Erro ao carregar HHT do localStorage:", err);
   }
-  return DEFAULT_HHT_STORE;
+
+  return applyGroupingToStore(base, config);
 };
 
 /**
@@ -119,7 +237,7 @@ export const saveHHTStoreToLocalStorage = (store: MultiYearHHTStore): void => {
 /**
  * Reseta o LocalStorage para a base original
  */
-export const resetHHTStoreLocalStorage = (): MultiYearHHTStore => {
+export const resetHHTStoreLocalStorage = (config: UnitGroupingConfig = DEFAULT_UNIT_GROUPING_CONFIG): MultiYearHHTStore => {
   try {
     localStorage.removeItem(LOCAL_STORAGE_KEY);
     localStorage.removeItem("acotubo_sesmt_hht_store_v3");
@@ -127,7 +245,7 @@ export const resetHHTStoreLocalStorage = (): MultiYearHHTStore => {
   } catch (err) {
     console.warn("Erro ao limpar localStorage:", err);
   }
-  return DEFAULT_HHT_STORE;
+  return loadHHTStore(config);
 };
 
 export const getFrequencyStatus = (f: number): OITClassification => {
@@ -225,40 +343,68 @@ export const calculateG = (t: number, h: number): number => {
 export const calculateTG = calculateG;
 
 /**
- * Mapeia a divisão e área do acidente para as 16 unidades de fonte.
- * AÇOTUBO - Carbono e Matriz são unificadas como "AÇOTUBO - Carbono".
+ * Mapeia a divisão e área do acidente para as unidades de fonte.
+ * Considera as configurações de agrupamento (Matriz vs Carbono e agrupamentos customizados).
  */
-export const matchAccidentToSourceUnit = (accidentDivision: string, accidentArea?: string): string => {
+export const matchAccidentToSourceUnit = (
+  accidentDivision: string, 
+  accidentArea?: string,
+  config: UnitGroupingConfig = DEFAULT_UNIT_GROUPING_CONFIG
+): string => {
   const normDiv = (accidentDivision || "").trim().toLowerCase();
   const normArea = (accidentArea || "").trim().toLowerCase();
 
-  if (normDiv.includes("canoas")) return "AÇOTUBO - Canoas";
-  if (normDiv.includes("cxs") || normDiv.includes("caxias")) return "AÇOTUBO - Caxias do Sul";
-  if (normDiv.includes("joinville")) return "AÇOTUBO - Joinville";
-  if (normDiv.includes("soluções") || normDiv.includes("solucoes")) return "AÇOTUBO - Soluções Integradas";
-  if (normDiv.includes("bassi")) return "Bassi";
-  if (normDiv.includes("incotep")) return "Incotep";
+  let matched = "";
 
-  if (normDiv.includes("artex")) {
-    return "AÇOTUBO - Inox";
+  if (normDiv.includes("canoas")) matched = "AÇOTUBO - Canoas";
+  else if (normDiv.includes("cxs") || normDiv.includes("caxias")) matched = "AÇOTUBO - Caxias do Sul";
+  else if (normDiv.includes("joinville")) matched = "AÇOTUBO - Joinville";
+  else if (normDiv.includes("soluções") || normDiv.includes("solucoes")) matched = "AÇOTUBO - Soluções Integradas";
+  else if (normDiv.includes("bassi")) matched = "Bassi";
+  else if (normDiv.includes("incotep")) matched = "Incotep";
+  else if (normDiv.includes("artex")) matched = "AÇOTUBO - Inox";
+  else if (normDiv.includes("curitiba")) matched = "AÇOTUBO - Curitiba";
+  else if (normDiv.includes("minas") || normDiv.includes(" mg")) matched = "AÇOTUBO - Minas Gerais";
+  else if (normDiv.includes("rio") || normDiv.includes(" rj")) matched = "AÇOTUBO - Rio de Janeiro";
+  else if (normDiv.includes("sertãozinho") || normDiv.includes("sertaozinho")) matched = "AÇOTUBO - Sertãozinho";
+  else if (normDiv.includes("maringá") || normDiv.includes("maringa")) matched = "AÇOTUBO - Maringá";
+  else if (normDiv.includes("piracicaba")) matched = "AÇOTUBO - Piracicaba";
+  else if (normDiv.includes("açocred") || normDiv.includes("acocred")) matched = "Açocred";
+  else if (normDiv.includes("gru") || normDiv.includes("matriz") || normDiv.includes("carbono") || normDiv.includes("tubo")) {
+    if (normArea.includes("inox")) {
+      matched = "AÇOTUBO - Inox";
+    } else if (normArea.includes("conexo") || normArea.includes("conexões")) {
+      matched = "AÇOTUBO - Conexões";
+    } else {
+      // Carbono vs Matriz
+      if (config.groupMatrizCarbono) {
+        matched = "AÇOTUBO - Carbono";
+      } else {
+        // Quando Matriz e Carbono são separadas:
+        // Setores corporativos/administrativos e menções a Matriz vão para Matriz
+        if (
+          normDiv.includes("matriz") || 
+          normArea.includes("adm") || 
+          normArea.includes("cozinha") || 
+          normArea.includes("manut corp") || 
+          normArea.includes("qualidade") ||
+          normArea.includes("diretoria") ||
+          normArea.includes("rh")
+        ) {
+          matched = "AÇOTUBO - Matriz";
+        } else {
+          matched = "AÇOTUBO - Carbono";
+        }
+      }
+    }
   }
 
-  // Carbono e Matriz unificados em AÇOTUBO - Carbono
-  if (normDiv.includes("gru") || normDiv.includes("matriz") || normDiv.includes("carbono") || normDiv.includes("tubo")) {
-    if (normArea.includes("inox")) return "AÇOTUBO - Inox";
-    if (normArea.includes("conexo") || normArea.includes("conexões")) return "AÇOTUBO - Conexões";
-    return "AÇOTUBO - Carbono";
+  // Agrupamento customizado adicional (se houver mapeamento direto desta unidade)
+  if (matched && config.customGroups && config.customGroups[matched]) {
+    matched = config.customGroups[matched];
   }
 
-  if (normDiv.includes("curitiba")) return "AÇOTUBO - Curitiba";
-  if (normDiv.includes("minas") || normDiv.includes(" mg")) return "AÇOTUBO - Minas Gerais";
-  if (normDiv.includes("rio") || normDiv.includes(" rj")) return "AÇOTUBO - Rio de Janeiro";
-  if (normDiv.includes("sertãozinho") || normDiv.includes("sertaozinho")) return "AÇOTUBO - Sertãozinho";
-  if (normDiv.includes("maringá") || normDiv.includes("maringa")) return "AÇOTUBO - Maringá";
-  if (normDiv.includes("piracicaba")) return "AÇOTUBO - Piracicaba";
-  if (normDiv.includes("açocred") || normDiv.includes("acocred")) return "Açocred";
-
-  return "";
+  return matched;
 };
 
 /**
@@ -273,9 +419,11 @@ export const processFrequencyAndSeverity = (
   year: number = 2026,
   selectedMonths: number[] = [1, 2, 3, 4, 5, 6, 7, 8],
   filterUnit: string = "ALL",
-  multiYearStore?: MultiYearHHTStore
+  multiYearStore?: MultiYearHHTStore,
+  config: UnitGroupingConfig = DEFAULT_UNIT_GROUPING_CONFIG
 ): FrequencySeverityOverview => {
-  const store = multiYearStore || loadHHTStore();
+  const rawStore = multiYearStore || loadHHTStore(config);
+  const store = applyGroupingToStore(rawStore, config);
   const yearHHT = store[year] || {};
 
   const yearAccidents = accidents.filter(a => a.year === year && selectedMonths.includes(a.month));
@@ -295,7 +443,7 @@ export const processFrequencyAndSeverity = (
     let accListFiltered = monthAccidentsList;
     if (filterUnit !== "ALL") {
       accListFiltered = monthAccidentsList.filter(a => {
-        const matched = matchAccidentToSourceUnit(a.division, a.area);
+        const matched = matchAccidentToSourceUnit(a.division, a.area, config);
         return matched === filterUnit;
       });
     }
@@ -349,10 +497,11 @@ export const processFrequencyAndSeverity = (
   const overallFrequencyRate = calculateF(totalAccidents, totalHHT);
   const overallSeverityRate = calculateG(totalLostDays, totalHHT);
 
-  // Estudo por Unidade de Negócio (16 unidades de fonte)
+  // Estudo por Unidade de Negócio com a lista dinâmica de unidades configuradas
   const unitRecords: UnitRateRecord[] = [];
+  const activeUnitsList = getUnitsList(config);
 
-  SOURCE_UNITS.forEach(unitName => {
+  activeUnitsList.forEach(unitName => {
     let unitH = 0;
     let unitPrevisto = 0;
     let unitAusencia = 0;
@@ -366,7 +515,7 @@ export const processFrequencyAndSeverity = (
     });
 
     const unitAccidents = yearAccidents.filter(a => {
-      const matched = matchAccidentToSourceUnit(a.division, a.area);
+      const matched = matchAccidentToSourceUnit(a.division, a.area, config);
       return matched === unitName;
     });
 
@@ -414,7 +563,7 @@ export const generateFrequencySeverityStory = (overview: FrequencySeverityOvervi
 
 /**
  * Lê e analisa arquivos mensais de HHT (.xlsx),
- * unificando automaticamente Matriz em AÇOTUBO - Carbono.
+ * preservando a unidade autêntica da planilha.
  */
 export const parseHHTSpreadsheet = (data: ArrayBuffer, fileName: string): HHTMonthEntry | null => {
   try {
@@ -449,9 +598,9 @@ export const parseHHTSpreadsheet = (data: ArrayBuffer, fileName: string): HHTMon
         totalHoras = totalCol;
         totalHH = hhCol;
       } else {
-        // Unificação: Matriz e Carbono são a mesma coisa
+        // Padronização do nome da Matriz caso venha como "AÇOTUBO - Matriz" ou similar
         if (localStr.toLowerCase().includes("matriz")) {
-          localStr = "AÇOTUBO - Carbono";
+          localStr = "AÇOTUBO - Matriz";
         }
 
         if (!units[localStr]) {

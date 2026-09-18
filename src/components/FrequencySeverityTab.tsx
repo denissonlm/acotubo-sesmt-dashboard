@@ -6,7 +6,7 @@ import {
 import { 
   Activity, Gauge, Clock, ShieldCheck, 
   TrendingUp, Filter, Upload, RotateCcw, Calendar, CheckCircle2,
-  Building2, Target
+  Building2, Target, SlidersHorizontal
 } from "lucide-react";
 import type { Accident, OITClassification } from "../types";
 import { 
@@ -18,9 +18,13 @@ import {
   resetHHTStoreLocalStorage,
   getFrequencyRateColor,
   getSeverityRateColor,
-  SOURCE_UNITS,
+  getUnitsList,
+  loadUnitGroupingConfig,
+  saveUnitGroupingConfig,
+  type UnitGroupingConfig,
   type MultiYearHHTStore
 } from "../utils/frequencySeverityLoader";
+import { UnitGroupingModal } from "./UnitGroupingModal";
 import { motion } from "framer-motion";
 
 interface FrequencySeverityTabProps {
@@ -267,6 +271,27 @@ export const FrequencySeverityTab: React.FC<FrequencySeverityTabProps> = ({
   const [uploadFeedback, setUploadFeedback] = useState<string | null>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
+  // Configuração de agrupamento de unidades fabris
+  const [groupingConfig, setGroupingConfig] = useState<UnitGroupingConfig>(() => loadUnitGroupingConfig());
+  const [isConfigModalOpen, setIsConfigModalOpen] = useState<boolean>(false);
+
+  // Lista dinâmica de unidades ativas segundo a configuração de agrupamento
+  const activeUnitsList = useMemo(() => {
+    return getUnitsList(groupingConfig);
+  }, [groupingConfig]);
+
+  // Se a unidade selecionada não estiver mais na lista ativa, redefinir para "ALL"
+  useEffect(() => {
+    if (selectedUnit !== "ALL" && !activeUnitsList.includes(selectedUnit)) {
+      setSelectedUnit("ALL");
+    }
+  }, [activeUnitsList, selectedUnit]);
+
+  const handleSaveGroupingConfig = (newConfig: UnitGroupingConfig) => {
+    setGroupingConfig(newConfig);
+    saveUnitGroupingConfig(newConfig);
+  };
+
   // Lista consolidada de anos disponíveis (anos dos acidentes + anos no HHTStore)
   const allYears = useMemo(() => {
     const yearsSet = new Set<number>(availableYears);
@@ -305,16 +330,17 @@ export const FrequencySeverityTab: React.FC<FrequencySeverityTabProps> = ({
     setSelectedMonths([...availableMonthsForYear]);
   };
 
-  // Processamento com as Horas Totais (coluna Total) como divisor
+  // Processamento com as Horas Totais (coluna Total) como divisor e agrupamento configurado
   const overview = useMemo(() => {
     return processFrequencyAndSeverity(
       accidents,
       selectedYear,
       selectedMonths,
       selectedUnit,
-      hhtStore
+      hhtStore,
+      groupingConfig
     );
-  }, [accidents, selectedYear, selectedMonths, selectedUnit, hhtStore]);
+  }, [accidents, selectedYear, selectedMonths, selectedUnit, hhtStore, groupingConfig]);
 
   const storyText = useMemo(() => {
     return generateFrequencySeverityStory(overview, selectedYear);
@@ -507,11 +533,45 @@ export const FrequencySeverityTab: React.FC<FrequencySeverityTabProps> = ({
               }}
             >
               <option value="ALL">Geral (Todas as Unidades)</option>
-              {SOURCE_UNITS.map(u => (
+              {activeUnitsList.map(u => (
                 <option key={u} value={u}>{u}</option>
               ))}
             </select>
           </div>
+
+          {/* Botão de Configuração de Agrupamento */}
+          <button
+            onClick={() => setIsConfigModalOpen(true)}
+            title="Configurar agrupamento de unidades fabris (Matriz, Carbono e fusões customizadas)"
+            style={{
+              display: "flex",
+              alignItems: "center",
+              gap: "0.45rem",
+              padding: "0.45rem 0.85rem",
+              borderRadius: "8px",
+              border: "1px solid var(--primary)",
+              background: groupingConfig.groupMatrizCarbono ? "rgba(185, 28, 28, 0.08)" : "#F8FAFC",
+              color: groupingConfig.groupMatrizCarbono ? "var(--primary)" : "#334155",
+              fontWeight: 800,
+              fontSize: "0.82rem",
+              cursor: "pointer",
+              transition: "all 0.2s"
+            }}
+          >
+            <SlidersHorizontal size={15} />
+            <span>Agrupar Unidades</span>
+            <span style={{
+              fontSize: "0.68rem",
+              padding: "2px 6px",
+              borderRadius: "999px",
+              background: groupingConfig.groupMatrizCarbono ? "var(--primary)" : "#64748B",
+              color: "white",
+              fontWeight: 800,
+              letterSpacing: "0.3px"
+            }}>
+              {activeUnitsList.length} Unid.
+            </span>
+          </button>
 
           <div style={{ display: "flex", gap: "0.5rem" }}>
             <button
@@ -1501,7 +1561,7 @@ export const FrequencySeverityTab: React.FC<FrequencySeverityTabProps> = ({
           <div>
             <h3 style={{ fontSize: "1.1rem", fontWeight: 800, color: "var(--text)" }}>Estudo por Unidade de Negócio ({selectedYear})</h3>
             <p style={{ fontSize: "0.8rem", color: "var(--text-muted)" }}>
-              Acompanhamento detalhado por Unidade (16 unidades de fonte, com AÇOTUBO - Carbono e Matriz unificadas)
+              Acompanhamento detalhado por Unidade ({activeUnitsList.length} unidades ativas{groupingConfig.groupMatrizCarbono ? ", com AÇOTUBO - Carbono e Matriz agrupadas" : ", com Matriz e Carbono independentes"})
             </p>
           </div>
           <div style={{ fontSize: "0.8rem", color: "#0284C7", fontWeight: 800, background: "#F0F9FF", border: "1px solid #BAE6FD", padding: "0.3rem 0.75rem", borderRadius: "6px" }}>
@@ -1512,24 +1572,31 @@ export const FrequencySeverityTab: React.FC<FrequencySeverityTabProps> = ({
         <div style={{ overflowX: "auto" }}>
           <table style={{ width: "100%", borderCollapse: "collapse", textAlign: "left", fontSize: "0.85rem" }}>
             <thead>
-              <tr style={{ background: "#F8FAFC", borderBottom: "2px solid #E2E8F0", color: "#475569", fontWeight: 800 }}>
-                <th style={{ padding: "0.75rem 1rem" }}>Unidade (Fonte)</th>
-                <th style={{ padding: "0.75rem 1rem", textAlign: "center" }}>Acidentados (N)</th>
-                <th style={{ padding: "0.75rem 1rem", textAlign: "right" }}>Horas Trabalhadas - HH (h)</th>
-                <th style={{ padding: "0.75rem 1rem", textAlign: "center" }}>Dias Computados (T)</th>
-                <th style={{ padding: "0.75rem 1rem", textAlign: "right" }}>Frequência (F)</th>
-                <th style={{ padding: "0.75rem 1rem", textAlign: "center" }}>Classificação F</th>
-                <th style={{ padding: "0.75rem 1rem", textAlign: "right" }}>Gravidade (G)</th>
-                <th style={{ padding: "0.75rem 1rem", textAlign: "center" }}>Classificação G</th>
+              <tr style={{ borderBottom: "2px solid var(--border)", background: "var(--surface)" }}>
+                <th style={{ padding: "0.75rem 1rem", fontWeight: 800, color: "var(--text)" }}>Unidade de Negócio</th>
+                <th style={{ padding: "0.75rem 1rem", textAlign: "center", fontWeight: 800, color: "var(--text)" }}>Acidentados (N)</th>
+                <th style={{ padding: "0.75rem 1rem", textAlign: "right", fontWeight: 800, color: "#0284C7" }}>Horas Trabalhadas - HH (h)</th>
+                <th style={{ padding: "0.75rem 1rem", textAlign: "center", fontWeight: 800, color: "var(--text)" }}>Dias Perdidos (T)</th>
+                <th style={{ padding: "0.75rem 1rem", textAlign: "right", fontWeight: 800, color: "var(--text)" }}>Frequência (F)</th>
+                <th style={{ padding: "0.75rem 1rem", textAlign: "center", fontWeight: 800, color: "var(--text)" }}>Classificação F</th>
+                <th style={{ padding: "0.75rem 1rem", textAlign: "right", fontWeight: 800, color: "var(--text)" }}>Gravidade (G)</th>
+                <th style={{ padding: "0.75rem 1rem", textAlign: "center", fontWeight: 800, color: "var(--text)" }}>Classificação G</th>
               </tr>
             </thead>
             <tbody>
-              {overview.unitRecords.map((unit, idx) => (
+              {overview.unitRecords.map(unit => (
                 <tr 
-                  key={unit.unitName} 
+                  key={unit.unitName}
                   style={{ 
-                    borderBottom: "1px solid #F1F5F9",
-                    background: idx % 2 === 0 ? "white" : "#FAFAFA"
+                    borderBottom: "1px solid var(--border)",
+                    transition: "background 0.15s ease",
+                    cursor: "pointer"
+                  }}
+                  onMouseEnter={(e) => {
+                    e.currentTarget.style.background = "var(--surface-hover)";
+                  }}
+                  onMouseLeave={(e) => {
+                    e.currentTarget.style.background = "transparent";
                   }}
                 >
                   <td style={{ padding: "0.75rem 1rem", fontWeight: 700, color: "var(--text)" }}>{unit.unitName}</td>
@@ -1568,6 +1635,14 @@ export const FrequencySeverityTab: React.FC<FrequencySeverityTabProps> = ({
           </table>
         </div>
       </div>
+
+      {/* Modal de Configuração de Agrupamento de Unidades */}
+      <UnitGroupingModal
+        isOpen={isConfigModalOpen}
+        onClose={() => setIsConfigModalOpen(false)}
+        config={groupingConfig}
+        onSave={handleSaveGroupingConfig}
+      />
 
     </motion.div>
   );
