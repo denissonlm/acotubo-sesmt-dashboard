@@ -24,6 +24,8 @@ export interface Accident {
   usedEPI: boolean;
   investigationLink?: string;
   role: string;
+  cat?: string;
+  hasCat: boolean;
 }
 
 export interface MonthlyStats {

@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react'
+import { useEffect, useState, useMemo } from 'react'
 import { loadAccidentData } from './utils/dataLoader'
 import type { Accident } from './types'
 import { Dashboard } from './components/Dashboard'
@@ -13,6 +13,7 @@ function App() {
   const [showUpload, setShowUpload] = useState(false)
   const [isLandscapePrinting, setIsLandscapePrinting] = useState(false)
   const [isLandscapeModalOpen, setIsLandscapeModalOpen] = useState(false)
+  const [catOnly, setCatOnly] = useState(false)
   const [landscapeFilters, setLandscapeFilters] = useState<LandscapeFilterValues>({
     years: [2024, 2025, 2026],
     division: 'ALL',
@@ -25,6 +26,11 @@ function App() {
   const [filterDivision, setFilterDivision] = useState('ALL')
   const [filterManager, setFilterManager] = useState('ALL')
   const [filterArea, setFilterArea] = useState('ALL')
+
+  const effectiveAccidents = useMemo(() => {
+    if (!catOnly) return accidents;
+    return accidents.filter(a => a.hasCat);
+  }, [accidents, catOnly]);
 
   useEffect(() => {
     const fetchData = async () => {
@@ -62,7 +68,7 @@ function App() {
   if (isLandscapePrinting) {
     return (
       <LandscapePrintView 
-        accidents={accidents} 
+        accidents={effectiveAccidents} 
         selectedYears={landscapeFilters.years} 
         filterDivision={landscapeFilters.division} 
         filterManager={landscapeFilters.manager} 
@@ -75,7 +81,7 @@ function App() {
   return (
     <>
       <Dashboard 
-        accidents={accidents} 
+        accidents={effectiveAccidents} 
         selectedYears={selectedYears}
         onYearsChange={setSelectedYears}
         filterDivision={filterDivision}
@@ -86,12 +92,14 @@ function App() {
         onAreaChange={setFilterArea}
         onReset={() => setShowUpload(true)}
         onLandscapePrint={() => setIsLandscapeModalOpen(true)}
+        catOnly={catOnly}
+        onToggleCatOnly={() => setCatOnly(prev => !prev)}
       />
 
       <LandscapeFilterModal 
         isOpen={isLandscapeModalOpen}
         onClose={() => setIsLandscapeModalOpen(false)}
-        accidents={accidents}
+        accidents={effectiveAccidents}
         initialFilters={{
           years: selectedYears,
           division: filterDivision,

@@ -93,6 +93,17 @@ export const parseAccidentData = (data: ArrayBuffer): Accident[] => {
         hadTraining: String(row['Havia capacitação?'] || '').toUpperCase() === 'SIM',
         usedEPI: String(row['Utilizava EPI?'] || '').toUpperCase() === 'SIM',
         investigationLink: row['Link'],
+        cat: (() => {
+          const keys = Object.keys(row);
+          const catKey = keys.find(k => k.trim().toUpperCase().replace('?', '') === 'CAT');
+          return catKey ? String(row[catKey] || '').trim() : String(row['CAT?'] || '').trim();
+        })(),
+        hasCat: (() => {
+          const keys = Object.keys(row);
+          const catKey = keys.find(k => k.trim().toUpperCase().replace('?', '') === 'CAT');
+          const val = catKey ? String(row[catKey] || '').trim().toUpperCase() : String(row['CAT?'] || '').trim().toUpperCase();
+          return val === 'SIM';
+        })(),
         role: (() => {
           const keys = Object.keys(row);
           const roleKey = keys.find(k => {

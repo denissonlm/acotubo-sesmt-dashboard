@@ -25,6 +25,8 @@ interface DashboardProps {
   onAreaChange: (val: string) => void;
   onReset: () => void;
   onLandscapePrint: () => void;
+  catOnly?: boolean;
+  onToggleCatOnly?: () => void;
 }
 
 const MONTH_NAMES = ['Jan', 'Fev', 'Mar', 'Abr', 'Mai', 'Jun', 'Jul', 'Ago', 'Set', 'Out', 'Nov', 'Dez'];
@@ -40,7 +42,9 @@ export const Dashboard: React.FC<DashboardProps> = ({
   filterArea,
   onAreaChange,
   onReset, 
-  onLandscapePrint
+  onLandscapePrint,
+  catOnly = false,
+  onToggleCatOnly
 }) => {
   const [activeTab, setActiveTab] = useState<'monthly' | 'temporal' | 'safety' | 'breakdown' | 'frequency_severity'>('monthly');
   const [isBreakdownModalOpen, setIsBreakdownModalOpen] = useState(false);
@@ -257,6 +261,44 @@ export const Dashboard: React.FC<DashboardProps> = ({
           >
             <Monitor size={22} />
           </button>
+          {onToggleCatOnly && (
+            <button
+              type="button"
+              role="switch"
+              aria-checked={catOnly}
+              onClick={onToggleCatOnly}
+              style={{
+                position: 'relative',
+                width: '42px',
+                height: '24px',
+                borderRadius: '999px',
+                background: catOnly ? '#10B981' : '#334155',
+                border: '1px solid rgba(255, 255, 255, 0.15)',
+                cursor: 'pointer',
+                padding: 0,
+                outline: 'none',
+                transition: 'all 0.25s ease',
+                boxShadow: catOnly ? '0 0 10px rgba(16, 185, 129, 0.5)' : 'none',
+                display: 'flex',
+                alignItems: 'center',
+                flexShrink: 0
+              }}
+            >
+              <span
+                style={{
+                  position: 'absolute',
+                  left: '2px',
+                  width: '18px',
+                  height: '18px',
+                  borderRadius: '50%',
+                  background: '#FFFFFF',
+                  boxShadow: '0 2px 4px rgba(0,0,0,0.3)',
+                  transform: catOnly ? 'translateX(18px)' : 'translateX(0)',
+                  transition: 'transform 0.25s cubic-bezier(0.4, 0, 0.2, 1)'
+                }}
+              />
+            </button>
+          )}
         </div>
       </header>
 
