@@ -1,7 +1,8 @@
 import React, { useState, useEffect, useMemo } from "react";
 import { 
-  Building2, X, Layers, Settings, RotateCcw, 
-  Check, Plus, Trash2, ArrowRight, Info, ShieldAlert
+  Building2, X, Layers, RotateCcw, 
+  Check, Plus, Trash2, ArrowRight, Info, ShieldAlert,
+  ChevronDown, ChevronUp, CheckCircle2
 } from "lucide-react";
 import { 
   ALL_POSSIBLE_UNITS, 
@@ -32,6 +33,7 @@ export const UnitGroupingModal: React.FC<UnitGroupingModalProps> = ({
   const [newSource, setNewSource] = useState<string>("");
   const [newTarget, setNewTarget] = useState<string>("");
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
+  const [showNativeMappings, setShowNativeMappings] = useState<boolean>(false);
 
   // Sincroniza ao abrir
   useEffect(() => {
@@ -133,7 +135,7 @@ export const UnitGroupingModal: React.FC<UnitGroupingModalProps> = ({
       <div style={{
         background: "#FFFFFF",
         width: "100%",
-        maxWidth: "720px",
+        maxWidth: "760px",
         maxHeight: "92vh",
         borderRadius: "16px",
         boxShadow: "0 25px 50px -12px rgba(0, 0, 0, 0.35)",
@@ -171,7 +173,7 @@ export const UnitGroupingModal: React.FC<UnitGroupingModalProps> = ({
                 Configuração de Agrupamento de Unidades Fabris
               </h2>
               <p style={{ margin: 0, fontSize: "0.78rem", color: "#94A3B8" }}>
-                Controle a consolidação de unidades fabris nos cálculos de Frequência (TF) e Gravidade (TG)
+                Gestão e transparência das regras de consolidação operacional e taxas (NBR 14280 / OIT)
               </p>
             </div>
           </div>
@@ -228,7 +230,7 @@ export const UnitGroupingModal: React.FC<UnitGroupingModalProps> = ({
                 </div>
                 <div>
                   <h3 style={{ margin: 0, fontSize: "0.95rem", fontWeight: 800, color: "#0F172A" }}>
-                    Agrupamento Açotubo Matriz & Açotubo Carbono
+                    Agrupamento Açotubo Matriz & Açotubo Carbono (Guarulhos)
                   </h3>
                   <p style={{ margin: "0.25rem 0 0 0", fontSize: "0.8rem", color: "#64748B", lineHeight: "1.35" }}>
                     Nas planilhas de HH, a unidade fabril e corporativa de Guarulhos ora é identificada como <strong>AÇOTUBO - Carbono</strong>, ora como <strong>AÇOTUBO - Matriz</strong>.
@@ -249,6 +251,7 @@ export const UnitGroupingModal: React.FC<UnitGroupingModalProps> = ({
                     position: "relative",
                     transition: "background 0.2s ease"
                   }}
+                  title={tempConfig.groupMatrizCarbono ? "Clique para desagrupar Matriz e Carbono" : "Clique para agrupar Matriz e Carbono"}
                 >
                   <div style={{
                     width: "22px",
@@ -300,7 +303,7 @@ export const UnitGroupingModal: React.FC<UnitGroupingModalProps> = ({
             </div>
           </div>
 
-          {/* Card Secundário: Agrupamentos Customizados */}
+          {/* SEÇÃO PRINCIPAL SOLICITADA: AGRUPAMENTOS CONFIGURADOS */}
           <div style={{
             background: "#FFFFFF",
             borderRadius: "12px",
@@ -308,163 +311,369 @@ export const UnitGroupingModal: React.FC<UnitGroupingModalProps> = ({
             padding: "1.25rem",
             boxShadow: "0 2px 6px rgba(0, 0, 0, 0.03)"
           }}>
-            <div style={{ display: "flex", alignItems: "center", gap: "0.5rem", marginBottom: "0.5rem" }}>
-              <Settings size={18} color="#64748B" />
-              <h3 style={{ margin: 0, fontSize: "0.95rem", fontWeight: 800, color: "#0F172A" }}>
-                Agrupamento e Fusão Adicional de Unidades
-              </h3>
-            </div>
-            <p style={{ margin: "0 0 1rem 0", fontSize: "0.8rem", color: "#64748B" }}>
-              Deseja unificar outra filial em uma unidade regional existente? Defina abaixo o direcionamento das horas e acidentes.
-            </p>
-
-            {/* Linha de Adição */}
-            <div style={{
-              display: "flex",
-              alignItems: "center",
-              gap: "0.5rem",
-              flexWrap: "wrap",
-              background: "#F1F5F9",
-              padding: "0.75rem",
-              borderRadius: "8px",
-              border: "1px solid #E2E8F0"
-            }}>
-              <div style={{ display: "flex", flexDirection: "column", gap: "0.25rem", flex: 1, minWidth: "160px" }}>
-                <span style={{ fontSize: "0.72rem", fontWeight: 700, color: "#64748B" }}>Unidade de Origem:</span>
-                <select
-                  value={newSource}
-                  onChange={(e) => setNewSource(e.target.value)}
-                  style={{
-                    padding: "0.45rem 0.6rem",
-                    borderRadius: "6px",
-                    border: "1px solid #CBD5E1",
-                    background: "#FFFFFF",
-                    fontSize: "0.8rem",
-                    fontWeight: 600,
-                    color: "#1E293B"
-                  }}
-                >
-                  <option value="">Selecione a origem...</option>
-                  {availableSources.map(u => (
-                    <option key={u} value={u}>{u}</option>
-                  ))}
-                </select>
-              </div>
-
-              <div style={{ marginTop: "1.1rem", color: "#94A3B8" }}>
-                <ArrowRight size={18} />
-              </div>
-
-              <div style={{ display: "flex", flexDirection: "column", gap: "0.25rem", flex: 1, minWidth: "160px" }}>
-                <span style={{ fontSize: "0.72rem", fontWeight: 700, color: "#64748B" }}>Agrupar sob (Destino):</span>
-                <select
-                  value={newTarget}
-                  onChange={(e) => setNewTarget(e.target.value)}
-                  style={{
-                    padding: "0.45rem 0.6rem",
-                    borderRadius: "6px",
-                    border: "1px solid #CBD5E1",
-                    background: "#FFFFFF",
-                    fontSize: "0.8rem",
-                    fontWeight: 600,
-                    color: "#1E293B"
-                  }}
-                >
-                  <option value="">Selecione o destino...</option>
-                  {availableTargets.map(u => (
-                    <option key={u} value={u}>{u}</option>
-                  ))}
-                </select>
-              </div>
-
-              <button
-                onClick={handleAddCustomGroup}
-                style={{
-                  marginTop: "1.1rem",
+            <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: "0.6rem" }}>
+              <div style={{ display: "flex", alignItems: "center", gap: "0.5rem" }}>
+                <div style={{
+                  padding: "0.4rem",
+                  borderRadius: "6px",
+                  background: "#F1F5F9",
+                  color: "#0F172A",
                   display: "flex",
                   alignItems: "center",
-                  gap: "0.3rem",
-                  padding: "0.45rem 0.85rem",
-                  borderRadius: "6px",
-                  background: "var(--primary)",
-                  border: "none",
-                  color: "#FFFFFF",
-                  fontWeight: 800,
-                  fontSize: "0.8rem",
-                  cursor: "pointer"
-                }}
-              >
-                <Plus size={14} />
-                <span>Agrupar</span>
-              </button>
+                  justifyContent: "center"
+                }}>
+                  <CheckCircle2 size={18} color="var(--primary)" />
+                </div>
+                <h3 style={{ margin: 0, fontSize: "0.95rem", fontWeight: 800, color: "#0F172A" }}>
+                  Agrupamentos Configurados
+                </h3>
+              </div>
+              <span style={{ fontSize: "0.75rem", color: "#64748B", fontWeight: 700 }}>
+                {tempConfig.groupMatrizCarbono ? 1 + Object.keys(tempConfig.customGroups || {}).length : Object.keys(tempConfig.customGroups || {}).length} regra(s) ativa(s)
+              </span>
             </div>
 
-            {errorMessage && (
-              <div style={{ 
-                marginTop: "0.5rem", 
-                display: "flex", 
-                alignItems: "center", 
-                gap: "0.35rem", 
-                color: "#DC2626", 
-                fontSize: "0.78rem", 
-                fontWeight: 600 
-              }}>
-                <ShieldAlert size={14} />
-                <span>{errorMessage}</span>
-              </div>
-            )}
+            <p style={{ margin: "0 0 1rem 0", fontSize: "0.8rem", color: "#64748B", lineHeight: "1.4" }}>
+              Veja abaixo exatamente o que já está agrupado no sistema e o que será agrupado, com o detalhamento técnico de cada consolidação:
+            </p>
 
-            {/* Lista de agrupamentos ativos */}
-            <div style={{ marginTop: "1rem" }}>
-              <span style={{ fontSize: "0.75rem", fontWeight: 800, color: "#475569", textTransform: "uppercase", letterSpacing: "0.5px" }}>
-                Agrupamentos Adicionais Configurados:
-              </span>
+            {/* Lista Unificada de Agrupamentos */}
+            <div style={{ display: "flex", flexDirection: "column", gap: "0.75rem" }}>
               
-              {tempConfig.customGroups && Object.keys(tempConfig.customGroups).length > 0 ? (
-                <div style={{ display: "flex", flexDirection: "column", gap: "0.4rem", marginTop: "0.5rem" }}>
-                  {Object.entries(tempConfig.customGroups).map(([src, dst]) => (
-                    <div 
-                      key={src}
+              {/* 1. Agrupamento Padrão: Matriz -> Carbono (se ativo) */}
+              {tempConfig.groupMatrizCarbono ? (
+                <div style={{
+                  padding: "0.85rem 1rem",
+                  borderRadius: "8px",
+                  background: "#F8FAFC",
+                  border: "1.5px solid #CBD5E1",
+                  display: "flex",
+                  flexDirection: "column",
+                  gap: "0.5rem"
+                }}>
+                  <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", flexWrap: "wrap", gap: "0.5rem" }}>
+                    <div style={{ display: "flex", alignItems: "center", gap: "0.6rem" }}>
+                      <span style={{ fontWeight: 800, color: "#0F172A", fontSize: "0.85rem" }}>AÇOTUBO - Matriz</span>
+                      <ArrowRight size={15} color="var(--primary)" />
+                      <span style={{ fontWeight: 800, color: "var(--primary)", fontSize: "0.85rem" }}>AÇOTUBO - Carbono</span>
+                      <span style={{
+                        padding: "2px 7px",
+                        borderRadius: "10px",
+                        fontSize: "0.7rem",
+                        fontWeight: 800,
+                        background: "rgba(16, 185, 129, 0.12)",
+                        color: "#047857",
+                        border: "1px solid rgba(16, 185, 129, 0.3)"
+                      }}>
+                        Padrão do Sistema (Ativo)
+                      </span>
+                    </div>
+
+                    <button
+                      onClick={handleToggleMatrizCarbono}
                       style={{
-                        display: "flex",
-                        alignItems: "center",
-                        justifyContent: "space-between",
-                        padding: "0.45rem 0.75rem",
+                        background: "#FFFFFF",
+                        border: "1px solid #CBD5E1",
+                        color: "#64748B",
+                        padding: "0.3rem 0.65rem",
                         borderRadius: "6px",
-                        background: "#F8FAFC",
-                        border: "1px solid #E2E8F0",
-                        fontSize: "0.8rem"
+                        fontSize: "0.75rem",
+                        fontWeight: 700,
+                        cursor: "pointer"
                       }}
+                      title="Desmembrar Matriz e Carbono em duas unidades separadas"
                     >
-                      <div style={{ display: "flex", alignItems: "center", gap: "0.5rem" }}>
-                        <span style={{ fontWeight: 700, color: "#1E293B" }}>{src}</span>
-                        <ArrowRight size={13} color="#94A3B8" />
-                        <span style={{ fontWeight: 800, color: "var(--primary)" }}>{dst}</span>
+                      Desagrupar
+                    </button>
+                  </div>
+
+                  {/* Detalhamento: O que está feito e como está feito */}
+                  <div style={{
+                    fontSize: "0.78rem",
+                    color: "#475569",
+                    background: "#FFFFFF",
+                    padding: "0.6rem 0.75rem",
+                    borderRadius: "6px",
+                    border: "1px solid #E2E8F0",
+                    lineHeight: "1.4"
+                  }}>
+                    <div><strong>• O que está feito:</strong> Consolidação de Matriz (Guarulhos) dentro de AÇOTUBO - Carbono.</div>
+                    <div><strong>• Como está feito:</strong> Na apuração de HHT, os 64.364,70 h do mês 08 (registrados na fonte como "AÇOTUBO - Matriz") são somados às horas de Carbono. Na apuração de ocorrências, os acidentes corporativos/administrativos de GRU (Cozinha, Manutenção Corporativa, TA Adm, Diretoria) são atribuídos a Carbono.</div>
+                  </div>
+                </div>
+              ) : (
+                <div style={{
+                  padding: "0.75rem 1rem",
+                  borderRadius: "8px",
+                  background: "#F1F5F9",
+                  border: "1px dashed #CBD5E1",
+                  display: "flex",
+                  alignItems: "center",
+                  justifyContent: "space-between",
+                  fontSize: "0.8rem",
+                  color: "#64748B"
+                }}>
+                  <div style={{ display: "flex", alignItems: "center", gap: "0.5rem" }}>
+                    <span style={{ fontWeight: 700 }}>AÇOTUBO - Matriz e AÇOTUBO - Carbono:</span>
+                    <span style={{ color: "#0284C7", fontWeight: 800 }}>Separadas (17 Unidades)</span>
+                  </div>
+                  <button
+                    onClick={handleToggleMatrizCarbono}
+                    style={{
+                      background: "var(--primary)",
+                      color: "#FFFFFF",
+                      border: "none",
+                      padding: "0.3rem 0.65rem",
+                      borderRadius: "6px",
+                      fontSize: "0.75rem",
+                      fontWeight: 800,
+                      cursor: "pointer"
+                    }}
+                  >
+                    Reagrupar
+                  </button>
+                </div>
+              )}
+
+              {/* 2. Agrupamentos Adicionais / Personalizados */}
+              {tempConfig.customGroups && Object.keys(tempConfig.customGroups).length > 0 ? (
+                Object.entries(tempConfig.customGroups).map(([src, dst]) => (
+                  <div 
+                    key={src}
+                    style={{
+                      padding: "0.85rem 1rem",
+                      borderRadius: "8px",
+                      background: "#F8FAFC",
+                      border: "1.5px solid #CBD5E1",
+                      display: "flex",
+                      flexDirection: "column",
+                      gap: "0.5rem"
+                    }}
+                  >
+                    <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", flexWrap: "wrap", gap: "0.5rem" }}>
+                      <div style={{ display: "flex", alignItems: "center", gap: "0.6rem" }}>
+                        <span style={{ fontWeight: 800, color: "#0F172A", fontSize: "0.85rem" }}>{src}</span>
+                        <ArrowRight size={15} color="var(--primary)" />
+                        <span style={{ fontWeight: 800, color: "var(--primary)", fontSize: "0.85rem" }}>{dst}</span>
+                        <span style={{
+                          padding: "2px 7px",
+                          borderRadius: "10px",
+                          fontSize: "0.7rem",
+                          fontWeight: 800,
+                          background: "rgba(2, 132, 199, 0.12)",
+                          color: "#0369A1",
+                          border: "1px solid rgba(2, 132, 199, 0.3)"
+                        }}>
+                          Agrupamento Personalizado
+                        </span>
                       </div>
+
                       <button
                         onClick={() => handleRemoveCustomGroup(src)}
                         style={{
-                          background: "transparent",
-                          border: "none",
-                          color: "#EF4444",
+                          background: "#FEE2E2",
+                          border: "1px solid #FCA5A5",
+                          color: "#DC2626",
+                          padding: "0.3rem 0.65rem",
+                          borderRadius: "6px",
+                          fontSize: "0.75rem",
+                          fontWeight: 800,
                           cursor: "pointer",
-                          padding: "0.2rem",
                           display: "flex",
-                          alignItems: "center"
+                          alignItems: "center",
+                          gap: "0.3rem"
                         }}
-                        title="Desfazer agrupamento"
+                        title="Remover este agrupamento"
                       >
-                        <Trash2 size={15} />
+                        <Trash2 size={13} />
+                        <span>Remover</span>
                       </button>
                     </div>
-                  ))}
+
+                    <div style={{
+                      fontSize: "0.78rem",
+                      color: "#475569",
+                      background: "#FFFFFF",
+                      padding: "0.6rem 0.75rem",
+                      borderRadius: "6px",
+                      border: "1px solid #E2E8F0",
+                      lineHeight: "1.4"
+                    }}>
+                      <div><strong>• O que está feito:</strong> Fusão da unidade "{src}" sob "{dst}".</div>
+                      <div><strong>• Como está feito:</strong> As Horas Trabalhadas (HHT), ausências e previsto da unidade de origem são incorporadas à unidade de destino, e quaisquer acidentes registrados na origem passam a pontuar na unidade de destino para o cálculo das taxas.</div>
+                    </div>
+                  </div>
+                ))
+              ) : null}
+
+              {/* Caso não haja agrupamentos customizados e Matriz esteja separada */}
+              {!tempConfig.groupMatrizCarbono && (!tempConfig.customGroups || Object.keys(tempConfig.customGroups).length === 0) && (
+                <div style={{ padding: "0.85rem", textAlign: "center", color: "#64748B", fontSize: "0.82rem", background: "#F1F5F9", borderRadius: "8px" }}>
+                  Nenhum agrupamento ativo. Todas as 17 unidades fabris e administrativas estão operando de forma 100% individual.
                 </div>
-              ) : (
-                <div style={{ marginTop: "0.35rem", fontSize: "0.78rem", color: "#94A3B8", fontStyle: "italic" }}>
-                  Nenhum agrupamento adicional configurado. Todas as demais unidades estão individuais.
+              )}
+
+            </div>
+
+            {/* Caixa para Criar Novo Agrupamento */}
+            <div style={{ marginTop: "1.25rem", borderTop: "1px solid #E2E8F0", paddingTop: "1rem" }}>
+              <span style={{ fontSize: "0.78rem", fontWeight: 800, color: "#334155", textTransform: "uppercase", letterSpacing: "0.5px" }}>
+                + Adicionar Novo Agrupamento:
+              </span>
+              
+              <div style={{
+                display: "flex",
+                alignItems: "center",
+                gap: "0.5rem",
+                flexWrap: "wrap",
+                background: "#F8FAFC",
+                padding: "0.75rem",
+                borderRadius: "8px",
+                border: "1px solid #E2E8F0",
+                marginTop: "0.5rem"
+              }}>
+                <div style={{ display: "flex", flexDirection: "column", gap: "0.25rem", flex: 1, minWidth: "160px" }}>
+                  <span style={{ fontSize: "0.72rem", fontWeight: 700, color: "#64748B" }}>Unidade de Origem:</span>
+                  <select
+                    value={newSource}
+                    onChange={(e) => setNewSource(e.target.value)}
+                    style={{
+                      padding: "0.45rem 0.6rem",
+                      borderRadius: "6px",
+                      border: "1px solid #CBD5E1",
+                      background: "#FFFFFF",
+                      fontSize: "0.8rem",
+                      fontWeight: 600,
+                      color: "#1E293B"
+                    }}
+                  >
+                    <option value="">Selecione a origem...</option>
+                    {availableSources.map(u => (
+                      <option key={u} value={u}>{u}</option>
+                    ))}
+                  </select>
+                </div>
+
+                <div style={{ marginTop: "1.1rem", color: "#94A3B8" }}>
+                  <ArrowRight size={18} />
+                </div>
+
+                <div style={{ display: "flex", flexDirection: "column", gap: "0.25rem", flex: 1, minWidth: "160px" }}>
+                  <span style={{ fontSize: "0.72rem", fontWeight: 700, color: "#64748B" }}>Agrupar sob (Destino):</span>
+                  <select
+                    value={newTarget}
+                    onChange={(e) => setNewTarget(e.target.value)}
+                    style={{
+                      padding: "0.45rem 0.6rem",
+                      borderRadius: "6px",
+                      border: "1px solid #CBD5E1",
+                      background: "#FFFFFF",
+                      fontSize: "0.8rem",
+                      fontWeight: 600,
+                      color: "#1E293B"
+                    }}
+                  >
+                    <option value="">Selecione o destino...</option>
+                    {availableTargets.map(u => (
+                      <option key={u} value={u}>{u}</option>
+                    ))}
+                  </select>
+                </div>
+
+                <button
+                  onClick={handleAddCustomGroup}
+                  style={{
+                    marginTop: "1.1rem",
+                    display: "flex",
+                    alignItems: "center",
+                    gap: "0.3rem",
+                    padding: "0.45rem 0.85rem",
+                    borderRadius: "6px",
+                    background: "var(--primary)",
+                    border: "none",
+                    color: "#FFFFFF",
+                    fontWeight: 800,
+                    fontSize: "0.8rem",
+                    cursor: "pointer"
+                  }}
+                >
+                  <Plus size={14} />
+                  <span>Agrupar</span>
+                </button>
+              </div>
+
+              {errorMessage && (
+                <div style={{ 
+                  marginTop: "0.5rem", 
+                  display: "flex", 
+                  alignItems: "center", 
+                  gap: "0.35rem", 
+                  color: "#DC2626", 
+                  fontSize: "0.78rem", 
+                  fontWeight: 600 
+                }}>
+                  <ShieldAlert size={14} />
+                  <span>{errorMessage}</span>
                 </div>
               )}
             </div>
+
+          </div>
+
+          {/* Seção Explicativa: Mapeamento de Padronização SESMT */}
+          <div style={{
+            background: "#FFFFFF",
+            borderRadius: "12px",
+            border: "1px solid #E2E8F0",
+            padding: "1rem 1.25rem",
+            boxShadow: "0 2px 6px rgba(0, 0, 0, 0.03)"
+          }}>
+            <div 
+              onClick={() => setShowNativeMappings(!showNativeMappings)}
+              style={{
+                display: "flex",
+                alignItems: "center",
+                justifyContent: "space-between",
+                cursor: "pointer",
+                userSelect: "none"
+              }}
+            >
+              <div style={{ display: "flex", alignItems: "center", gap: "0.5rem" }}>
+                <Info size={17} color="#0284C7" />
+                <span style={{ fontSize: "0.85rem", fontWeight: 800, color: "#0F172A" }}>
+                  Mapeamento e Padronização de Siglas da Base de Acidentes (SESMT)
+                </span>
+              </div>
+              <div style={{ color: "#64748B", display: "flex", alignItems: "center", gap: "0.3rem", fontSize: "0.75rem", fontWeight: 700 }}>
+                <span>{showNativeMappings ? "Recolher" : "Ver detalhes"}</span>
+                {showNativeMappings ? <ChevronUp size={16} /> : <ChevronDown size={16} />}
+              </div>
+            </div>
+
+            {showNativeMappings && (
+              <div style={{ marginTop: "0.85rem", paddingTop: "0.85rem", borderTop: "1px solid #E2E8F0", fontSize: "0.78rem", color: "#475569" }}>
+                <p style={{ margin: "0 0 0.6rem 0", lineHeight: "1.4" }}>
+                  Para correlacionar as siglas operacionais dos comunicados de acidentes com as unidades oficiais das planilhas de HH, o sistema adota as seguintes padronizações nativas:
+                </p>
+                <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(280px, 1fr))", gap: "0.5rem" }}>
+                  <div style={{ background: "#F8FAFC", padding: "0.5rem 0.75rem", borderRadius: "6px", border: "1px solid #E2E8F0" }}>
+                    <strong>• Artex GRU</strong> (Inox Prod / Inox Log) → <strong>AÇOTUBO - Inox</strong>
+                  </div>
+                  <div style={{ background: "#F8FAFC", padding: "0.5rem 0.75rem", borderRadius: "6px", border: "1px solid #E2E8F0" }}>
+                    <strong>• Açotubo GRU</strong> (Área: TA Conex) → <strong>AÇOTUBO - Conexões</strong>
+                  </div>
+                  <div style={{ background: "#F8FAFC", padding: "0.5rem 0.75rem", borderRadius: "6px", border: "1px solid #E2E8F0" }}>
+                    <strong>• Soluções</strong> (Área: Sol Prod) → <strong>AÇOTUBO - Soluções Integradas</strong>
+                  </div>
+                  <div style={{ background: "#F8FAFC", padding: "0.5rem 0.75rem", borderRadius: "6px", border: "1px solid #E2E8F0" }}>
+                    <strong>• Açotubo CXS</strong> → <strong>AÇOTUBO - Caxias do Sul</strong>
+                  </div>
+                  <div style={{ background: "#F8FAFC", padding: "0.5rem 0.75rem", borderRadius: "6px", border: "1px solid #E2E8F0" }}>
+                    <strong>• Acotubo Canoas</strong> → <strong>AÇOTUBO - Canoas</strong>
+                  </div>
+                </div>
+              </div>
+            )}
           </div>
 
           {/* Card de Preview: Unidades Resultantes */}
