@@ -464,24 +464,60 @@ export const LandscapePrintView: React.FC<LandscapePrintViewProps> = ({
 
           {/* Centro: Gráficos Lado a Lado ou Painel Único com Tabela Vertical quando 1 ano selecionado */}
           {selectedYears.length === 1 ? (
-            <div className="panel-premium" style={{ flex: 1, display: 'flex', flexDirection: 'column', padding: '0.75rem', minHeight: 0 }}>
-              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '0.2rem' }}>
-                <h2 style={{ fontSize: '0.85rem', fontWeight: 900, color: 'var(--text)', margin: 0 }}>
-                  Evolução Mensal de Acidentes e Afastamentos — Ano {selectedYears[0]}
-                </h2>
-                <span style={{ fontSize: '0.62rem', color: '#64748B', fontWeight: 700 }}>
-                  Total: <strong style={{ color: '#B91C1C' }}>{stats[selectedYears[0]]?.total || 0} acidentes</strong> • <strong style={{ color: '#0284C7' }}>{stats[selectedYears[0]]?.totalLostDays || 0} dias perdidos</strong>
-                </span>
+            <div className="panel-premium" style={{ flex: 1, display: 'flex', flexDirection: 'column', padding: '0.45rem 0.75rem', minHeight: 0 }}>
+              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '0.25rem' }}>
+                <div>
+                  <h2 style={{ fontSize: '0.82rem', fontWeight: 900, color: 'var(--text)', margin: 0, display: 'flex', alignItems: 'center', gap: '6px' }}>
+                    <span>Evolução Mensal de Acidentes e Afastamentos</span>
+                    <span style={{ fontSize: '0.68rem', color: '#B91C1C', background: 'rgba(185, 28, 28, 0.08)', padding: '1px 6px', borderRadius: '4px' }}>
+                      Ano {selectedYears[0]}
+                    </span>
+                  </h2>
+                  <p style={{ fontSize: '0.54rem', color: 'var(--text-muted)', margin: '1px 0 0 0' }}>
+                    Distribuição cronológica mensal de acidentes e gravidade no período
+                  </p>
+                </div>
+                
+                {/* Totalizadores consolidados na parte superior, alinhados à direita sobre a tabela */}
+                <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                  <div style={{
+                    display: 'inline-flex',
+                    alignItems: 'center',
+                    gap: '4px',
+                    padding: '1.5px 6px',
+                    background: '#FEF2F2',
+                    border: '1px solid #FECACA',
+                    borderRadius: '4px',
+                    fontSize: '0.62rem',
+                    color: '#991B1B',
+                    fontWeight: 800
+                  }}>
+                    <span style={{ fontSize: '0.55rem', color: '#64748B', fontWeight: 700, textTransform: 'uppercase' }}>Total:</span>
+                    <strong style={{ fontSize: '0.72rem', color: '#B91C1C', fontWeight: 900 }}>{stats[selectedYears[0]]?.total || 0}</strong> acidentes
+                  </div>
+                  <div style={{
+                    display: 'inline-flex',
+                    alignItems: 'center',
+                    gap: '4px',
+                    padding: '1.5px 6px',
+                    background: '#F0F9FF',
+                    border: '1px solid #BAE6FD',
+                    borderRadius: '4px',
+                    fontSize: '0.62rem',
+                    color: '#075985',
+                    fontWeight: 800
+                  }}>
+                    <span style={{ fontSize: '0.55rem', color: '#64748B', fontWeight: 700, textTransform: 'uppercase' }}>Perda:</span>
+                    <strong style={{ fontSize: '0.72rem', color: '#0284C7', fontWeight: 900 }}>{stats[selectedYears[0]]?.totalLostDays || 0}</strong> dias perdidos
+                  </div>
+                </div>
               </div>
-              <p style={{ fontSize: '0.58rem', color: 'var(--text-muted)', margin: '0 0 0.4rem 0' }}>
-                Distribuição cronológica mensal de acidentes e gravidade no período
-              </p>
 
-              <div style={{ flex: 1, minHeight: 0, display: 'grid', gridTemplateColumns: 'minmax(0, 1fr) 220px', gap: '0.85rem', alignItems: 'stretch' }}>
+              <div style={{ flex: 1, minHeight: 0, display: 'grid', gridTemplateColumns: 'minmax(0, 1fr) 230px', gap: '0.75rem', alignItems: 'stretch' }}>
                 {/* Gráfico de Barras */}
                 <div style={{ height: '100%', minHeight: 0 }}>
                   <ResponsiveContainer width="100%" height="100%">
-                    <BarChart data={monthlyChartData} margin={{ top: 15, right: 15, left: -25, bottom: 0 }}>
+                    <BarChart data={monthlyChartData} margin={{ top: 12, right: 15, left: -25, bottom: 0 }}>
                       <XAxis dataKey="month" axisLine={false} tickLine={false} tick={{ fontSize: 8, fontWeight: 700, fill: '#64748B' }} />
                       <YAxis axisLine={false} tickLine={false} tick={{ fontSize: 8, fill: '#64748B' }} />
                       <Tooltip 
@@ -501,7 +537,7 @@ export const LandscapePrintView: React.FC<LandscapePrintViewProps> = ({
                   </ResponsiveContainer>
                 </div>
 
-                {/* Tabela Vertical com mesma altura do gráfico */}
+                {/* Tabela Vertical com mesma altura do gráfico, 100% visível sem cortes */}
                 <div style={{
                   height: '100%',
                   background: '#FFFFFF',
@@ -511,60 +547,46 @@ export const LandscapePrintView: React.FC<LandscapePrintViewProps> = ({
                   flexDirection: 'column',
                   overflow: 'hidden'
                 }}>
-                  <div style={{
-                    padding: '3px 6px',
-                    background: '#F8FAFC',
-                    borderBottom: '1px solid #E2E8F0',
-                    fontSize: '7px',
-                    fontWeight: 900,
-                    color: '#0F172A',
-                    textAlign: 'center',
-                    letterSpacing: '0.3px'
-                  }}>
-                    CONSOLIDADO MENSAL ({selectedYears[0]})
-                  </div>
-                  <div style={{ flex: 1, minHeight: 0, display: 'flex', flexDirection: 'column' }}>
-                    <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '7.5px', height: '100%' }}>
-                      <thead>
-                        <tr style={{ background: '#F8FAFC', borderBottom: '1px solid #E2E8F0' }}>
-                          <th style={{ padding: '2px 5px', textAlign: 'left', fontWeight: 900, color: '#475569', fontSize: '6.8px' }}>MÊS</th>
-                          <th style={{ padding: '2px 5px', textAlign: 'center', fontWeight: 900, color: '#475569', fontSize: '6.8px' }}>ACIDENTES</th>
-                          <th style={{ padding: '2px 5px', textAlign: 'right', fontWeight: 900, color: '#475569', fontSize: '6.8px' }}>DIAS AFAST.</th>
-                        </tr>
-                      </thead>
-                      <tbody>
-                        {MONTH_NAMES.map((mName, idx) => {
-                          const mStats = stats[selectedYears[0]]?.monthly[idx];
-                          const count = mStats?.count || 0;
-                          const lost = mStats?.lostDays || 0;
-                          return (
-                            <tr key={mName} style={{ borderBottom: '1px solid #F1F5F9' }}>
-                              <td style={{ padding: '1.5px 5px', fontWeight: count > 0 ? 800 : 600, color: count > 0 ? '#0F172A' : '#94A3B8' }}>
-                                {mName}
-                              </td>
-                              <td style={{ padding: '1.5px 5px', textAlign: 'center', fontWeight: 900, color: count > 0 ? '#B91C1C' : '#CBD5E1' }}>
-                                {count > 0 ? count : '—'}
-                              </td>
-                              <td style={{ padding: '1.5px 5px', textAlign: 'right', fontWeight: 800, color: lost > 0 ? '#0284C7' : '#CBD5E1' }}>
-                                {lost > 0 ? `${lost}d` : '0d'}
-                              </td>
-                            </tr>
-                          );
-                        })}
-                      </tbody>
-                      <tfoot>
-                        <tr style={{ background: '#F8FAFC', borderTop: '1.5px solid #CBD5E1' }}>
-                          <td style={{ padding: '2.5px 5px', fontWeight: 950, color: '#0F172A' }}>TOTAL</td>
-                          <td style={{ padding: '2.5px 5px', textAlign: 'center', fontWeight: 950, color: '#B91C1C' }}>
-                            {stats[selectedYears[0]]?.total || 0}
-                          </td>
-                          <td style={{ padding: '2.5px 5px', textAlign: 'right', fontWeight: 950, color: '#0284C7' }}>
-                            {stats[selectedYears[0]]?.totalLostDays || 0}d
-                          </td>
-                        </tr>
-                      </tfoot>
-                    </table>
-                  </div>
+                  <table style={{ width: '100%', height: '100%', borderCollapse: 'collapse', fontSize: '6.8px', tableLayout: 'fixed' }}>
+                    <thead>
+                      <tr style={{ background: '#F8FAFC', borderBottom: '1px solid #CBD5E1', height: '15px' }}>
+                        <th style={{ padding: '1px 4px', textAlign: 'left', fontWeight: 900, color: '#334155', fontSize: '6.2px', textTransform: 'uppercase', letterSpacing: '0.2px' }}>MÊS</th>
+                        <th style={{ padding: '1px 4px', textAlign: 'center', fontWeight: 900, color: '#334155', fontSize: '6.2px', textTransform: 'uppercase', letterSpacing: '0.2px' }}>ACIDENTES</th>
+                        <th style={{ padding: '1px 4px', textAlign: 'right', fontWeight: 900, color: '#334155', fontSize: '6.2px', textTransform: 'uppercase', letterSpacing: '0.2px' }}>DIAS AFAST.</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {MONTH_NAMES.map((mName, idx) => {
+                        const mStats = stats[selectedYears[0]]?.monthly[idx];
+                        const count = mStats?.count || 0;
+                        const lost = mStats?.lostDays || 0;
+                        return (
+                          <tr key={mName} style={{ borderBottom: '1px solid #F1F5F9', background: count > 0 ? 'rgba(254, 242, 242, 0.4)' : '#FFFFFF' }}>
+                            <td style={{ padding: '1px 4px', fontWeight: count > 0 ? 900 : 600, color: count > 0 ? '#0F172A' : '#94A3B8', fontSize: '6.8px', lineHeight: 1.15 }}>
+                              {mName}
+                            </td>
+                            <td style={{ padding: '1px 4px', textAlign: 'center', fontWeight: 900, color: count > 0 ? '#B91C1C' : '#CBD5E1', fontSize: '6.8px', lineHeight: 1.15 }}>
+                              {count > 0 ? count : '—'}
+                            </td>
+                            <td style={{ padding: '1px 4px', textAlign: 'right', fontWeight: 800, color: lost > 0 ? '#0284C7' : '#CBD5E1', fontSize: '6.8px', lineHeight: 1.15 }}>
+                              {lost > 0 ? `${lost}d` : '0d'}
+                            </td>
+                          </tr>
+                        );
+                      })}
+                    </tbody>
+                    <tfoot>
+                      <tr style={{ background: '#F8FAFC', borderTop: '1.5px solid #CBD5E1', height: '15px' }}>
+                        <td style={{ padding: '1px 4px', fontWeight: 950, color: '#0F172A', fontSize: '6.8px' }}>TOTAL</td>
+                        <td style={{ padding: '1px 4px', textAlign: 'center', fontWeight: 950, color: '#B91C1C', fontSize: '6.8px' }}>
+                          {stats[selectedYears[0]]?.total || 0}
+                        </td>
+                        <td style={{ padding: '1px 4px', textAlign: 'right', fontWeight: 950, color: '#0284C7', fontSize: '6.8px' }}>
+                          {stats[selectedYears[0]]?.totalLostDays || 0}d
+                        </td>
+                      </tr>
+                    </tfoot>
+                  </table>
                 </div>
               </div>
             </div>

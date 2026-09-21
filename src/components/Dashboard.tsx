@@ -1142,6 +1142,60 @@ export const Dashboard: React.FC<DashboardProps> = ({
                 {/* 2. NÍVEL MENSAL (PADRÃO) */}
                 {drillLevel === 'monthly' && (
                   <div>
+                    {/* Barra de Totais Superior quando apenas 1 ano selecionado */}
+                    {selectedYears.length === 1 && (
+                      <div style={{
+                        display: 'flex',
+                        justifyContent: 'space-between',
+                        alignItems: 'center',
+                        marginBottom: '0.65rem',
+                        padding: '0.4rem 0.85rem',
+                        background: '#F8FAFC',
+                        borderRadius: '8px',
+                        border: '1px solid #E2E8F0'
+                      }}>
+                        <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                          <span style={{ fontSize: '0.76rem', fontWeight: 800, color: '#334155' }}>
+                            Detalhamento Cronológico — Ano <strong>{selectedYears[0]}</strong>
+                          </span>
+                          <span style={{ fontSize: '0.68rem', color: '#64748B' }}>
+                            • Clique no mês da tabela ou na barra do gráfico para inspecionar os dias
+                          </span>
+                        </div>
+                        <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                          <span style={{ fontSize: '0.68rem', color: '#64748B', fontWeight: 700, textTransform: 'uppercase' }}>Consolidado:</span>
+                          <div style={{
+                            display: 'inline-flex',
+                            alignItems: 'center',
+                            gap: '4px',
+                            padding: '2px 8px',
+                            background: '#FEF2F2',
+                            border: '1px solid #FECACA',
+                            borderRadius: '5px',
+                            fontSize: '0.72rem',
+                            fontWeight: 800,
+                            color: '#991B1B'
+                          }}>
+                            <strong style={{ fontSize: '0.78rem', color: 'var(--primary)', fontWeight: 900 }}>{stats[selectedYears[0]]?.total || 0}</strong> acidentes
+                          </div>
+                          <div style={{
+                            display: 'inline-flex',
+                            alignItems: 'center',
+                            gap: '4px',
+                            padding: '2px 8px',
+                            background: '#F0F9FF',
+                            border: '1px solid #BAE6FD',
+                            borderRadius: '5px',
+                            fontSize: '0.72rem',
+                            fontWeight: 800,
+                            color: '#075985'
+                          }}>
+                            <strong style={{ fontSize: '0.78rem', color: '#0284C7', fontWeight: 900 }}>{stats[selectedYears[0]]?.totalLostDays || 0}</strong> dias perdidos
+                          </div>
+                        </div>
+                      </div>
+                    )}
+
                     <div style={{ 
                       height: 350, 
                       display: selectedYears.length === 1 ? 'grid' : 'block',
@@ -1230,29 +1284,34 @@ export const Dashboard: React.FC<DashboardProps> = ({
                           boxShadow: '0 2px 8px rgba(0,0,0,0.04)'
                         }}>
                           <div style={{
-                            padding: '0.45rem 0.75rem',
+                            padding: '0.35rem 0.65rem',
                             background: '#F8FAFC',
                             borderBottom: '1px solid #E2E8F0',
                             display: 'flex',
                             alignItems: 'center',
                             justifyContent: 'space-between'
                           }}>
-                            <span style={{ fontSize: '0.74rem', fontWeight: 900, color: '#0F172A', display: 'flex', alignItems: 'center', gap: '6px' }}>
-                              <span style={{ width: '8px', height: '8px', borderRadius: '50%', background: 'var(--primary)' }}></span>
+                            <span style={{ fontSize: '0.72rem', fontWeight: 900, color: '#0F172A', display: 'flex', alignItems: 'center', gap: '5px' }}>
+                              <span style={{ width: '7px', height: '7px', borderRadius: '50%', background: 'var(--primary)' }}></span>
                               Mês a Mês ({selectedYears[0]})
                             </span>
-                            <span style={{ fontSize: '0.65rem', fontWeight: 700, color: '#64748B' }}>
-                              Consolidado
-                            </span>
+                            <div style={{ display: 'flex', alignItems: 'center', gap: '5px', fontSize: '0.66rem', fontWeight: 900 }}>
+                              <span style={{ color: 'var(--primary)', background: '#FEF2F2', padding: '1px 5px', borderRadius: '4px', border: '1px solid #FECACA' }}>
+                                {stats[selectedYears[0]]?.total || 0} acd
+                              </span>
+                              <span style={{ color: '#0284C7', background: '#F0F9FF', padding: '1px 5px', borderRadius: '4px', border: '1px solid #BAE6FD' }}>
+                                {stats[selectedYears[0]]?.totalLostDays || 0}d
+                              </span>
+                            </div>
                           </div>
 
-                          <div style={{ flex: 1, overflowY: 'auto', overflowX: 'hidden' }}>
-                            <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '0.72rem' }}>
+                          <div style={{ flex: 1, minHeight: 0, overflow: 'hidden', display: 'flex', flexDirection: 'column' }}>
+                            <table style={{ width: '100%', height: '100%', borderCollapse: 'collapse', fontSize: '0.7rem', tableLayout: 'fixed' }}>
                               <thead>
-                                <tr style={{ background: '#F8FAFC', borderBottom: '1px solid #E2E8F0', position: 'sticky', top: 0, zIndex: 1 }}>
-                                  <th style={{ padding: '3.5px 7px', textAlign: 'left', fontWeight: 800, color: '#64748B', fontSize: '0.66rem' }}>MÊS</th>
-                                  <th style={{ padding: '3.5px 7px', textAlign: 'center', fontWeight: 800, color: '#64748B', fontSize: '0.66rem' }}>ACIDENTES</th>
-                                  <th style={{ padding: '3.5px 7px', textAlign: 'right', fontWeight: 800, color: '#64748B', fontSize: '0.66rem' }}>DIAS AFAST.</th>
+                                <tr style={{ background: '#F8FAFC', borderBottom: '1px solid #E2E8F0', height: '20px' }}>
+                                  <th style={{ padding: '2px 6px', textAlign: 'left', fontWeight: 800, color: '#64748B', fontSize: '0.64rem' }}>MÊS</th>
+                                  <th style={{ padding: '2px 6px', textAlign: 'center', fontWeight: 800, color: '#64748B', fontSize: '0.64rem' }}>ACIDENTES</th>
+                                  <th style={{ padding: '2px 6px', textAlign: 'right', fontWeight: 800, color: '#64748B', fontSize: '0.64rem' }}>DIAS AFAST.</th>
                                 </tr>
                               </thead>
                               <tbody>
@@ -1280,42 +1339,31 @@ export const Dashboard: React.FC<DashboardProps> = ({
                                       onMouseEnter={(e) => { e.currentTarget.style.background = '#FEE2E2'; }}
                                       onMouseLeave={(e) => { e.currentTarget.style.background = isSelectedDrill ? '#FEF2F2' : (count > 0 ? 'rgba(254, 242, 242, 0.35)' : '#FFFFFF'); }}
                                     >
-                                      <td style={{ padding: '3.5px 7px', fontWeight: count > 0 ? 800 : 600, color: count > 0 ? '#0F172A' : '#64748B' }}>
+                                      <td style={{ padding: '1.5px 6px', fontWeight: count > 0 ? 800 : 600, color: count > 0 ? '#0F172A' : '#64748B', lineHeight: 1.15 }}>
                                         {mName}
                                       </td>
-                                      <td style={{ padding: '3.5px 7px', textAlign: 'center', fontWeight: 900, color: count > 0 ? 'var(--primary)' : '#94A3B8' }}>
+                                      <td style={{ padding: '1.5px 6px', textAlign: 'center', fontWeight: 900, color: count > 0 ? 'var(--primary)' : '#94A3B8', lineHeight: 1.15 }}>
                                         {count > 0 ? count : '—'}
                                       </td>
-                                      <td style={{ padding: '3.5px 7px', textAlign: 'right', fontWeight: 800, color: lost > 0 ? '#0284C7' : '#94A3B8' }}>
+                                      <td style={{ padding: '1.5px 6px', textAlign: 'right', fontWeight: 800, color: lost > 0 ? '#0284C7' : '#94A3B8', lineHeight: 1.15 }}>
                                         {lost > 0 ? `${lost}d` : '0d'}
                                       </td>
                                     </tr>
                                   );
                                 })}
                               </tbody>
+                              <tfoot>
+                                <tr style={{ background: '#F8FAFC', borderTop: '1.5px solid #CBD5E1', height: '22px' }}>
+                                  <td style={{ padding: '2px 6px', fontWeight: 900, color: '#0F172A', fontSize: '0.68rem' }}>TOTAL</td>
+                                  <td style={{ padding: '2px 6px', textAlign: 'center', fontWeight: 900, color: 'var(--primary)', fontSize: '0.68rem' }}>
+                                    {stats[selectedYears[0]]?.total || 0}
+                                  </td>
+                                  <td style={{ padding: '2px 6px', textAlign: 'right', fontWeight: 900, color: '#0284C7', fontSize: '0.68rem' }}>
+                                    {stats[selectedYears[0]]?.totalLostDays || 0}d
+                                  </td>
+                                </tr>
+                              </tfoot>
                             </table>
-                          </div>
-
-                          {/* Rodapé com Totais */}
-                          <div style={{
-                            padding: '0.4rem 0.75rem',
-                            background: '#F8FAFC',
-                            borderTop: '2px solid #E2E8F0',
-                            display: 'flex',
-                            alignItems: 'center',
-                            justifyContent: 'space-between',
-                            fontSize: '0.72rem',
-                            fontWeight: 900
-                          }}>
-                            <span style={{ color: '#0F172A' }}>TOTAL {selectedYears[0]}</span>
-                            <div style={{ display: 'flex', gap: '10px' }}>
-                              <span style={{ color: 'var(--primary)' }}>
-                                {stats[selectedYears[0]]?.total || 0} acd
-                              </span>
-                              <span style={{ color: '#0284C7' }}>
-                                {stats[selectedYears[0]]?.totalLostDays || 0}d
-                              </span>
-                            </div>
                           </div>
                         </div>
                       )}
