@@ -940,6 +940,22 @@ body {
   margin-bottom: 0.7rem !important;
 }
 
+.a4-landscape .panel-premium.monthly-evolution-panel {
+  padding: 0.55rem 0.85rem !important;
+  border-radius: 12px !important;
+}
+
+.a4-landscape .panel-premium.monthly-evolution-panel h2 {
+  font-size: 0.82rem !important;
+  margin-bottom: 0.1rem !important;
+  font-weight: 900 !important;
+}
+
+.a4-landscape .panel-premium.monthly-evolution-panel p {
+  font-size: 0.56rem !important;
+  margin-bottom: 0.25rem !important;
+}
+
 /* Folha 03: Gestão de Segurança (Cartões Topo) */
 .a4-landscape .safety-top-card {
   padding: 0.45rem 0.65rem !important;

@@ -464,8 +464,8 @@ export const LandscapePrintView: React.FC<LandscapePrintViewProps> = ({
 
           {/* Centro: Gráficos Lado a Lado ou Painel Único com Tabela Vertical quando 1 ano selecionado */}
           {selectedYears.length === 1 ? (
-            <div className="panel-premium" style={{ flex: 1, display: 'flex', flexDirection: 'column', padding: '0.45rem 0.75rem', minHeight: 0 }}>
-              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '0.25rem' }}>
+            <div className="panel-premium monthly-evolution-panel" style={{ flex: 1, display: 'flex', flexDirection: 'column', minHeight: 0 }}>
+              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '0.35rem' }}>
                 <div>
                   <h2 style={{ fontSize: '0.82rem', fontWeight: 900, color: 'var(--text)', margin: 0, display: 'flex', alignItems: 'center', gap: '6px' }}>
                     <span>Evolução Mensal de Acidentes e Afastamentos</span>
@@ -484,10 +484,10 @@ export const LandscapePrintView: React.FC<LandscapePrintViewProps> = ({
                     display: 'inline-flex',
                     alignItems: 'center',
                     gap: '4px',
-                    padding: '1.5px 6px',
+                    padding: '2px 7px',
                     background: '#FEF2F2',
                     border: '1px solid #FECACA',
-                    borderRadius: '4px',
+                    borderRadius: '5px',
                     fontSize: '0.62rem',
                     color: '#991B1B',
                     fontWeight: 800
@@ -499,10 +499,10 @@ export const LandscapePrintView: React.FC<LandscapePrintViewProps> = ({
                     display: 'inline-flex',
                     alignItems: 'center',
                     gap: '4px',
-                    padding: '1.5px 6px',
+                    padding: '2px 7px',
                     background: '#F0F9FF',
                     border: '1px solid #BAE6FD',
-                    borderRadius: '4px',
+                    borderRadius: '5px',
                     fontSize: '0.62rem',
                     color: '#075985',
                     fontWeight: 800
@@ -513,46 +513,71 @@ export const LandscapePrintView: React.FC<LandscapePrintViewProps> = ({
                 </div>
               </div>
 
-              <div style={{ flex: 1, minHeight: 0, display: 'grid', gridTemplateColumns: 'minmax(0, 1fr) 230px', gap: '0.75rem', alignItems: 'stretch' }}>
-                {/* Gráfico de Barras */}
-                <div style={{ height: '100%', minHeight: 0 }}>
-                  <ResponsiveContainer width="100%" height="100%">
-                    <BarChart data={monthlyChartData} margin={{ top: 12, right: 15, left: -25, bottom: 0 }}>
-                      <XAxis dataKey="month" axisLine={false} tickLine={false} tick={{ fontSize: 8, fontWeight: 700, fill: '#64748B' }} />
-                      <YAxis axisLine={false} tickLine={false} tick={{ fontSize: 8, fill: '#64748B' }} />
-                      <Tooltip 
-                        cursor={{ fill: '#F1F5F9' }} 
-                        contentStyle={{ backgroundColor: '#FFFFFF', borderRadius: '8px', border: '1px solid #E2E8F0', boxShadow: '0 4px 12px rgba(0,0,0,0.1)', fontSize: '0.75rem' }} 
-                        itemStyle={{ color: '#0F172A', fontWeight: 600 }} 
-                        labelStyle={{ color: '#0F172A', fontWeight: 800, marginBottom: '2px' }} 
-                      />
-                      <Bar 
-                        dataKey={selectedYears[0]} 
-                        name={`Ano ${selectedYears[0]}`} 
-                        fill="#B91C1C" 
-                        radius={[3, 3, 0, 0]} 
-                        label={{ position: 'top', fill: '#0F172A', fontSize: 9, fontWeight: 900 }}
-                      />
-                    </BarChart>
-                  </ResponsiveContainer>
-                </div>
-
-                {/* Tabela Vertical com mesma altura do gráfico, 100% visível sem cortes */}
+              <div style={{ flex: 1, minHeight: 0, display: 'grid', gridTemplateColumns: 'minmax(0, 1fr) 220px', gap: '0.75rem', alignItems: 'stretch' }}>
+                {/* Gráfico de Barras nivelado em card idêntico à tabela */}
                 <div style={{
                   height: '100%',
+                  minHeight: 0,
                   background: '#FFFFFF',
                   border: '1px solid #E2E8F0',
-                  borderRadius: '6px',
+                  borderRadius: '8px',
+                  padding: '6px 10px 2px 0px',
                   display: 'flex',
                   flexDirection: 'column',
-                  overflow: 'hidden'
+                  boxSizing: 'border-box'
+                }}>
+                  <div style={{ flex: 1, minHeight: 0 }}>
+                    <ResponsiveContainer width="100%" height="100%">
+                      <BarChart data={monthlyChartData} margin={{ top: 12, right: 10, left: -25, bottom: 0 }}>
+                        <XAxis dataKey="month" axisLine={false} tickLine={false} tick={{ fontSize: 7.5, fontWeight: 700, fill: '#64748B' }} />
+                        <YAxis axisLine={false} tickLine={false} tick={{ fontSize: 7.5, fill: '#64748B' }} />
+                        <Tooltip 
+                          cursor={{ fill: '#F1F5F9' }} 
+                          contentStyle={{ backgroundColor: '#FFFFFF', borderRadius: '8px', border: '1px solid #E2E8F0', boxShadow: '0 4px 12px rgba(0,0,0,0.1)', fontSize: '0.75rem' }} 
+                          itemStyle={{ color: '#0F172A', fontWeight: 600 }} 
+                          labelStyle={{ color: '#0F172A', fontWeight: 800, marginBottom: '2px' }} 
+                        />
+                        <Bar 
+                          dataKey={selectedYears[0]} 
+                          name={`Ano ${selectedYears[0]}`} 
+                          fill="#B91C1C" 
+                          radius={[3, 3, 0, 0]} 
+                          label={{ position: 'top', fill: '#0F172A', fontSize: 8.5, fontWeight: 900 }}
+                        />
+                      </BarChart>
+                    </ResponsiveContainer>
+                  </div>
+                </div>
+
+                {/* Tabela Vertical nivelada e estilizada, com cabeçalho sem quebras e badges */}
+                <div style={{
+                  height: '100%',
+                  minHeight: 0,
+                  background: '#FFFFFF',
+                  border: '1px solid #E2E8F0',
+                  borderRadius: '8px',
+                  display: 'flex',
+                  flexDirection: 'column',
+                  overflow: 'hidden',
+                  boxSizing: 'border-box'
                 }}>
                   <table style={{ width: '100%', height: '100%', borderCollapse: 'collapse', fontSize: '6.8px', tableLayout: 'fixed' }}>
+                    <colgroup>
+                      <col style={{ width: '30%' }} />
+                      <col style={{ width: '38%' }} />
+                      <col style={{ width: '32%' }} />
+                    </colgroup>
                     <thead>
-                      <tr style={{ background: '#F8FAFC', borderBottom: '1px solid #CBD5E1', height: '15px' }}>
-                        <th style={{ padding: '1px 4px', textAlign: 'left', fontWeight: 900, color: '#334155', fontSize: '6.2px', textTransform: 'uppercase', letterSpacing: '0.2px' }}>MÊS</th>
-                        <th style={{ padding: '1px 4px', textAlign: 'center', fontWeight: 900, color: '#334155', fontSize: '6.2px', textTransform: 'uppercase', letterSpacing: '0.2px' }}>ACIDENTES</th>
-                        <th style={{ padding: '1px 4px', textAlign: 'right', fontWeight: 900, color: '#334155', fontSize: '6.2px', textTransform: 'uppercase', letterSpacing: '0.2px' }}>DIAS AFAST.</th>
+                      <tr style={{ background: '#F8FAFC', borderBottom: '1.5px solid #E2E8F0', height: '18px' }}>
+                        <th style={{ padding: '0 6px', textAlign: 'left', fontWeight: 900, color: '#475569', fontSize: '6.2px', textTransform: 'uppercase', letterSpacing: '0.3px', whiteSpace: 'nowrap' }}>
+                          MÊS
+                        </th>
+                        <th style={{ padding: '0 4px', textAlign: 'center', fontWeight: 900, color: '#475569', fontSize: '6.2px', textTransform: 'uppercase', letterSpacing: '0.3px', whiteSpace: 'nowrap' }}>
+                          ACIDENTES
+                        </th>
+                        <th style={{ padding: '0 6px', textAlign: 'right', fontWeight: 900, color: '#475569', fontSize: '6.2px', textTransform: 'uppercase', letterSpacing: '0.3px', whiteSpace: 'nowrap' }}>
+                          AFAST
+                        </th>
                       </tr>
                     </thead>
                     <tbody>
@@ -561,28 +586,90 @@ export const LandscapePrintView: React.FC<LandscapePrintViewProps> = ({
                         const count = mStats?.count || 0;
                         const lost = mStats?.lostDays || 0;
                         return (
-                          <tr key={mName} style={{ borderBottom: '1px solid #F1F5F9', background: count > 0 ? 'rgba(254, 242, 242, 0.4)' : '#FFFFFF' }}>
-                            <td style={{ padding: '1px 4px', fontWeight: count > 0 ? 900 : 600, color: count > 0 ? '#0F172A' : '#94A3B8', fontSize: '6.8px', lineHeight: 1.15 }}>
+                          <tr 
+                            key={mName} 
+                            style={{ 
+                              borderBottom: '1px solid #F1F5F9', 
+                              background: count > 0 ? 'rgba(254, 242, 242, 0.45)' : (idx % 2 === 0 ? '#FFFFFF' : '#FAFAFA') 
+                            }}
+                          >
+                            <td style={{ padding: '0 6px', fontWeight: count > 0 ? 900 : 600, color: count > 0 ? '#0F172A' : '#64748B', fontSize: '6.8px', whiteSpace: 'nowrap', verticalAlign: 'middle' }}>
                               {mName}
                             </td>
-                            <td style={{ padding: '1px 4px', textAlign: 'center', fontWeight: 900, color: count > 0 ? '#B91C1C' : '#CBD5E1', fontSize: '6.8px', lineHeight: 1.15 }}>
-                              {count > 0 ? count : '—'}
+                            <td style={{ padding: '0 4px', textAlign: 'center', verticalAlign: 'middle' }}>
+                              {count > 0 ? (
+                                <span style={{ 
+                                  display: 'inline-block',
+                                  background: '#FEF2F2', 
+                                  color: '#B91C1C', 
+                                  padding: '0.5px 5px', 
+                                  borderRadius: '3px', 
+                                  fontWeight: 900, 
+                                  fontSize: '6.8px',
+                                  border: '1px solid #FECACA',
+                                  lineHeight: 1.1
+                                }}>
+                                  {count}
+                                </span>
+                              ) : (
+                                <span style={{ color: '#CBD5E1', fontWeight: 600 }}>—</span>
+                              )}
                             </td>
-                            <td style={{ padding: '1px 4px', textAlign: 'right', fontWeight: 800, color: lost > 0 ? '#0284C7' : '#CBD5E1', fontSize: '6.8px', lineHeight: 1.15 }}>
-                              {lost > 0 ? `${lost}d` : '0d'}
+                            <td style={{ padding: '0 6px', textAlign: 'right', verticalAlign: 'middle' }}>
+                              {lost > 0 ? (
+                                <span style={{ 
+                                  display: 'inline-block',
+                                  background: '#F0F9FF', 
+                                  color: '#0284C7', 
+                                  padding: '0.5px 5px', 
+                                  borderRadius: '3px', 
+                                  fontWeight: 800, 
+                                  fontSize: '6.8px',
+                                  border: '1px solid #BAE6FD',
+                                  lineHeight: 1.1
+                                }}>
+                                  {lost}d
+                                </span>
+                              ) : (
+                                <span style={{ color: '#CBD5E1', fontWeight: 600 }}>0d</span>
+                              )}
                             </td>
                           </tr>
                         );
                       })}
                     </tbody>
                     <tfoot>
-                      <tr style={{ background: '#F8FAFC', borderTop: '1.5px solid #CBD5E1', height: '15px' }}>
-                        <td style={{ padding: '1px 4px', fontWeight: 950, color: '#0F172A', fontSize: '6.8px' }}>TOTAL</td>
-                        <td style={{ padding: '1px 4px', textAlign: 'center', fontWeight: 950, color: '#B91C1C', fontSize: '6.8px' }}>
-                          {stats[selectedYears[0]]?.total || 0}
+                      <tr style={{ background: '#F8FAFC', borderTop: '2px solid #CBD5E1', height: '18px' }}>
+                        <td style={{ padding: '0 6px', fontWeight: 950, color: '#0F172A', fontSize: '6.8px', textTransform: 'uppercase', verticalAlign: 'middle' }}>
+                          TOTAL
                         </td>
-                        <td style={{ padding: '1px 4px', textAlign: 'right', fontWeight: 950, color: '#0284C7', fontSize: '6.8px' }}>
-                          {stats[selectedYears[0]]?.totalLostDays || 0}d
+                        <td style={{ padding: '0 4px', textAlign: 'center', verticalAlign: 'middle' }}>
+                          <span style={{ 
+                            display: 'inline-block',
+                            background: '#B91C1C', 
+                            color: '#FFFFFF', 
+                            padding: '1px 6px', 
+                            borderRadius: '3px', 
+                            fontWeight: 950, 
+                            fontSize: '6.8px',
+                            lineHeight: 1.1
+                          }}>
+                            {stats[selectedYears[0]]?.total || 0}
+                          </span>
+                        </td>
+                        <td style={{ padding: '0 6px', textAlign: 'right', verticalAlign: 'middle' }}>
+                          <span style={{ 
+                            display: 'inline-block',
+                            background: '#0284C7', 
+                            color: '#FFFFFF', 
+                            padding: '1px 6px', 
+                            borderRadius: '3px', 
+                            fontWeight: 950, 
+                            fontSize: '6.8px',
+                            lineHeight: 1.1
+                          }}>
+                            {stats[selectedYears[0]]?.totalLostDays || 0}d
+                          </span>
                         </td>
                       </tr>
                     </tfoot>
