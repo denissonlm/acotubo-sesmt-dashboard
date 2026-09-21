@@ -31,13 +31,16 @@ export interface Accident {
 export interface MonthlyStats {
   month: number;
   count: number;
+  lostDays: number;
 }
 
 export interface YearStats {
   year: number;
   total: number;
+  totalLostDays: number;
   monthly: MonthlyStats[];
   avgPerMonth: number;
+  avgLostDaysPerMonth?: number;
   vsPrevious?: number;
 }
 

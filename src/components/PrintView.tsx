@@ -230,10 +230,21 @@ export const PrintView: React.FC<PrintViewProps> = ({
           {/* Top Row: Panorama Stats */}
           <div style={{ display: 'grid', gridTemplateColumns: `repeat(${selectedYears.length}, 1fr)`, gap: '1rem' }}>
             {selectedYears.map(year => (
-              <div key={year} style={{ background: '#F8FAFC', border: '1px solid #E2E8F0', padding: '1rem', borderRadius: '12px', textAlign: 'center' }}>
+              <div key={year} style={{ background: '#F8FAFC', border: '1px solid #E2E8F0', padding: '0.85rem 1rem', borderRadius: '12px', textAlign: 'center' }}>
                 <div style={{ fontSize: '0.7rem', color: '#64748B', fontWeight: 800 }}>ANO {year}</div>
-                <div style={{ fontSize: '1.75rem', fontWeight: 900, color: '#0F172A' }}>{stats[year]?.total || 0}</div>
-                <div style={{ fontSize: '0.65rem', color: '#B91C1C', fontWeight: 700 }}>{stats[year]?.avgPerMonth || 0} acidentes/mês</div>
+                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '0.5rem', textAlign: 'center', marginTop: '0.35rem' }}>
+                  <div style={{ borderRight: '1px solid #E2E8F0', paddingRight: '0.5rem' }}>
+                    <div style={{ fontSize: '1.6rem', fontWeight: 900, color: 'var(--primary)', lineHeight: 1.1 }}>{stats[year]?.total || 0}</div>
+                    <div style={{ fontSize: '0.62rem', color: '#64748B', fontWeight: 700, marginTop: '2px', textTransform: 'uppercase' }}>acidentes</div>
+                  </div>
+                  <div style={{ paddingLeft: '0.5rem' }}>
+                    <div style={{ fontSize: '1.6rem', fontWeight: 900, color: '#475569', lineHeight: 1.1 }}>{stats[year]?.totalLostDays || 0}</div>
+                    <div style={{ fontSize: '0.62rem', color: '#64748B', fontWeight: 700, marginTop: '2px', textTransform: 'uppercase' }}>dias afast.</div>
+                  </div>
+                </div>
+                <div style={{ fontSize: '0.62rem', color: '#64748B', fontWeight: 700, marginTop: '0.5rem', borderTop: '1px dashed #E2E8F0', paddingTop: '0.35rem' }}>
+                  média {stats[year]?.avgPerMonth || 0} acid/mês
+                </div>
               </div>
             ))}
           </div>

@@ -2,7 +2,7 @@ import React, { useMemo, useState } from 'react';
 import { 
   BarChart, Bar, XAxis, YAxis, Tooltip, Legend, ResponsiveContainer
 } from 'recharts';
-import { AlertCircle, TrendingUp, Calendar, ShieldCheck, Upload, Monitor, Gauge, FileSpreadsheet } from 'lucide-react';
+import { AlertCircle, TrendingUp, Calendar, ShieldCheck, Upload, Monitor, Gauge, FileSpreadsheet, Clock } from 'lucide-react';
 import type { Accident } from '../types';
 import { calculateStats, generateInsights, generateTemporalInsights } from '../utils/dataLoader';
 import { motion } from 'framer-motion';
@@ -48,6 +48,7 @@ export const Dashboard: React.FC<DashboardProps> = ({
 }) => {
   const [activeTab, setActiveTab] = useState<'monthly' | 'temporal' | 'safety' | 'breakdown' | 'frequency_severity'>('monthly');
   const [isBreakdownModalOpen, setIsBreakdownModalOpen] = useState(false);
+  const [monthlyMetric, setMonthlyMetric] = useState<'accidents' | 'lostDays'>('accidents');
 
   const filteredAccidents = useMemo(() => {
     return accidents.filter(a => {
@@ -115,11 +116,14 @@ export const Dashboard: React.FC<DashboardProps> = ({
     return Array.from({ length: 12 }, (_, i) => {
       const monthData: any = { month: MONTH_NAMES[i] };
       selectedYears.forEach(year => {
-        monthData[year] = stats[year]?.monthly[i].count || 0;
+        const m = stats[year]?.monthly[i];
+        monthData[year] = monthlyMetric === 'accidents' 
+          ? (m?.count || 0) 
+          : (m?.lostDays || 0);
       });
       return monthData;
     });
-  }, [stats, selectedYears]);
+  }, [stats, selectedYears, monthlyMetric]);
 
   const getHeatmapColor = (count: number) => {
     if (count === 0) return '#F1F5F9';
@@ -450,12 +454,30 @@ export const Dashboard: React.FC<DashboardProps> = ({
                 initial={{ opacity: 0, x: -20 }}
                 animate={{ opacity: 1, x: 0 }}
                 transition={{ delay: i * 0.1 }}
+                style={{
+                  padding: '1rem 0.85rem',
+                  background: 'white',
+                  borderRadius: '14px',
+                  border: '1px solid #E2E8F0',
+                  boxShadow: '0 4px 6px -1px rgba(0, 0, 0, 0.05)',
+                  marginBottom: '0.85rem'
+                }}
               >
-                <h3>{year}</h3>
-                <div className="count">{s.total}</div>
-                <div className="stats-line">
-                  <span>acidentes</span>
-                  <strong>média {s.avgPerMonth}/mês</strong>
+                <h3 style={{ margin: '0 0 0.5rem 0', textAlign: 'center', color: '#64748B', fontSize: '0.85rem', fontWeight: 800 }}>ANO {year}</h3>
+                
+                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '0.5rem', textAlign: 'center', width: '100%' }}>
+                  <div style={{ borderRight: '1px solid #E2E8F0', paddingRight: '0.4rem' }}>
+                    <div style={{ fontSize: '1.65rem', fontWeight: 900, color: 'var(--primary)', lineHeight: 1.1 }}>{s.total}</div>
+                    <div style={{ fontSize: '0.62rem', color: '#64748B', fontWeight: 800, marginTop: '3px', textTransform: 'uppercase' }}>acidentes</div>
+                  </div>
+                  <div style={{ paddingLeft: '0.4rem' }}>
+                    <div style={{ fontSize: '1.65rem', fontWeight: 900, color: '#334155', lineHeight: 1.1 }}>{s.totalLostDays}</div>
+                    <div style={{ fontSize: '0.62rem', color: '#64748B', fontWeight: 800, marginTop: '3px', textTransform: 'uppercase' }}>dias perdidos</div>
+                  </div>
+                </div>
+
+                <div style={{ marginTop: '0.65rem', borderTop: '1px dashed #E2E8F0', paddingTop: '0.45rem', fontSize: '0.68rem', color: '#64748B', textAlign: 'center', fontWeight: 700, width: '100%' }}>
+                  média {s.avgPerMonth} acid/mês
                 </div>
               </motion.div>
             );
@@ -474,8 +496,67 @@ export const Dashboard: React.FC<DashboardProps> = ({
             <>
               {/* Monthly View Content */}
               <div className="panel-premium">
-                <h2 style={{textAlign: 'center', marginBottom: '0.5rem', fontWeight: 900, color: 'var(--text)'}}>Comparativo <span style={{color: 'var(--primary)'}}>Mensal</span></h2>
-                <p style={{textAlign: 'center', fontSize: '0.75rem', color: 'var(--text-muted)', marginBottom: '2rem'}}>Distribuição histórica de acidentes no {yearsLabel.noun} selecionado</p>
+                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1.25rem', flexWrap: 'wrap', gap: '1rem' }}>
+                  <div>
+                    <h2 style={{ margin: 0, fontWeight: 900, color: 'var(--text)', fontSize: '1.25rem' }}>
+                      Comparativo <span style={{ color: 'var(--primary)' }}>Mensal</span>
+                    </h2>
+                    <p style={{ margin: '0.25rem 0 0 0', fontSize: '0.75rem', color: 'var(--text-muted)' }}>
+                      {monthlyMetric === 'accidents' 
+                        ? `Distribuição histórica de acidentes no ${yearsLabel.noun} selecionado`
+                        : `Distribuição histórica de dias de afastamento no ${yearsLabel.noun} selecionado`}
+                    </p>
+                  </div>
+
+                  {/* Toggle: Acidentes por mês vs Dias de afastamento por mês */}
+                  <div style={{ display: 'inline-flex', background: '#F1F5F9', padding: '3px', borderRadius: '10px', border: '1px solid #E2E8F0', gap: '2px' }}>
+                    <button
+                      type="button"
+                      onClick={() => setMonthlyMetric('accidents')}
+                      style={{
+                        display: 'flex',
+                        alignItems: 'center',
+                        gap: '6px',
+                        padding: '0.45rem 0.85rem',
+                        borderRadius: '7px',
+                        border: 'none',
+                        background: monthlyMetric === 'accidents' ? '#FFFFFF' : 'transparent',
+                        color: monthlyMetric === 'accidents' ? 'var(--primary)' : 'var(--text-muted)',
+                        fontWeight: 800,
+                        fontSize: '0.75rem',
+                        cursor: 'pointer',
+                        boxShadow: monthlyMetric === 'accidents' ? '0 2px 6px rgba(0,0,0,0.08)' : 'none',
+                        transition: 'all 0.2s'
+                      }}
+                    >
+                      <AlertCircle size={14} />
+                      <span>Acidentes por Mês</span>
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => setMonthlyMetric('lostDays')}
+                      style={{
+                        display: 'flex',
+                        alignItems: 'center',
+                        gap: '6px',
+                        padding: '0.45rem 0.85rem',
+                        borderRadius: '7px',
+                        border: 'none',
+                        background: monthlyMetric === 'lostDays' ? '#FFFFFF' : 'transparent',
+                        color: monthlyMetric === 'lostDays' ? '#0284C7' : 'var(--text-muted)',
+                        fontWeight: 800,
+                        fontSize: '0.75rem',
+                        cursor: 'pointer',
+                        boxShadow: monthlyMetric === 'lostDays' ? '0 2px 6px rgba(0,0,0,0.08)' : 'none',
+                        transition: 'all 0.2s'
+                      }}
+                    >
+                      <Clock size={14} />
+                      <span>Dias de Afastamento</span>
+                    </button>
+                  </div>
+                </div>
+
                 <div style={{ height: 350, overflowX: 'auto', overflowY: 'hidden', paddingBottom: '1rem' }}>
                   <div style={{ 
                     minWidth: selectedYears.length > 2 ? `${selectedYears.length * 400}px` : '100%', 
@@ -484,12 +565,18 @@ export const Dashboard: React.FC<DashboardProps> = ({
                     <ResponsiveContainer width="100%" height="100%">
                       <BarChart data={chartData} margin={{ top: 25, right: 30, left: 0, bottom: 0 }}>
                         <XAxis dataKey="month" axisLine={false} tickLine={false} tick={{fontSize: 12, fill: '#64748B'}} />
-                        <YAxis axisLine={false} tickLine={false} tick={{fontSize: 12, fill: '#64748B'}} domain={[0, 'dataMax + 2']} />
+                        <YAxis axisLine={false} tickLine={false} tick={{fontSize: 12, fill: '#64748B'}} domain={[0, monthlyMetric === 'accidents' ? 'dataMax + 2' : 'dataMax + 5']} />
                         <Tooltip 
                           cursor={{fill: '#F1F5F9'}} 
                           contentStyle={{backgroundColor: '#FFFFFF', borderRadius: '12px', border: '1px solid #E2E8F0', boxShadow: '0 8px 20px rgba(0,0,0,0.1)'}} 
                           itemStyle={{color: '#0F172A', fontWeight: 600}} 
                           labelStyle={{color: '#0F172A', fontWeight: 800, marginBottom: '4px'}} 
+                          formatter={(value: any, name: any) => [
+                            monthlyMetric === 'accidents'
+                              ? `${value} acidente${Number(value) !== 1 ? 's' : ''}`
+                              : `${value} dia${Number(value) !== 1 ? 's' : ''} de afastamento`,
+                            `Ano ${name}`
+                          ]}
                         />
                         <Legend verticalAlign="top" align="center" iconType="circle" />
                         {selectedYears.map((year, idx) => {

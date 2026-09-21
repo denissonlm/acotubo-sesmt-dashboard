@@ -127,10 +127,14 @@ export const calculateStats = (accidents: Accident[], targetYears: number[]): Re
 
   targetYears.forEach(year => {
     const yearAccidents = accidents.filter(a => a.year === year);
-    const monthly: MonthlyStats[] = Array.from({ length: 12 }, (_, i) => ({
-      month: i + 1,
-      count: yearAccidents.filter(a => a.month === i + 1).length
-    }));
+    const monthly: MonthlyStats[] = Array.from({ length: 12 }, (_, i) => {
+      const monthAccidents = yearAccidents.filter(a => a.month === i + 1);
+      return {
+        month: i + 1,
+        count: monthAccidents.length,
+        lostDays: monthAccidents.reduce((sum, a) => sum + (a.lostDays || 0), 0)
+      };
+    });
 
     let monthsToConsider = 12;
     if (year === currentYear) {
@@ -140,12 +144,15 @@ export const calculateStats = (accidents: Accident[], targetYears: number[]): Re
     }
 
     const total = yearAccidents.length;
+    const totalLostDays = yearAccidents.reduce((sum, a) => sum + (a.lostDays || 0), 0);
     
     stats[year] = {
       year,
       total,
+      totalLostDays,
       monthly,
-      avgPerMonth: Number((total / monthsToConsider).toFixed(1))
+      avgPerMonth: Number((total / monthsToConsider).toFixed(1)),
+      avgLostDaysPerMonth: Number((totalLostDays / monthsToConsider).toFixed(1))
     };
   });
   

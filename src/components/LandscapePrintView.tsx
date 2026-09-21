@@ -348,11 +348,19 @@ export const LandscapePrintView: React.FC<LandscapePrintViewProps> = ({
         const s = stats[year];
         if (!s) return null;
         return (
-          <div key={year} className="year-card" style={{ background: '#FFF', borderLeft: '4px solid var(--primary)', display: 'flex', flexDirection: 'column', gap: '1px', padding: '0.35rem 0.55rem' }}>
-            <h3 style={{ margin: 0, color: '#64748B', fontWeight: 800 }}>{year}</h3>
-            <div className="count" style={{ lineHeight: 1, margin: '2px 0 1px 0' }}>{s.total}</div>
-            <div style={{ fontSize: '0.62rem', fontWeight: 800, color: '#94A3B8', textTransform: 'uppercase' }}>acidentes</div>
-            <div style={{ fontSize: '0.62rem', fontWeight: 900, color: '#475569', marginTop: '1px' }}>média {s.avgPerMonth}/mês</div>
+          <div key={year} className="year-card" style={{ background: '#FFF', borderLeft: '4px solid var(--primary)', display: 'flex', flexDirection: 'column', gap: '2px', padding: '0.4rem 0.5rem' }}>
+            <h3 style={{ margin: 0, color: '#64748B', fontWeight: 800, fontSize: '0.75rem', textAlign: 'center' }}>{year}</h3>
+            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '0.25rem', textAlign: 'center', marginTop: '2px' }}>
+              <div style={{ borderRight: '1px solid #E2E8F0', paddingRight: '0.25rem' }}>
+                <div style={{ fontSize: '1.25rem', fontWeight: 900, color: 'var(--primary)', lineHeight: 1 }}>{s.total}</div>
+                <div style={{ fontSize: '0.55rem', fontWeight: 800, color: '#94A3B8', textTransform: 'uppercase' }}>acd.</div>
+              </div>
+              <div style={{ paddingLeft: '0.25rem' }}>
+                <div style={{ fontSize: '1.25rem', fontWeight: 900, color: '#475569', lineHeight: 1 }}>{s.totalLostDays}</div>
+                <div style={{ fontSize: '0.55rem', fontWeight: 800, color: '#94A3B8', textTransform: 'uppercase' }}>dias</div>
+              </div>
+            </div>
+            <div style={{ fontSize: '0.55rem', fontWeight: 900, color: '#475569', marginTop: '4px', textAlign: 'center', borderTop: '1px dashed #E2E8F0', paddingTop: '2px' }}>média {s.avgPerMonth}/mês</div>
           </div>
         );
       })}
@@ -463,11 +471,18 @@ export const LandscapePrintView: React.FC<LandscapePrintViewProps> = ({
                 <div key={year} className="panel-premium" style={{ flex: 1, display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '0.45rem 1rem', borderLeft: '5px solid var(--primary)', background: '#FFF' }}>
                   <div>
                     <h3 style={{ margin: 0, color: '#64748B', fontWeight: 800, fontSize: '0.75rem' }}>ANO {year}</h3>
-                    <div style={{ fontSize: '0.58rem', fontWeight: 800, color: '#94A3B8', textTransform: 'uppercase', marginTop: '1px' }}>acidentes registrados</div>
+                    <div style={{ fontSize: '0.58rem', fontWeight: 800, color: '#94A3B8', textTransform: 'uppercase', marginTop: '1px' }}>méd {s.avgPerMonth}/mês</div>
                   </div>
-                  <div style={{ display: 'flex', alignItems: 'baseline', gap: '0.4rem' }}>
-                    <span style={{ fontSize: '1.85rem', fontWeight: 900, color: '#0F172A', lineHeight: 1 }}>{s.total}</span>
-                    <span style={{ fontSize: '0.7rem', fontWeight: 800, color: '#475569' }}>• méd. {s.avgPerMonth}/mês</span>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
+                    <div style={{ textAlign: 'center' }}>
+                      <div style={{ fontSize: '1.55rem', fontWeight: 900, color: 'var(--primary)', lineHeight: 1 }}>{s.total}</div>
+                      <div style={{ fontSize: '0.55rem', fontWeight: 800, color: '#94A3B8', textTransform: 'uppercase', marginTop: '2px' }}>acd.</div>
+                    </div>
+                    <div style={{ height: '28px', width: '1px', background: '#E2E8F0' }}></div>
+                    <div style={{ textAlign: 'center' }}>
+                      <div style={{ fontSize: '1.55rem', fontWeight: 900, color: '#475569', lineHeight: 1 }}>{s.totalLostDays}</div>
+                      <div style={{ fontSize: '0.55rem', fontWeight: 800, color: '#94A3B8', textTransform: 'uppercase', marginTop: '2px' }}>dias</div>
+                    </div>
                   </div>
                 </div>
               );
