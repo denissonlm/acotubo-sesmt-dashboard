@@ -5,7 +5,7 @@ import {
 import { 
   AlertCircle, TrendingUp, Calendar, ShieldCheck, Upload, Monitor, Gauge, 
   FileSpreadsheet, Clock, ChevronRight, ChevronLeft, ArrowLeft, ArrowUp, 
-  Users, ExternalLink, Layers, Key 
+  Users, ExternalLink, Key 
 } from 'lucide-react';
 import type { Accident } from '../types';
 import { calculateStats, generateInsights, generateTemporalInsights } from '../utils/dataLoader';
@@ -1500,17 +1500,17 @@ export const Dashboard: React.FC<DashboardProps> = ({
                 {/* 3. NÍVEL DIÁRIO (DRILL-DOWN) */}
                 {drillLevel === 'daily' && (
                   <div>
-                    <div style={{ height: 320, overflowX: 'auto', overflowY: 'hidden', paddingBottom: '0.5rem' }}>
-                      <div style={{ minWidth: '760px', height: '100%' }}>
+                    <div style={{ height: 280, overflow: 'hidden' }}>
+                      <div style={{ width: '100%', height: '100%' }}>
                         <ResponsiveContainer width="100%" height="100%">
                           <BarChart 
                             data={dailyChartData} 
-                            margin={{ top: 25, right: 15, left: -15, bottom: 0 }}
+                            margin={{ top: 20, right: 10, left: -20, bottom: 0 }}
                             onClick={handleDailyChartClick}
                             style={{ cursor: 'pointer' }}
                           >
-                            <XAxis dataKey="day" axisLine={false} tickLine={false} tick={{ fontSize: 11, fill: '#64748B', fontWeight: 700 }} />
-                            <YAxis axisLine={false} tickLine={false} tick={{ fontSize: 11, fill: '#64748B' }} allowDecimals={false} domain={[0, monthlyMetric === 'accidents' ? 'dataMax + 1' : 'dataMax + 5']} />
+                            <XAxis dataKey="day" axisLine={false} tickLine={false} tick={{ fontSize: 10, fill: '#64748B', fontWeight: 700 }} interval={0} />
+                            <YAxis axisLine={false} tickLine={false} tick={{ fontSize: 10, fill: '#64748B' }} allowDecimals={false} domain={[0, monthlyMetric === 'accidents' ? 'dataMax + 1' : 'dataMax + 5']} />
                             <Tooltip 
                               cursor={{ fill: '#F1F5F9' }}
                               content={({ active, payload }) => {
@@ -1561,7 +1561,7 @@ export const Dashboard: React.FC<DashboardProps> = ({
                             <Bar 
                               dataKey="value"
                               radius={[4, 4, 0, 0]}
-                              barSize={18}
+                              barSize={16}
                               cursor="pointer"
                               onClick={(data: any, barIndex: number) => {
                                 const d = data?.dayNum || data?.payload?.dayNum || (barIndex !== undefined && dailyChartData[barIndex]?.dayNum);
@@ -1572,21 +1572,14 @@ export const Dashboard: React.FC<DashboardProps> = ({
                               label={{ 
                                 position: 'top', 
                                 fill: '#475569', 
-                                fontSize: 10, 
+                                fontSize: 9.5, 
                                 fontWeight: 800,
                                 formatter: (val: any) => Number(val) > 0 ? val : ''
                               }}
                             >
                               {dailyChartData.map((entry) => {
-                                let fill = '#E2E8F0';
-                                if (entry.count > 0) {
-                                  if (entry.hasMultiple) {
-                                    fill = '#DC2626'; // Vermelho intenso para múltiplos acidentes no mesmo dia
-                                  } else {
-                                    fill = monthlyMetric === 'accidents' ? 'var(--primary)' : '#0284C7';
-                                  }
-                                }
-                                if (selectedDay === entry.dayNum) {
+                                let fill = entry.hasMultiple ? '#DC2626' : monthlyMetric === 'accidents' ? 'var(--primary)' : '#0284C7';
+                                if (selectedDay !== null && entry.dayNum === selectedDay) {
                                   fill = '#F59E0B'; // Âmbar para o dia filtrado
                                 }
                                 return (
@@ -1604,12 +1597,12 @@ export const Dashboard: React.FC<DashboardProps> = ({
                       </div>
                     </div>
 
-                    {/* Detalhamento dos Acidentados do Mês / Dia */}
-                    <div style={{ marginTop: '1rem', borderTop: '1px solid #E2E8F0', paddingTop: '1rem' }}>
-                      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '0.75rem', flexWrap: 'wrap', gap: '0.5rem' }}>
+                    {/* Detalhamento dos Acidentados do Mês / Dia - Layout Limpo sem Barra Horizontal */}
+                    <div style={{ marginTop: '0.75rem' }}>
+                      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '0.5rem', flexWrap: 'wrap', gap: '0.5rem' }}>
                         <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-                          <Users size={16} color="var(--primary)" />
-                          <h3 style={{ margin: 0, fontSize: '0.9rem', fontWeight: 900, color: '#0F172A' }}>
+                          <Users size={15} color="var(--primary)" />
+                          <h3 style={{ margin: 0, fontSize: '0.85rem', fontWeight: 900, color: '#0F172A' }}>
                             {selectedDay !== null 
                               ? `Colaboradores Acidentados no Dia ${String(selectedDay).padStart(2, '0')}/${String(drillMonth).padStart(2, '0')}/${drillYear}`
                               : `Colaboradores Acidentados em ${MONTH_NAMES[drillMonth - 1]} de ${drillYear}`}
@@ -1617,9 +1610,9 @@ export const Dashboard: React.FC<DashboardProps> = ({
                           <span style={{ 
                             background: monthAccidentsList.length > 0 ? '#FEF2F2' : '#F1F5F9', 
                             color: monthAccidentsList.length > 0 ? '#991B1B' : '#64748B', 
-                            fontSize: '0.7rem', 
+                            fontSize: '0.68rem', 
                             fontWeight: 900, 
-                            padding: '2px 8px', 
+                            padding: '1.5px 7px', 
                             borderRadius: '999px',
                             border: monthAccidentsList.length > 0 ? '1px solid #FECACA' : '1px solid #E2E8F0'
                           }}>
@@ -1635,9 +1628,9 @@ export const Dashboard: React.FC<DashboardProps> = ({
                               background: '#F1F5F9',
                               border: '1px solid #CBD5E1',
                               color: '#334155',
-                              fontSize: '0.72rem',
+                              fontSize: '0.7rem',
                               fontWeight: 800,
-                              padding: '3px 8px',
+                              padding: '2.5px 8px',
                               borderRadius: '6px',
                               cursor: 'pointer'
                             }}
@@ -1648,107 +1641,167 @@ export const Dashboard: React.FC<DashboardProps> = ({
                       </div>
 
                       {monthAccidentsList.length === 0 ? (
-                        <div style={{ padding: '1.25rem', textAlign: 'center', background: '#F8FAFC', borderRadius: '10px', color: '#64748B', fontSize: '0.8rem', fontWeight: 600 }}>
+                        <div style={{ padding: '1rem', textAlign: 'center', background: '#F8FAFC', borderRadius: '8px', color: '#64748B', fontSize: '0.75rem', fontWeight: 600 }}>
                           Nenhum acidente registrado para esta data com os filtros atuais.
                         </div>
                       ) : (
-                        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(280px, 1fr))', gap: '0.75rem', maxHeight: '280px', overflowY: 'auto', paddingRight: '4px' }}>
-                          {monthAccidentsList.map((acc, idx) => (
-                            <div
-                              key={acc.id || idx}
-                              style={{
-                                background: '#FFFFFF',
-                                border: '1px solid #E2E8F0',
-                                borderRadius: '10px',
-                                padding: '0.75rem',
-                                display: 'flex',
-                                flexDirection: 'column',
-                                gap: '6px',
-                                borderLeft: `4px solid ${acc.lostDays > 0 ? '#EF4444' : '#10B981'}`,
-                                boxShadow: '0 2px 4px rgba(0,0,0,0.03)'
-                              }}
-                            >
-                              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
-                                <div>
-                                  <div style={{ fontWeight: 900, fontSize: '0.85rem', color: '#0F172A' }}>{acc.employee}</div>
-                                  <div style={{ fontSize: '0.68rem', color: '#64748B', fontWeight: 700 }}>RE: {acc.re || 'N/A'} • {acc.role}</div>
-                                </div>
-                                <span style={{ 
-                                  fontSize: '0.65rem', 
-                                  fontWeight: 900, 
-                                  background: '#F1F5F9', 
-                                  padding: '2px 6px', 
-                                  borderRadius: '4px', 
-                                  color: '#334155' 
-                                }}>
-                                  {acc.date.toLocaleDateString('pt-BR')}
-                                </span>
-                              </div>
+                        <div style={{ 
+                          display: 'grid', 
+                          gridTemplateColumns: 'repeat(auto-fill, minmax(310px, 1fr))', 
+                          gap: '0.5rem', 
+                          maxHeight: '340px', 
+                          overflowY: 'auto', 
+                          paddingRight: '4px' 
+                        }}>
+                          {monthAccidentsList.map((acc, idx) => {
+                            const empName = acc.employee && acc.employee.trim() && acc.employee !== 'N/A' && acc.employee !== 'Não informado'
+                              ? acc.employee
+                              : (acc.re ? `Colaborador (RE: ${acc.re})` : `Ocorrência #${idx + 1}`);
 
-                              <div style={{ display: 'flex', alignItems: 'center', gap: '6px', fontSize: '0.72rem', color: '#475569' }}>
-                                <Layers size={13} color="#94A3B8" />
-                                <span>{acc.area} • {acc.division}</span>
-                              </div>
+                            const dateStr = (() => {
+                              const d = acc.date instanceof Date ? acc.date : new Date(acc.date);
+                              return !isNaN(d.getTime()) 
+                                ? d.toLocaleDateString('pt-BR') 
+                                : `${String(drillMonth).padStart(2, '0')}/${drillYear}`;
+                            })();
 
-                              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginTop: '4px', borderTop: '1px dashed #F1F5F9', paddingTop: '6px' }}>
-                                <div style={{ display: 'flex', gap: '4px' }}>
-                                  <span style={{
-                                    fontSize: '0.62rem',
-                                    fontWeight: 800,
-                                    padding: '2px 6px',
-                                    borderRadius: '4px',
-                                    background: acc.hasCat ? '#DCFCE7' : '#F1F5F9',
-                                    color: acc.hasCat ? '#15803D' : '#64748B'
+                            return (
+                              <div
+                                key={acc.id || idx}
+                                style={{
+                                  background: '#FFFFFF',
+                                  border: '1px solid #E2E8F0',
+                                  borderRadius: '8px',
+                                  padding: '0.5rem 0.7rem',
+                                  display: 'flex',
+                                  flexDirection: 'column',
+                                  gap: '3.5px',
+                                  borderLeft: `4px solid ${acc.lostDays > 0 ? '#B91C1C' : '#10B981'}`,
+                                  boxShadow: '0 1px 3px rgba(0,0,0,0.03)'
+                                }}
+                              >
+                                {/* Linha 1: Nome, RE e Data */}
+                                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: '6px' }}>
+                                  <div style={{ display: 'flex', alignItems: 'center', gap: '5px', minWidth: 0 }}>
+                                    <span style={{ fontWeight: 900, fontSize: '0.78rem', color: '#0F172A', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
+                                      {empName}
+                                    </span>
+                                    {acc.re && acc.re !== 'N/A' && (
+                                      <span style={{ fontSize: '0.62rem', color: '#64748B', fontWeight: 700, background: '#F1F5F9', padding: '1px 5px', borderRadius: '3px', flexShrink: 0 }}>
+                                        RE {acc.re}
+                                      </span>
+                                    )}
+                                  </div>
+                                  <span style={{ 
+                                    fontSize: '0.64rem', 
+                                    fontWeight: 800, 
+                                    background: '#F8FAFC', 
+                                    border: '1px solid #E2E8F0',
+                                    padding: '1px 5px', 
+                                    borderRadius: '4px', 
+                                    color: '#334155',
+                                    whiteSpace: 'nowrap',
+                                    flexShrink: 0
                                   }}>
-                                    {acc.hasCat ? 'CAT' : 'Sem CAT'}
-                                  </span>
-                                  <span style={{
-                                    fontSize: '0.62rem',
-                                    fontWeight: 800,
-                                    padding: '2px 6px',
-                                    borderRadius: '4px',
-                                    background: acc.unsafeAct ? '#FEF2F2' : '#F0FDF4',
-                                    color: acc.unsafeAct ? '#991B1B' : '#166534'
-                                  }}>
-                                    {acc.unsafeAct ? 'Ato Inseguro' : 'Condição'}
+                                    📅 {dateStr}
                                   </span>
                                 </div>
 
-                                <span style={{
-                                  fontSize: '0.75rem',
-                                  fontWeight: 900,
-                                  color: acc.lostDays > 0 ? '#EF4444' : '#10B981'
-                                }}>
-                                  {acc.lostDays > 0 ? `${acc.lostDays} dias afast.` : 'Sem afast.'}
-                                </span>
-                              </div>
+                                {/* Linha 2: Cargo, Área e Gestor */}
+                                <div style={{ display: 'flex', alignItems: 'center', gap: '5px', fontSize: '0.67rem', color: '#475569', flexWrap: 'wrap', lineHeight: 1.2 }}>
+                                  {acc.role && acc.role !== 'N/A' && (
+                                    <span style={{ fontWeight: 700, color: '#1E293B' }}>{acc.role}</span>
+                                  )}
+                                  {acc.role && acc.role !== 'N/A' && <span style={{ color: '#CBD5E1' }}>•</span>}
+                                  <span>{acc.area || 'Operacional'} ({acc.division || 'Geral'})</span>
+                                  {acc.manager && acc.manager !== 'N/A' && acc.manager !== 'Não informado' && (
+                                    <>
+                                      <span style={{ color: '#CBD5E1' }}>•</span>
+                                      <span style={{ color: '#64748B' }}>Gestor: {acc.manager}</span>
+                                    </>
+                                  )}
+                                </div>
 
-                              {acc.investigationLink && (
-                                <div style={{ marginTop: '2px', display: 'flex', justifyContent: 'flex-end' }}>
-                                  <a
-                                    href={acc.investigationLink}
-                                    target="_blank"
-                                    rel="noopener noreferrer"
-                                    style={{
-                                      display: 'inline-flex',
-                                      alignItems: 'center',
-                                      gap: '3px',
-                                      fontSize: '0.65rem',
-                                      color: '#2563EB',
+                                {/* Linha 3: Tipo e Parte Atingida (se houver) */}
+                                {(acc.type || acc.partAffected) && (
+                                  <div style={{ display: 'flex', alignItems: 'center', gap: '6px', fontSize: '0.65rem', color: '#64748B', flexWrap: 'wrap', lineHeight: 1.2 }}>
+                                    {acc.type && (
+                                      <span>Tipo: <strong style={{ color: '#334155' }}>{acc.type}</strong></span>
+                                    )}
+                                    {acc.type && acc.partAffected && <span style={{ color: '#CBD5E1' }}>•</span>}
+                                    {acc.partAffected && (
+                                      <span>Parte: <strong style={{ color: '#334155' }}>{acc.partAffected}</strong></span>
+                                    )}
+                                  </div>
+                                )}
+
+                                {/* Linha 4: Badges e Afastamento em Linha Única Achatada */}
+                                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginTop: '1px', borderTop: '1px dashed #F1F5F9', paddingTop: '3px', flexWrap: 'wrap', gap: '4px' }}>
+                                  <div style={{ display: 'flex', alignItems: 'center', gap: '3.5px', flexWrap: 'wrap' }}>
+                                    <span style={{
+                                      fontSize: '0.6rem',
                                       fontWeight: 800,
-                                      textDecoration: 'none',
-                                      background: '#EFF6FF',
-                                      padding: '2px 6px',
+                                      padding: '1px 5px',
+                                      borderRadius: '3px',
+                                      background: acc.hasCat ? '#DCFCE7' : '#F1F5F9',
+                                      color: acc.hasCat ? '#15803D' : '#64748B',
+                                      border: acc.hasCat ? '1px solid #BBF7D0' : '1px solid #E2E8F0'
+                                    }}>
+                                      {acc.hasCat ? 'CAT' : 'Sem CAT'}
+                                    </span>
+                                    <span style={{
+                                      fontSize: '0.6rem',
+                                      fontWeight: 800,
+                                      padding: '1px 5px',
+                                      borderRadius: '3px',
+                                      background: acc.unsafeAct ? '#FEF2F2' : '#F0FDF4',
+                                      color: acc.unsafeAct ? '#991B1B' : '#166534',
+                                      border: acc.unsafeAct ? '1px solid #FECACA' : '1px solid #DCFCE7'
+                                    }}>
+                                      {acc.unsafeAct ? 'Ato Inseguro' : 'Condição'}
+                                    </span>
+                                  </div>
+
+                                  <div style={{ display: 'flex', alignItems: 'center', gap: '5px' }}>
+                                    <span style={{
+                                      fontSize: '0.68rem',
+                                      fontWeight: 900,
+                                      color: acc.lostDays > 0 ? '#B91C1C' : '#10B981',
+                                      background: acc.lostDays > 0 ? '#FEF2F2' : '#F0FDF4',
+                                      padding: '1px 6px',
                                       borderRadius: '4px',
-                                      border: '1px solid #BFDBFE'
-                                    }}
-                                  >
-                                    <ExternalLink size={10} /> Investigação
-                                  </a>
+                                      border: acc.lostDays > 0 ? '1px solid #FECACA' : '1px solid #BBF7D0'
+                                    }}>
+                                      {acc.lostDays > 0 ? `${acc.lostDays} dias afast.` : 'Sem afast.'}
+                                    </span>
+
+                                    {acc.investigationLink && (
+                                      <a
+                                        href={acc.investigationLink}
+                                        target="_blank"
+                                        rel="noopener noreferrer"
+                                        style={{
+                                          display: 'inline-flex',
+                                          alignItems: 'center',
+                                          gap: '3px',
+                                          fontSize: '0.62rem',
+                                          color: '#1D4ED8',
+                                          fontWeight: 800,
+                                          textDecoration: 'none',
+                                          background: '#EFF6FF',
+                                          padding: '1px 5px',
+                                          borderRadius: '3px',
+                                          border: '1px solid #BFDBFE'
+                                        }}
+                                      >
+                                        <ExternalLink size={9} /> Investigação
+                                      </a>
+                                    )}
+                                  </div>
                                 </div>
-                              )}
-                            </div>
-                          ))}
+                              </div>
+                            );
+                          })}
                         </div>
                       )}
                     </div>
