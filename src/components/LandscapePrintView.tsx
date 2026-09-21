@@ -102,24 +102,6 @@ export const LandscapePrintView: React.FC<LandscapePrintViewProps> = ({
     }
   ], [filteredAccidents]);
 
-  const occurrenceInsights = useMemo(() => [
-    {
-      title: 'Total de Ocorrências',
-      text: `${filteredAccidents.length} acidentes registrados no período trienal analisado.`,
-      type: 'info' as const
-    },
-    {
-      title: 'Dias Perdidos',
-      text: `${filteredAccidents.reduce((sum, a) => sum + a.lostDays, 0)} dias totais de afastamento acumulados no período.`,
-      type: 'danger' as const
-    },
-    {
-      title: 'Gravidade de Eventos',
-      text: `${Math.round((filteredAccidents.filter(a => a.lostDays > 0).length / Math.max(filteredAccidents.length, 1)) * 100)}% dos acidentes resultaram em afastamento.`,
-      type: 'warning' as const
-    }
-  ], [filteredAccidents]);
-
   const reportTitle = useMemo(() => {
     const yearsCount = selectedYears.length;
     switch (yearsCount) {
@@ -145,8 +127,8 @@ export const LandscapePrintView: React.FC<LandscapePrintViewProps> = ({
     const sorted = [...filteredAccidents].sort((a, b) => b.date.getTime() - a.date.getTime());
     if (sorted.length === 0) return [[]];
     const chunks: typeof filteredAccidents[] = [];
-    for (let i = 0; i < sorted.length; i += 12) {
-      chunks.push(sorted.slice(i, i + 12));
+    for (let i = 0; i < sorted.length; i += 15) {
+      chunks.push(sorted.slice(i, i + 15));
     }
     return chunks;
   }, [filteredAccidents]);
@@ -1438,57 +1420,97 @@ export const LandscapePrintView: React.FC<LandscapePrintViewProps> = ({
               </div>
             </header>
 
-            <div className="grid-main">
-              {renderLeftSidebar()}
-
-              <main className="content-area">
-                <div className="panel-premium" style={{ height: '490px', display: 'flex', flexDirection: 'column' }}>
-                  <h3 style={{ fontSize: '0.85rem', fontWeight: 900, margin: '0 0 0.6rem 0' }}>Detalhamento de Acidentes e Afastamentos (Parte {chunkIdx + 1})</h3>
-                  <div style={{ flex: 1, overflow: 'hidden' }}>
-                    <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '0.75rem', whiteSpace: 'nowrap' }}>
-                      <thead>
-                        <tr style={{ textAlign: 'left', background: '#F8FAFC', borderBottom: '1px solid #E2E8F0' }}>
-                          <th style={{ padding: '6px 8px', fontWeight: 900, width: '75px' }}>DATA</th>
-                          <th style={{ padding: '6px 8px', fontWeight: 900 }}>COLABORADOR</th>
-                          <th style={{ padding: '6px 8px', fontWeight: 900 }}>CARGO</th>
-                          <th style={{ padding: '6px 8px', fontWeight: 900 }}>ÁREA</th>
-                          <th style={{ padding: '6px 8px', fontWeight: 900 }}>TIPO</th>
-                          <th style={{ padding: '6px 8px', fontWeight: 900, width: '50px', textAlign: 'center' }}>AFAS.</th>
-                        </tr>
-                      </thead>
-                      <tbody>
-                        {chunk.length === 0 ? (
-                          <tr>
-                            <td colSpan={6} style={{ textAlign: 'center', padding: '2rem', color: '#64748B' }}>Nenhum evento registrado.</td>
-                          </tr>
-                        ) : (
-                          chunk.map((a, idx) => (
-                            <tr key={idx} style={{ borderBottom: '1px solid #F1F5F9', height: '28px' }}>
-                              <td style={{ padding: '4px 8px', fontWeight: 700 }}>{a.date.toLocaleDateString('pt-BR')}</td>
-                              <td style={{ padding: '4px 8px', fontWeight: 800 }}>
-                                {a.employee}
-                                {employeeCounts[a.employee] > 1 && (
-                                  <span style={{ marginLeft: '6px', background: '#FEE2E2', color: '#B91C1C', padding: '1.5px 4.5px', borderRadius: '4px', fontSize: '8px', fontWeight: 950 }}>
-                                    {employeeCounts[a.employee]}x
-                                  </span>
-                                )}
-                              </td>
-                              <td style={{ padding: '4px 8px', color: '#475569' }}>{a.role}</td>
-                              <td style={{ padding: '4px 8px', color: '#475569' }}>{a.area}</td>
-                              <td style={{ padding: '4px 8px' }}>{a.type}</td>
-                              <td style={{ padding: '4px 8px', textAlign: 'center', fontWeight: 900, color: a.lostDays > 0 ? '#B91C1C' : '#475569' }}>
-                                {a.lostDays > 0 ? `${a.lostDays}d` : '0d'}
-                              </td>
-                            </tr>
-                          ))
-                        )}
-                      </tbody>
-                    </table>
-                  </div>
+            <div style={{ flex: 1, display: 'flex', flexDirection: 'column', marginTop: '0.75rem', minHeight: 0 }}>
+              <div className="panel-premium" style={{ flex: 1, display: 'flex', flexDirection: 'column', minHeight: 0, padding: '0.85rem 1.25rem' }}>
+                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '0.65rem' }}>
+                  <h3 style={{ fontSize: '0.9rem', fontWeight: 900, margin: 0, color: '#0F172A', display: 'flex', alignItems: 'center', gap: '8px' }}>
+                    <span style={{ width: '8px', height: '8px', borderRadius: '50%', background: '#6366F1', display: 'inline-block' }}></span>
+                    Detalhamento de Acidentes e Afastamentos (Parte {chunkIdx + 1} de {occurrenceChunks.length})
+                  </h3>
+                  <span style={{ fontSize: '0.7rem', color: '#475569', fontWeight: 700, background: '#F8FAFC', border: '1px solid #E2E8F0', padding: '3px 9px', borderRadius: '6px' }}>
+                    Ocorrências {chunkIdx * 15 + 1} a {Math.min((chunkIdx + 1) * 15, filteredAccidents.length)} de {filteredAccidents.length}
+                  </span>
                 </div>
-              </main>
 
-              {renderRightSidebar('Detalhamento de', 'Casos', 'Resumo de dias de afastamento e gravidade', occurrenceInsights)}
+                <div style={{ flex: 1, overflow: 'hidden', minHeight: 0 }}>
+                  <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '0.75rem', whiteSpace: 'nowrap' }}>
+                    <thead>
+                      <tr style={{ textAlign: 'left', background: '#F8FAFC', borderBottom: '2px solid #E2E8F0' }}>
+                        <th style={{ padding: '6px 8px', fontWeight: 900, width: '75px', color: '#475569' }}>DATA</th>
+                        <th style={{ padding: '6px 8px', fontWeight: 900, width: '200px', color: '#475569' }}>COLABORADOR</th>
+                        <th style={{ padding: '6px 8px', fontWeight: 900, color: '#475569' }}>CARGO</th>
+                        <th style={{ padding: '6px 8px', fontWeight: 900, width: '110px', color: '#475569' }}>DIVISÃO</th>
+                        <th style={{ padding: '6px 8px', fontWeight: 900, width: '110px', color: '#475569' }}>ÁREA / SETOR</th>
+                        <th style={{ padding: '6px 8px', fontWeight: 900, width: '85px', color: '#475569' }}>TIPO</th>
+                        <th style={{ padding: '6px 8px', fontWeight: 900, color: '#475569' }}>PARTE ATINGIDA</th>
+                        <th style={{ padding: '6px 8px', fontWeight: 900, width: '55px', textAlign: 'center', color: '#475569' }}>CAT</th>
+                        <th style={{ padding: '6px 8px', fontWeight: 900, width: '65px', textAlign: 'center', color: '#475569' }}>AFAST.</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {chunk.length === 0 ? (
+                        <tr>
+                          <td colSpan={9} style={{ textAlign: 'center', padding: '2.5rem', color: '#64748B' }}>Nenhum evento registrado.</td>
+                        </tr>
+                      ) : (
+                        chunk.map((a, idx) => (
+                          <tr key={idx} style={{ borderBottom: '1px solid #F1F5F9', height: '29px' }}>
+                            <td style={{ padding: '4px 8px', fontWeight: 700, color: '#0F172A' }}>
+                              {a.date.toLocaleDateString('pt-BR')}
+                            </td>
+                            <td style={{ padding: '4px 8px', fontWeight: 800, color: '#0F172A' }}>
+                              {a.employee}
+                              {employeeCounts[a.employee] > 1 && (
+                                <span style={{ marginLeft: '6px', background: '#FEE2E2', color: '#B91C1C', padding: '1.5px 4.5px', borderRadius: '4px', fontSize: '8px', fontWeight: 950 }}>
+                                  {employeeCounts[a.employee]}x
+                                </span>
+                              )}
+                            </td>
+                            <td style={{ padding: '4px 8px', color: '#475569' }}>{a.role || 'N/A'}</td>
+                            <td style={{ padding: '4px 8px', color: '#475569' }}>{a.division}</td>
+                            <td style={{ padding: '4px 8px', color: '#475569' }}>{a.area}</td>
+                            <td style={{ padding: '4px 8px', color: '#334155' }}>
+                              <span style={{ 
+                                padding: '2px 6px', 
+                                borderRadius: '4px', 
+                                fontSize: '0.68rem', 
+                                fontWeight: 700,
+                                background: a.type?.toLowerCase().includes('trajeto') ? '#F1F5F9' : '#FEF2F2',
+                                color: a.type?.toLowerCase().includes('trajeto') ? '#475569' : '#991B1B'
+                              }}>
+                                {a.type || 'TÍPICO'}
+                              </span>
+                            </td>
+                            <td style={{ padding: '4px 8px', color: '#475569' }}>{a.partAffected || '—'}</td>
+                            <td style={{ padding: '4px 8px', textAlign: 'center' }}>
+                              <span style={{ 
+                                padding: '1.5px 5px', 
+                                borderRadius: '4px', 
+                                fontSize: '0.66rem', 
+                                fontWeight: 800,
+                                background: a.hasCat ? '#ECFDF5' : '#F8FAFC',
+                                color: a.hasCat ? '#059669' : '#94A3B8',
+                                border: '1px solid ' + (a.hasCat ? '#A7F3D0' : '#E2E8F0')
+                              }}>
+                                {a.hasCat ? (a.cat && a.cat.length > 3 ? a.cat : 'SIM') : 'NÃO'}
+                              </span>
+                            </td>
+                            <td style={{ padding: '4px 8px', textAlign: 'center', fontWeight: 900, color: a.lostDays > 0 ? '#B91C1C' : '#64748B' }}>
+                              {a.lostDays > 0 ? (
+                                <span style={{ background: '#FEE2E2', color: '#B91C1C', padding: '1.5px 5px', borderRadius: '4px', fontSize: '0.7rem' }}>
+                                  {a.lostDays}d
+                                </span>
+                              ) : (
+                                <span style={{ color: '#94A3B8', fontSize: '0.7rem' }}>0d</span>
+                              )}
+                            </td>
+                          </tr>
+                        ))
+                      )}
+                    </tbody>
+                  </table>
+                </div>
+              </div>
             </div>
 
             <footer style={{ display: 'flex', justifyContent: 'space-between', borderTop: '1px solid #E2E8F0', paddingTop: '0.4rem', fontSize: '0.55rem', color: '#94A3B8', fontWeight: 800 }}>
