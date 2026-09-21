@@ -1,8 +1,12 @@
 import React, { useMemo, useState } from 'react';
 import { 
-  BarChart, Bar, XAxis, YAxis, Tooltip, Legend, ResponsiveContainer
+  BarChart, Bar, Cell, XAxis, YAxis, Tooltip, Legend, ResponsiveContainer
 } from 'recharts';
-import { AlertCircle, TrendingUp, Calendar, ShieldCheck, Upload, Monitor, Gauge, FileSpreadsheet, Clock } from 'lucide-react';
+import { 
+  AlertCircle, TrendingUp, Calendar, ShieldCheck, Upload, Monitor, Gauge, 
+  FileSpreadsheet, Clock, ChevronRight, ArrowLeft, ArrowUp, 
+  Users, ExternalLink, Layers 
+} from 'lucide-react';
 import type { Accident } from '../types';
 import { calculateStats, generateInsights, generateTemporalInsights } from '../utils/dataLoader';
 import { motion } from 'framer-motion';
@@ -49,6 +53,10 @@ export const Dashboard: React.FC<DashboardProps> = ({
   const [activeTab, setActiveTab] = useState<'monthly' | 'temporal' | 'safety' | 'breakdown' | 'frequency_severity'>('monthly');
   const [isBreakdownModalOpen, setIsBreakdownModalOpen] = useState(false);
   const [monthlyMetric, setMonthlyMetric] = useState<'accidents' | 'lostDays'>('accidents');
+  const [drillLevel, setDrillLevel] = useState<'yearly' | 'monthly' | 'daily'>('monthly');
+  const [drillYear, setDrillYear] = useState<number>(() => selectedYears[0] || new Date().getFullYear());
+  const [drillMonth, setDrillMonth] = useState<number>(() => new Date().getMonth() + 1);
+  const [selectedDay, setSelectedDay] = useState<number | null>(null);
 
   const filteredAccidents = useMemo(() => {
     return accidents.filter(a => {
@@ -112,9 +120,27 @@ export const Dashboard: React.FC<DashboardProps> = ({
   const uniqueManagers = useMemo(() => Array.from(new Set(accidents.map(a => a.manager))).sort(), [accidents]);
   const uniqueAreas = useMemo(() => Array.from(new Set(accidents.map(a => a.area))).sort(), [accidents]);
 
+  const yearlyChartData = useMemo(() => {
+    const years = [...selectedYears].sort((a, b) => a - b);
+    return years.map(year => {
+      const s = stats[year];
+      return {
+        year: String(year),
+        yearNum: year,
+        value: monthlyMetric === 'accidents' ? (s?.total || 0) : (s?.totalLostDays || 0),
+        total: s?.total || 0,
+        totalLostDays: s?.totalLostDays || 0,
+        avgPerMonth: s?.avgPerMonth || 0
+      };
+    });
+  }, [selectedYears, stats, monthlyMetric]);
+
   const chartData = useMemo(() => {
     return Array.from({ length: 12 }, (_, i) => {
-      const monthData: any = { month: MONTH_NAMES[i] };
+      const monthData: any = { 
+        month: MONTH_NAMES[i],
+        monthIndex: i + 1 
+      };
       selectedYears.forEach(year => {
         const m = stats[year]?.monthly[i];
         monthData[year] = monthlyMetric === 'accidents' 
@@ -124,6 +150,35 @@ export const Dashboard: React.FC<DashboardProps> = ({
       return monthData;
     });
   }, [stats, selectedYears, monthlyMetric]);
+
+  const dailyChartData = useMemo(() => {
+    const numDays = new Date(drillYear, drillMonth, 0).getDate();
+    return Array.from({ length: numDays }, (_, i) => {
+      const dayNum = i + 1;
+      const dayAccidents = filteredAccidents.filter(a => {
+        return a.year === drillYear && a.month === drillMonth && a.date.getDate() === dayNum;
+      });
+      const count = dayAccidents.length;
+      const lostDays = dayAccidents.reduce((sum, a) => sum + (a.lostDays || 0), 0);
+      return {
+        day: String(dayNum).padStart(2, '0'),
+        dayNum,
+        value: monthlyMetric === 'accidents' ? count : lostDays,
+        count,
+        lostDays,
+        accidents: dayAccidents,
+        hasMultiple: count > 1
+      };
+    });
+  }, [filteredAccidents, drillYear, drillMonth, monthlyMetric]);
+
+  const monthAccidentsList = useMemo(() => {
+    const list = filteredAccidents.filter(a => a.year === drillYear && a.month === drillMonth);
+    if (selectedDay !== null) {
+      return list.filter(a => a.date.getDate() === selectedDay);
+    }
+    return [...list].sort((a, b) => a.date.getDate() - b.date.getDate());
+  }, [filteredAccidents, drillYear, drillMonth, selectedDay]);
 
   const getHeatmapColor = (count: number) => {
     if (count === 0) return '#F1F5F9';
@@ -494,108 +549,627 @@ export const Dashboard: React.FC<DashboardProps> = ({
         <main className="content-area">
           {activeTab === 'monthly' ? (
             <>
-              {/* Monthly View Content */}
+              {/* Monthly View Content with Drill-Up & Drill-Down */}
               <div className="panel-premium">
-                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1.25rem', flexWrap: 'wrap', gap: '1rem' }}>
+                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '1.25rem', flexWrap: 'wrap', gap: '1rem' }}>
                   <div>
+                    {/* Breadcrumbs de Navegação Multinível */}
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '6px', fontSize: '0.75rem', fontWeight: 800, marginBottom: '6px' }}>
+                      <button
+                        type="button"
+                        onClick={() => { setDrillLevel('yearly'); setSelectedDay(null); }}
+                        style={{
+                          background: drillLevel === 'yearly' ? 'rgba(185, 28, 28, 0.1)' : 'transparent',
+                          color: drillLevel === 'yearly' ? 'var(--primary)' : '#64748B',
+                          border: 'none',
+                          cursor: 'pointer',
+                          padding: '3px 8px',
+                          borderRadius: '6px',
+                          fontWeight: drillLevel === 'yearly' ? 900 : 700,
+                          transition: 'all 0.2s'
+                        }}
+                      >
+                        Visão Anual
+                      </button>
+                      <ChevronRight size={13} color="#94A3B8" />
+                      <button
+                        type="button"
+                        onClick={() => { setDrillLevel('monthly'); setSelectedDay(null); }}
+                        style={{
+                          background: drillLevel === 'monthly' ? 'rgba(185, 28, 28, 0.1)' : 'transparent',
+                          color: drillLevel === 'monthly' ? 'var(--primary)' : '#64748B',
+                          border: 'none',
+                          cursor: 'pointer',
+                          padding: '3px 8px',
+                          borderRadius: '6px',
+                          fontWeight: drillLevel === 'monthly' ? 900 : 700,
+                          transition: 'all 0.2s'
+                        }}
+                      >
+                        Visão Mensal
+                      </button>
+                      {drillLevel === 'daily' && (
+                        <>
+                          <ChevronRight size={13} color="#94A3B8" />
+                          <span
+                            style={{
+                              background: 'rgba(185, 28, 28, 0.1)',
+                              color: 'var(--primary)',
+                              padding: '3px 8px',
+                              borderRadius: '6px',
+                              fontWeight: 900
+                            }}
+                          >
+                            Diário ({MONTH_NAMES[drillMonth - 1]}/{drillYear})
+                          </span>
+                        </>
+                      )}
+                    </div>
+
                     <h2 style={{ margin: 0, fontWeight: 900, color: 'var(--text)', fontSize: '1.25rem' }}>
-                      Comparativo <span style={{ color: 'var(--primary)' }}>Mensal</span>
+                      {drillLevel === 'yearly' && (
+                        <>Comparativo <span style={{ color: 'var(--primary)' }}>Anual</span> (Drill-Up)</>
+                      )}
+                      {drillLevel === 'monthly' && (
+                        <>Comparativo <span style={{ color: 'var(--primary)' }}>Mensal</span></>
+                      )}
+                      {drillLevel === 'daily' && (
+                        <>Detalhamento <span style={{ color: 'var(--primary)' }}>Diário</span> • {MONTH_NAMES[drillMonth - 1]} de {drillYear}</>
+                      )}
                     </h2>
                     <p style={{ margin: '0.25rem 0 0 0', fontSize: '0.75rem', color: 'var(--text-muted)' }}>
-                      {monthlyMetric === 'accidents' 
-                        ? `Distribuição histórica de acidentes no ${yearsLabel.noun} selecionado`
-                        : `Distribuição histórica de dias de afastamento no ${yearsLabel.noun} selecionado`}
+                      {drillLevel === 'yearly' && (
+                        monthlyMetric === 'accidents'
+                          ? 'Volume total consolidado de acidentes por ano • Clique em um ano para abrir os meses'
+                          : 'Total consolidado de dias de afastamento por ano • Clique em um ano para abrir os meses'
+                      )}
+                      {drillLevel === 'monthly' && (
+                        monthlyMetric === 'accidents' 
+                          ? `Distribuição mensal de acidentes no ${yearsLabel.noun} selecionado • Clique em uma barra para detalhar os dias`
+                          : `Distribuição mensal de dias de afastamento no ${yearsLabel.noun} selecionado • Clique em uma barra para detalhar os dias`
+                      )}
+                      {drillLevel === 'daily' && (
+                        monthlyMetric === 'accidents'
+                          ? `Ocorrências dia a dia em ${MONTH_NAMES[drillMonth - 1]}/${drillYear} • Clique em um dia para inspecionar os colaboradores`
+                          : `Dias de afastamento dia a dia em ${MONTH_NAMES[drillMonth - 1]}/${drillYear} • Clique em um dia para inspecionar os colaboradores`
+                      )}
                     </p>
                   </div>
 
-                  {/* Toggle: Acidentes por mês vs Dias de afastamento por mês */}
-                  <div style={{ display: 'inline-flex', background: '#F1F5F9', padding: '3px', borderRadius: '10px', border: '1px solid #E2E8F0', gap: '2px' }}>
-                    <button
-                      type="button"
-                      onClick={() => setMonthlyMetric('accidents')}
-                      style={{
-                        display: 'flex',
-                        alignItems: 'center',
-                        gap: '6px',
-                        padding: '0.45rem 0.85rem',
-                        borderRadius: '7px',
-                        border: 'none',
-                        background: monthlyMetric === 'accidents' ? '#FFFFFF' : 'transparent',
-                        color: monthlyMetric === 'accidents' ? 'var(--primary)' : 'var(--text-muted)',
-                        fontWeight: 800,
-                        fontSize: '0.75rem',
-                        cursor: 'pointer',
-                        boxShadow: monthlyMetric === 'accidents' ? '0 2px 6px rgba(0,0,0,0.08)' : 'none',
-                        transition: 'all 0.2s'
-                      }}
-                    >
-                      <AlertCircle size={14} />
-                      <span>Acidentes por Mês</span>
-                    </button>
-                    <button
-                      type="button"
-                      onClick={() => setMonthlyMetric('lostDays')}
-                      style={{
-                        display: 'flex',
-                        alignItems: 'center',
-                        gap: '6px',
-                        padding: '0.45rem 0.85rem',
-                        borderRadius: '7px',
-                        border: 'none',
-                        background: monthlyMetric === 'lostDays' ? '#FFFFFF' : 'transparent',
-                        color: monthlyMetric === 'lostDays' ? '#0284C7' : 'var(--text-muted)',
-                        fontWeight: 800,
-                        fontSize: '0.75rem',
-                        cursor: 'pointer',
-                        boxShadow: monthlyMetric === 'lostDays' ? '0 2px 6px rgba(0,0,0,0.08)' : 'none',
-                        transition: 'all 0.2s'
-                      }}
-                    >
-                      <Clock size={14} />
-                      <span>Dias de Afastamento</span>
-                    </button>
+                  {/* Controles do Cabeçalho: Navegação Drill & Toggle Métrica */}
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '0.6rem', flexWrap: 'wrap' }}>
+                    {drillLevel === 'monthly' && (
+                      <button
+                        type="button"
+                        onClick={() => { setDrillLevel('yearly'); setSelectedDay(null); }}
+                        title="Subir para visão comparativa entre anos"
+                        style={{
+                          display: 'flex',
+                          alignItems: 'center',
+                          gap: '5px',
+                          padding: '0.45rem 0.75rem',
+                          borderRadius: '8px',
+                          border: '1px solid #CBD5E1',
+                          background: '#FFFFFF',
+                          color: '#475569',
+                          fontWeight: 800,
+                          fontSize: '0.74rem',
+                          cursor: 'pointer',
+                          transition: 'all 0.2s'
+                        }}
+                      >
+                        <ArrowUp size={13} />
+                        <span>Comparar Anos (Drill Up)</span>
+                      </button>
+                    )}
+
+                    {drillLevel === 'yearly' && (
+                      <button
+                        type="button"
+                        onClick={() => { setDrillLevel('monthly'); setSelectedDay(null); }}
+                        title="Descer para visão comparativa entre meses"
+                        style={{
+                          display: 'flex',
+                          alignItems: 'center',
+                          gap: '5px',
+                          padding: '0.45rem 0.75rem',
+                          borderRadius: '8px',
+                          border: '1px solid #CBD5E1',
+                          background: '#FFFFFF',
+                          color: '#475569',
+                          fontWeight: 800,
+                          fontSize: '0.74rem',
+                          cursor: 'pointer',
+                          transition: 'all 0.2s'
+                        }}
+                      >
+                        <ArrowLeft size={13} />
+                        <span>Voltar aos Meses</span>
+                      </button>
+                    )}
+
+                    {drillLevel === 'daily' && (
+                      <div style={{ display: 'flex', alignItems: 'center', gap: '0.4rem' }}>
+                        <select
+                          value={drillMonth}
+                          onChange={(e) => { setDrillMonth(Number(e.target.value)); setSelectedDay(null); }}
+                          style={{
+                            padding: '0.4rem 0.55rem',
+                            borderRadius: '8px',
+                            border: '1px solid #CBD5E1',
+                            background: '#FFFFFF',
+                            color: '#1E293B',
+                            fontWeight: 800,
+                            fontSize: '0.74rem',
+                            cursor: 'pointer'
+                          }}
+                        >
+                          {MONTH_NAMES.map((m, idx) => (
+                            <option key={m} value={idx + 1}>{m}</option>
+                          ))}
+                        </select>
+
+                        <select
+                          value={drillYear}
+                          onChange={(e) => { setDrillYear(Number(e.target.value)); setSelectedDay(null); }}
+                          style={{
+                            padding: '0.4rem 0.55rem',
+                            borderRadius: '8px',
+                            border: '1px solid #CBD5E1',
+                            background: '#FFFFFF',
+                            color: '#1E293B',
+                            fontWeight: 800,
+                            fontSize: '0.74rem',
+                            cursor: 'pointer'
+                          }}
+                        >
+                          {allAvailableYears.map(y => (
+                            <option key={y} value={y}>{y}</option>
+                          ))}
+                        </select>
+
+                        <button
+                          type="button"
+                          onClick={() => { setDrillLevel('monthly'); setSelectedDay(null); }}
+                          title="Voltar para a visão mensal"
+                          style={{
+                            display: 'flex',
+                            alignItems: 'center',
+                            gap: '5px',
+                            padding: '0.45rem 0.75rem',
+                            borderRadius: '8px',
+                            border: '1px solid #CBD5E1',
+                            background: '#FFFFFF',
+                            color: '#475569',
+                            fontWeight: 800,
+                            fontSize: '0.74rem',
+                            cursor: 'pointer',
+                            transition: 'all 0.2s'
+                          }}
+                        >
+                          <ArrowLeft size={13} />
+                          <span>Voltar aos Meses</span>
+                        </button>
+                      </div>
+                    )}
+
+                    {/* Toggle: Acidentes vs Dias de afastamento */}
+                    <div style={{ display: 'inline-flex', background: '#F1F5F9', padding: '3px', borderRadius: '10px', border: '1px solid #E2E8F0', gap: '2px' }}>
+                      <button
+                        type="button"
+                        onClick={() => setMonthlyMetric('accidents')}
+                        style={{
+                          display: 'flex',
+                          alignItems: 'center',
+                          gap: '6px',
+                          padding: '0.45rem 0.85rem',
+                          borderRadius: '7px',
+                          border: 'none',
+                          background: monthlyMetric === 'accidents' ? '#FFFFFF' : 'transparent',
+                          color: monthlyMetric === 'accidents' ? 'var(--primary)' : 'var(--text-muted)',
+                          fontWeight: 800,
+                          fontSize: '0.75rem',
+                          cursor: 'pointer',
+                          boxShadow: monthlyMetric === 'accidents' ? '0 2px 6px rgba(0,0,0,0.08)' : 'none',
+                          transition: 'all 0.2s'
+                        }}
+                      >
+                        <AlertCircle size={14} />
+                        <span>
+                          {drillLevel === 'yearly' ? 'Total Acidentes' : drillLevel === 'daily' ? 'Acidentes/Dia' : 'Acidentes por Mês'}
+                        </span>
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => setMonthlyMetric('lostDays')}
+                        style={{
+                          display: 'flex',
+                          alignItems: 'center',
+                          gap: '6px',
+                          padding: '0.45rem 0.85rem',
+                          borderRadius: '7px',
+                          border: 'none',
+                          background: monthlyMetric === 'lostDays' ? '#FFFFFF' : 'transparent',
+                          color: monthlyMetric === 'lostDays' ? '#0284C7' : 'var(--text-muted)',
+                          fontWeight: 800,
+                          fontSize: '0.75rem',
+                          cursor: 'pointer',
+                          boxShadow: monthlyMetric === 'lostDays' ? '0 2px 6px rgba(0,0,0,0.08)' : 'none',
+                          transition: 'all 0.2s'
+                        }}
+                      >
+                        <Clock size={14} />
+                        <span>Dias de Afastamento</span>
+                      </button>
+                    </div>
                   </div>
                 </div>
 
-                <div style={{ height: 350, overflowX: 'auto', overflowY: 'hidden', paddingBottom: '1rem' }}>
-                  <div style={{ 
-                    minWidth: selectedYears.length > 2 ? `${selectedYears.length * 400}px` : '100%', 
-                    height: '100%' 
-                  }}>
-                    <ResponsiveContainer width="100%" height="100%">
-                      <BarChart data={chartData} margin={{ top: 25, right: 30, left: 0, bottom: 0 }}>
-                        <XAxis dataKey="month" axisLine={false} tickLine={false} tick={{fontSize: 12, fill: '#64748B'}} />
-                        <YAxis axisLine={false} tickLine={false} tick={{fontSize: 12, fill: '#64748B'}} domain={[0, monthlyMetric === 'accidents' ? 'dataMax + 2' : 'dataMax + 5']} />
-                        <Tooltip 
-                          cursor={{fill: '#F1F5F9'}} 
-                          contentStyle={{backgroundColor: '#FFFFFF', borderRadius: '12px', border: '1px solid #E2E8F0', boxShadow: '0 8px 20px rgba(0,0,0,0.1)'}} 
-                          itemStyle={{color: '#0F172A', fontWeight: 600}} 
-                          labelStyle={{color: '#0F172A', fontWeight: 800, marginBottom: '4px'}} 
-                          formatter={(value: any, name: any) => [
-                            monthlyMetric === 'accidents'
-                              ? `${value} acidente${Number(value) !== 1 ? 's' : ''}`
-                              : `${value} dia${Number(value) !== 1 ? 's' : ''} de afastamento`,
-                            `Ano ${name}`
-                          ]}
-                        />
-                        <Legend verticalAlign="top" align="center" iconType="circle" />
-                        {selectedYears.map((year, idx) => {
-                          const colors = ['#B91C1C', '#94A3B8', '#0F172A', '#3B82F6', '#10B981', '#F59E0B'];
-                          return (
-                            <Bar 
-                              key={year}
-                              dataKey={String(year)} 
-                              fill={colors[idx % colors.length]} 
-                              radius={[4, 4, 0, 0]} 
-                              barSize={selectedYears.length > 3 ? 12 : 20}
-                              label={{ position: 'top', fill: '#64748B', fontSize: 10, fontWeight: 700 }}
-                            />
-                          );
-                        })}
-                      </BarChart>
-                    </ResponsiveContainer>
+                {/* 1. NÍVEL ANUAL (DRILL-UP) */}
+                {drillLevel === 'yearly' && (
+                  <div>
+                    <div style={{ height: 350, overflowX: 'auto', overflowY: 'hidden', paddingBottom: '0.5rem' }}>
+                      <ResponsiveContainer width="100%" height="100%">
+                        <BarChart 
+                          data={yearlyChartData} 
+                          margin={{ top: 25, right: 30, left: 0, bottom: 0 }}
+                          onClick={(e: any) => {
+                            if (e && e.activePayload && e.activePayload.length > 0) {
+                              const y = e.activePayload[0].payload?.yearNum;
+                              if (y) {
+                                setDrillYear(y);
+                                setDrillLevel('monthly');
+                              }
+                            }
+                          }}
+                          style={{ cursor: 'pointer' }}
+                        >
+                          <XAxis dataKey="year" axisLine={false} tickLine={false} tick={{ fontSize: 13, fill: '#334155', fontWeight: 800 }} />
+                          <YAxis axisLine={false} tickLine={false} tick={{ fontSize: 12, fill: '#64748B' }} domain={[0, 'dataMax + 10']} />
+                          <Tooltip 
+                            cursor={{ fill: '#F1F5F9' }}
+                            contentStyle={{ backgroundColor: '#FFFFFF', borderRadius: '12px', border: '1px solid #E2E8F0', boxShadow: '0 8px 20px rgba(0,0,0,0.1)' }}
+                            itemStyle={{ color: '#0F172A', fontWeight: 600 }}
+                            labelStyle={{ color: '#0F172A', fontWeight: 800, marginBottom: '4px' }}
+                            formatter={(value: any, _, props: any) => [
+                              monthlyMetric === 'accidents' 
+                                ? `${value} acidentes (média ${props.payload?.avgPerMonth}/mês)` 
+                                : `${value} dias de afastamento`,
+                              'Consolidado Anual'
+                            ]}
+                          />
+                          <Bar 
+                            dataKey="value" 
+                            name={monthlyMetric === 'accidents' ? 'Total de Acidentes' : 'Dias de Afastamento'}
+                            fill={monthlyMetric === 'accidents' ? 'var(--primary)' : '#0284C7'}
+                            radius={[6, 6, 0, 0]}
+                            barSize={50}
+                            label={{ position: 'top', fill: '#0F172A', fontSize: 12, fontWeight: 900 }}
+                          />
+                        </BarChart>
+                      </ResponsiveContainer>
+                    </div>
+                    <div style={{ textAlign: 'center', fontSize: '0.72rem', color: '#64748B', marginTop: '0.5rem', fontWeight: 600 }}>
+                      💡 Dica: Clique em qualquer barra de ano para detalhar os meses correspondentes.
+                    </div>
                   </div>
-                </div>
+                )}
+
+                {/* 2. NÍVEL MENSAL (PADRÃO) */}
+                {drillLevel === 'monthly' && (
+                  <div>
+                    <div style={{ height: 350, overflowX: 'auto', overflowY: 'hidden', paddingBottom: '0.5rem' }}>
+                      <div style={{ 
+                        minWidth: selectedYears.length > 2 ? `${selectedYears.length * 400}px` : '100%', 
+                        height: '100%' 
+                      }}>
+                        <ResponsiveContainer width="100%" height="100%">
+                          <BarChart 
+                            data={chartData} 
+                            margin={{ top: 25, right: 30, left: 0, bottom: 0 }}
+                            onClick={(e: any) => {
+                              if (e && e.activePayload && e.activePayload.length > 0) {
+                                const payload = e.activePayload[0];
+                                const monthIdx = payload.payload?.monthIndex || (MONTH_NAMES.indexOf(String(e.activeLabel)) + 1);
+                                const clickedYear = Number(payload.dataKey) || drillYear;
+                                if (monthIdx >= 1 && monthIdx <= 12) {
+                                  setDrillMonth(monthIdx);
+                                  if (clickedYear && !isNaN(clickedYear)) setDrillYear(clickedYear);
+                                  setDrillLevel('daily');
+                                  setSelectedDay(null);
+                                }
+                              }
+                            }}
+                            style={{ cursor: 'pointer' }}
+                          >
+                            <XAxis dataKey="month" axisLine={false} tickLine={false} tick={{fontSize: 12, fill: '#64748B'}} />
+                            <YAxis axisLine={false} tickLine={false} tick={{fontSize: 12, fill: '#64748B'}} domain={[0, monthlyMetric === 'accidents' ? 'dataMax + 2' : 'dataMax + 5']} />
+                            <Tooltip 
+                              cursor={{fill: '#F1F5F9'}} 
+                              contentStyle={{backgroundColor: '#FFFFFF', borderRadius: '12px', border: '1px solid #E2E8F0', boxShadow: '0 8px 20px rgba(0,0,0,0.1)'}} 
+                              itemStyle={{color: '#0F172A', fontWeight: 600}} 
+                              labelStyle={{color: '#0F172A', fontWeight: 800, marginBottom: '4px'}} 
+                              formatter={(value: any, name: any) => [
+                                monthlyMetric === 'accidents'
+                                  ? `${value} acidente${Number(value) !== 1 ? 's' : ''}`
+                                  : `${value} dia${Number(value) !== 1 ? 's' : ''} de afastamento`,
+                                `Ano ${name}`
+                              ]}
+                            />
+                            <Legend verticalAlign="top" align="center" iconType="circle" />
+                            {selectedYears.map((year, idx) => {
+                              const colors = ['#B91C1C', '#94A3B8', '#0F172A', '#3B82F6', '#10B981', '#F59E0B'];
+                              return (
+                                <Bar 
+                                  key={year}
+                                  dataKey={String(year)} 
+                                  fill={colors[idx % colors.length]} 
+                                  radius={[4, 4, 0, 0]} 
+                                  barSize={selectedYears.length > 3 ? 12 : 20}
+                                  label={{ position: 'top', fill: '#64748B', fontSize: 10, fontWeight: 700 }}
+                                />
+                              );
+                            })}
+                          </BarChart>
+                        </ResponsiveContainer>
+                      </div>
+                    </div>
+                    <div style={{ textAlign: 'center', fontSize: '0.72rem', color: '#64748B', marginTop: '0.5rem', fontWeight: 600 }}>
+                      💡 Dica: Clique em qualquer barra ou mês para fazer o <strong>Drill-Down</strong> e ver os acidentados dia a dia.
+                    </div>
+                  </div>
+                )}
+
+                {/* 3. NÍVEL DIÁRIO (DRILL-DOWN) */}
+                {drillLevel === 'daily' && (
+                  <div>
+                    <div style={{ height: 320, overflowX: 'auto', overflowY: 'hidden', paddingBottom: '0.5rem' }}>
+                      <div style={{ minWidth: '760px', height: '100%' }}>
+                        <ResponsiveContainer width="100%" height="100%">
+                          <BarChart 
+                            data={dailyChartData} 
+                            margin={{ top: 25, right: 15, left: -15, bottom: 0 }}
+                            onClick={(e: any) => {
+                              if (e && e.activePayload && e.activePayload.length > 0) {
+                                const d = e.activePayload[0].payload?.dayNum;
+                                if (d !== undefined) {
+                                  setSelectedDay(prev => prev === d ? null : d);
+                                }
+                              }
+                            }}
+                            style={{ cursor: 'pointer' }}
+                          >
+                            <XAxis dataKey="day" axisLine={false} tickLine={false} tick={{ fontSize: 11, fill: '#64748B', fontWeight: 700 }} />
+                            <YAxis axisLine={false} tickLine={false} tick={{ fontSize: 11, fill: '#64748B' }} allowDecimals={false} domain={[0, monthlyMetric === 'accidents' ? 'dataMax + 1' : 'dataMax + 5']} />
+                            <Tooltip 
+                              cursor={{ fill: '#F1F5F9' }}
+                              content={({ active, payload }) => {
+                                if (!active || !payload || !payload.length) return null;
+                                const data = payload[0].payload;
+                                const dayAccs = data.accidents as Accident[];
+                                return (
+                                  <div style={{
+                                    backgroundColor: '#FFFFFF',
+                                    borderRadius: '12px',
+                                    border: '1px solid #E2E8F0',
+                                    boxShadow: '0 8px 24px rgba(0,0,0,0.12)',
+                                    padding: '0.75rem 1rem',
+                                    maxWidth: '320px'
+                                  }}>
+                                    <div style={{ fontWeight: 900, color: '#0F172A', fontSize: '0.85rem', marginBottom: '2px' }}>
+                                      Dia {data.day} de {MONTH_NAMES[drillMonth - 1]} de {drillYear}
+                                    </div>
+                                    <div style={{ 
+                                      fontSize: '0.72rem', 
+                                      color: data.count > 0 ? (data.hasMultiple ? '#DC2626' : 'var(--primary)') : '#64748B', 
+                                      fontWeight: 800, 
+                                      marginBottom: '6px' 
+                                    }}>
+                                      {data.count === 0 
+                                        ? 'Nenhum acidente registrado'
+                                        : `${data.count} acidente${data.count > 1 ? 's' : ''} ${data.hasMultiple ? '⚠️ (Múltiplas ocorrências)' : ''} • ${data.lostDays} dias afast.`}
+                                    </div>
+                                    {dayAccs.length > 0 && (
+                                      <div style={{ borderTop: '1px dashed #E2E8F0', paddingTop: '6px', display: 'flex', flexDirection: 'column', gap: '5px' }}>
+                                        {dayAccs.map((a, idx) => (
+                                          <div key={a.id || idx} style={{ fontSize: '0.7rem', color: '#334155' }}>
+                                            <div style={{ fontWeight: 800, color: '#0F172A' }}>• {a.employee}</div>
+                                            <div style={{ color: '#64748B', fontSize: '0.65rem' }}>
+                                              {a.role} • {a.area} ({a.division})
+                                            </div>
+                                            <div style={{ color: a.lostDays > 0 ? '#EF4444' : '#10B981', fontSize: '0.65rem', fontWeight: 700 }}>
+                                              {a.lostDays > 0 ? `${a.lostDays} dias perdidos` : 'Sem afastamento'} • {a.hasCat ? 'Com CAT' : 'Sem CAT'}
+                                            </div>
+                                          </div>
+                                        ))}
+                                      </div>
+                                    )}
+                                  </div>
+                                );
+                              }}
+                            />
+                            <Bar 
+                              dataKey="value"
+                              radius={[4, 4, 0, 0]}
+                              barSize={18}
+                              label={{ 
+                                position: 'top', 
+                                fill: '#475569', 
+                                fontSize: 10, 
+                                fontWeight: 800,
+                                formatter: (val: any) => Number(val) > 0 ? val : ''
+                              }}
+                            >
+                              {dailyChartData.map((entry) => {
+                                let fill = '#E2E8F0';
+                                if (entry.count > 0) {
+                                  if (entry.hasMultiple) {
+                                    fill = '#DC2626'; // Vermelho intenso para múltiplos acidentes no mesmo dia
+                                  } else {
+                                    fill = monthlyMetric === 'accidents' ? 'var(--primary)' : '#0284C7';
+                                  }
+                                }
+                                if (selectedDay === entry.dayNum) {
+                                  fill = '#F59E0B'; // Âmbar para o dia filtrado
+                                }
+                                return <Cell key={`cell-${entry.dayNum}`} fill={fill} />;
+                              })}
+                            </Bar>
+                          </BarChart>
+                        </ResponsiveContainer>
+                      </div>
+                    </div>
+
+                    {/* Detalhamento dos Acidentados do Mês / Dia */}
+                    <div style={{ marginTop: '1rem', borderTop: '1px solid #E2E8F0', paddingTop: '1rem' }}>
+                      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '0.75rem', flexWrap: 'wrap', gap: '0.5rem' }}>
+                        <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                          <Users size={16} color="var(--primary)" />
+                          <h3 style={{ margin: 0, fontSize: '0.9rem', fontWeight: 900, color: '#0F172A' }}>
+                            {selectedDay !== null 
+                              ? `Colaboradores Acidentados no Dia ${String(selectedDay).padStart(2, '0')}/${String(drillMonth).padStart(2, '0')}/${drillYear}`
+                              : `Colaboradores Acidentados em ${MONTH_NAMES[drillMonth - 1]} de ${drillYear}`}
+                          </h3>
+                          <span style={{ 
+                            background: monthAccidentsList.length > 0 ? '#FEF2F2' : '#F1F5F9', 
+                            color: monthAccidentsList.length > 0 ? '#991B1B' : '#64748B', 
+                            fontSize: '0.7rem', 
+                            fontWeight: 900, 
+                            padding: '2px 8px', 
+                            borderRadius: '999px',
+                            border: monthAccidentsList.length > 0 ? '1px solid #FECACA' : '1px solid #E2E8F0'
+                          }}>
+                            {monthAccidentsList.length} ocorrência{monthAccidentsList.length !== 1 ? 's' : ''}
+                          </span>
+                        </div>
+
+                        {selectedDay !== null && (
+                          <button
+                            type="button"
+                            onClick={() => setSelectedDay(null)}
+                            style={{
+                              background: '#F1F5F9',
+                              border: '1px solid #CBD5E1',
+                              color: '#334155',
+                              fontSize: '0.72rem',
+                              fontWeight: 800,
+                              padding: '3px 8px',
+                              borderRadius: '6px',
+                              cursor: 'pointer'
+                            }}
+                          >
+                            ✕ Mostrar todos os dias do mês
+                          </button>
+                        )}
+                      </div>
+
+                      {monthAccidentsList.length === 0 ? (
+                        <div style={{ padding: '1.25rem', textAlign: 'center', background: '#F8FAFC', borderRadius: '10px', color: '#64748B', fontSize: '0.8rem', fontWeight: 600 }}>
+                          Nenhum acidente registrado para esta data com os filtros atuais.
+                        </div>
+                      ) : (
+                        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(280px, 1fr))', gap: '0.75rem', maxHeight: '280px', overflowY: 'auto', paddingRight: '4px' }}>
+                          {monthAccidentsList.map((acc, idx) => (
+                            <div
+                              key={acc.id || idx}
+                              style={{
+                                background: '#FFFFFF',
+                                border: '1px solid #E2E8F0',
+                                borderRadius: '10px',
+                                padding: '0.75rem',
+                                display: 'flex',
+                                flexDirection: 'column',
+                                gap: '6px',
+                                borderLeft: `4px solid ${acc.lostDays > 0 ? '#EF4444' : '#10B981'}`,
+                                boxShadow: '0 2px 4px rgba(0,0,0,0.03)'
+                              }}
+                            >
+                              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
+                                <div>
+                                  <div style={{ fontWeight: 900, fontSize: '0.85rem', color: '#0F172A' }}>{acc.employee}</div>
+                                  <div style={{ fontSize: '0.68rem', color: '#64748B', fontWeight: 700 }}>RE: {acc.re || 'N/A'} • {acc.role}</div>
+                                </div>
+                                <span style={{ 
+                                  fontSize: '0.65rem', 
+                                  fontWeight: 900, 
+                                  background: '#F1F5F9', 
+                                  padding: '2px 6px', 
+                                  borderRadius: '4px', 
+                                  color: '#334155' 
+                                }}>
+                                  {acc.date.toLocaleDateString('pt-BR')}
+                                </span>
+                              </div>
+
+                              <div style={{ display: 'flex', alignItems: 'center', gap: '6px', fontSize: '0.72rem', color: '#475569' }}>
+                                <Layers size={13} color="#94A3B8" />
+                                <span>{acc.area} • {acc.division}</span>
+                              </div>
+
+                              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginTop: '4px', borderTop: '1px dashed #F1F5F9', paddingTop: '6px' }}>
+                                <div style={{ display: 'flex', gap: '4px' }}>
+                                  <span style={{
+                                    fontSize: '0.62rem',
+                                    fontWeight: 800,
+                                    padding: '2px 6px',
+                                    borderRadius: '4px',
+                                    background: acc.hasCat ? '#DCFCE7' : '#F1F5F9',
+                                    color: acc.hasCat ? '#15803D' : '#64748B'
+                                  }}>
+                                    {acc.hasCat ? 'CAT' : 'Sem CAT'}
+                                  </span>
+                                  <span style={{
+                                    fontSize: '0.62rem',
+                                    fontWeight: 800,
+                                    padding: '2px 6px',
+                                    borderRadius: '4px',
+                                    background: acc.unsafeAct ? '#FEF2F2' : '#F0FDF4',
+                                    color: acc.unsafeAct ? '#991B1B' : '#166534'
+                                  }}>
+                                    {acc.unsafeAct ? 'Ato Inseguro' : 'Condição'}
+                                  </span>
+                                </div>
+
+                                <span style={{
+                                  fontSize: '0.75rem',
+                                  fontWeight: 900,
+                                  color: acc.lostDays > 0 ? '#EF4444' : '#10B981'
+                                }}>
+                                  {acc.lostDays > 0 ? `${acc.lostDays} dias afast.` : 'Sem afast.'}
+                                </span>
+                              </div>
+
+                              {acc.investigationLink && (
+                                <div style={{ marginTop: '2px', display: 'flex', justifyContent: 'flex-end' }}>
+                                  <a
+                                    href={acc.investigationLink}
+                                    target="_blank"
+                                    rel="noopener noreferrer"
+                                    style={{
+                                      display: 'inline-flex',
+                                      alignItems: 'center',
+                                      gap: '3px',
+                                      fontSize: '0.65rem',
+                                      color: '#2563EB',
+                                      fontWeight: 800,
+                                      textDecoration: 'none',
+                                      background: '#EFF6FF',
+                                      padding: '2px 6px',
+                                      borderRadius: '4px',
+                                      border: '1px solid #BFDBFE'
+                                    }}
+                                  >
+                                    <ExternalLink size={10} /> Investigação
+                                  </a>
+                                </div>
+                              )}
+                            </div>
+                          ))}
+                        </div>
+                      )}
+                    </div>
+                  </div>
+                )}
               </div>
 
               <div className="panel-premium">
