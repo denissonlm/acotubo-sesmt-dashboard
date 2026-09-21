@@ -462,106 +462,213 @@ export const LandscapePrintView: React.FC<LandscapePrintViewProps> = ({
             })}
           </div>
 
-          {/* Centro: Gráficos Lado a Lado (Comparativo Mensal e Mapa de Calor) */}
-          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1.25fr', gap: '0.75rem', flex: 1, minHeight: 0 }}>
-            {/* Comparativo Mensal */}
-            <div className="panel-premium" style={{ display: 'flex', flexDirection: 'column', padding: '0.75rem' }}>
-              <h2 style={{ fontSize: '0.85rem', fontWeight: 900, color: 'var(--text)', margin: '0 0 0.15rem 0', textAlign: 'center' }}>Comparativo Mensal</h2>
-              <p style={{ fontSize: '0.58rem', color: 'var(--text-muted)', margin: '0 0 0.35rem 0', textAlign: 'center' }}>Distribuição de acidentes no período selecionado</p>
-              <div style={{ flex: 1, minHeight: 0 }}>
-                <ResponsiveContainer width="100%" height="100%">
-                  <BarChart data={monthlyChartData} margin={{ top: 10, right: 10, left: -25, bottom: 0 }}>
-                    <XAxis dataKey="month" axisLine={false} tickLine={false} tick={{ fontSize: 8, fontWeight: 700, fill: '#64748B' }} />
-                    <YAxis axisLine={false} tickLine={false} tick={{ fontSize: 8, fill: '#64748B' }} />
-                    <Tooltip 
-                      cursor={{ fill: '#F1F5F9' }} 
-                      contentStyle={{ backgroundColor: '#FFFFFF', borderRadius: '8px', border: '1px solid #E2E8F0', boxShadow: '0 4px 12px rgba(0,0,0,0.1)', fontSize: '0.75rem' }} 
-                      itemStyle={{ color: '#0F172A', fontWeight: 600 }} 
-                      labelStyle={{ color: '#0F172A', fontWeight: 800, marginBottom: '2px' }} 
-                    />
-                    <Legend verticalAlign="top" align="center" iconType="circle" wrapperStyle={{ fontSize: 8, paddingBottom: 3 }} />
-                    {selectedYears.map((year, idx) => {
-                      const colors = ['#B91C1C', '#3B82F6', '#10B981', '#F59E0B'];
-                      return (
-                        <Bar 
-                          key={year} 
-                          dataKey={year} 
-                          name={String(year)} 
-                          fill={colors[idx % colors.length]} 
-                          radius={[3, 3, 0, 0]} 
-                        />
-                      );
-                    })}
-                  </BarChart>
-                </ResponsiveContainer>
+          {/* Centro: Gráficos Lado a Lado ou Painel Único com Tabela Vertical quando 1 ano selecionado */}
+          {selectedYears.length === 1 ? (
+            <div className="panel-premium" style={{ flex: 1, display: 'flex', flexDirection: 'column', padding: '0.75rem', minHeight: 0 }}>
+              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '0.2rem' }}>
+                <h2 style={{ fontSize: '0.85rem', fontWeight: 900, color: 'var(--text)', margin: 0 }}>
+                  Evolução Mensal de Acidentes e Afastamentos — Ano {selectedYears[0]}
+                </h2>
+                <span style={{ fontSize: '0.62rem', color: '#64748B', fontWeight: 700 }}>
+                  Total: <strong style={{ color: '#B91C1C' }}>{stats[selectedYears[0]]?.total || 0} acidentes</strong> • <strong style={{ color: '#0284C7' }}>{stats[selectedYears[0]]?.totalLostDays || 0} dias perdidos</strong>
+                </span>
               </div>
-            </div>
-
-            {/* Mapa de Intensidade */}
-            <div className="panel-premium" style={{ display: 'flex', flexDirection: 'column', padding: '0.75rem' }}>
-              <h2 style={{ fontSize: '0.85rem', fontWeight: 900, color: 'var(--text)', margin: '0 0 0.15rem 0', textAlign: 'center' }}>
-                Mapa de <span style={{ color: 'var(--primary)' }}>Intensidade</span>
-              </h2>
-              <p style={{ fontSize: '0.58rem', color: 'var(--text-muted)', margin: '0 0 0.35rem 0', textAlign: 'center' }}>
-                Frequência mensal de ocorrências (Mapa de Calor)
+              <p style={{ fontSize: '0.58rem', color: 'var(--text-muted)', margin: '0 0 0.4rem 0' }}>
+                Distribuição cronológica mensal de acidentes e gravidade no período
               </p>
-              <div style={{ flex: 1, minHeight: 0, display: 'flex', flexDirection: 'column', justifyContent: 'center' }}>
-                <table className="heatmap-table" style={{ width: '100%', borderCollapse: 'separate', borderSpacing: '3px' }}>
-                  <thead>
-                    <tr>
-                      <th style={{ width: '42px', minWidth: '42px', fontSize: '8px', fontWeight: 800, color: '#64748B', textAlign: 'center' }}></th>
-                      {MONTH_NAMES.map(m => (
-                        <th key={m} style={{ fontSize: '8px', fontWeight: 800, color: '#64748B', textAlign: 'center', padding: '1px' }}>
-                          {m.toUpperCase()}
-                        </th>
-                      ))}
-                    </tr>
-                  </thead>
-                  <tbody>
-                    {selectedYears.map(year => {
-                      const s = stats[year];
-                      if (!s) return null;
-                      return (
-                        <tr key={year}>
-                          <td style={{ fontSize: '9px', fontWeight: 900, color: '#334155', verticalAlign: 'middle', textAlign: 'center', padding: '2px 0', width: '42px', minWidth: '42px' }}>
-                            {year}
-                          </td>
-                          {s.monthly.map((m, i) => (
-                            <td 
-                              key={i} 
-                              style={{ 
-                                background: '#FFFFFF', 
-                                border: m.count > 0 ? '1.5px solid #FECACA' : '1px solid #F1F5F9',
-                                color: m.count > 0 ? '#B91C1C' : '#CBD5E1',
-                                height: '22px',
-                                borderRadius: '4px',
-                                fontSize: '9.5px',
-                                fontWeight: 900,
-                                textAlign: 'center',
-                                verticalAlign: 'middle',
-                                boxShadow: m.count > 0 ? '0 1px 2px rgba(185, 28, 28, 0.05)' : 'none'
-                              }}
-                            >
-                              <div>{m.count > 0 ? m.count : '-'}</div>
-                            </td>
-                          ))}
-                        </tr>
-                      );
-                    })}
-                  </tbody>
-                </table>
-                <div style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', gap: '10px', marginTop: '0.45rem', fontSize: '7.5px', color: 'var(--text-muted)', fontWeight: 700 }}>
-                  <div style={{ display: 'flex', alignItems: 'center', gap: '5px' }}>
-                    <div style={{ width: 14, height: 14, borderRadius: 3, border: '1.5px solid #FECACA', background: '#FFFFFF', color: '#B91C1C', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '8.5px', fontWeight: 900 }}>
-                      N
-                    </div>
-                    <span>Ocorrências registradas no mês (em vermelho com fundo branco)</span>
+
+              <div style={{ flex: 1, minHeight: 0, display: 'grid', gridTemplateColumns: 'minmax(0, 1fr) 220px', gap: '0.85rem', alignItems: 'stretch' }}>
+                {/* Gráfico de Barras */}
+                <div style={{ height: '100%', minHeight: 0 }}>
+                  <ResponsiveContainer width="100%" height="100%">
+                    <BarChart data={monthlyChartData} margin={{ top: 15, right: 15, left: -25, bottom: 0 }}>
+                      <XAxis dataKey="month" axisLine={false} tickLine={false} tick={{ fontSize: 8, fontWeight: 700, fill: '#64748B' }} />
+                      <YAxis axisLine={false} tickLine={false} tick={{ fontSize: 8, fill: '#64748B' }} />
+                      <Tooltip 
+                        cursor={{ fill: '#F1F5F9' }} 
+                        contentStyle={{ backgroundColor: '#FFFFFF', borderRadius: '8px', border: '1px solid #E2E8F0', boxShadow: '0 4px 12px rgba(0,0,0,0.1)', fontSize: '0.75rem' }} 
+                        itemStyle={{ color: '#0F172A', fontWeight: 600 }} 
+                        labelStyle={{ color: '#0F172A', fontWeight: 800, marginBottom: '2px' }} 
+                      />
+                      <Bar 
+                        dataKey={selectedYears[0]} 
+                        name={`Ano ${selectedYears[0]}`} 
+                        fill="#B91C1C" 
+                        radius={[3, 3, 0, 0]} 
+                        label={{ position: 'top', fill: '#0F172A', fontSize: 9, fontWeight: 900 }}
+                      />
+                    </BarChart>
+                  </ResponsiveContainer>
+                </div>
+
+                {/* Tabela Vertical com mesma altura do gráfico */}
+                <div style={{
+                  height: '100%',
+                  background: '#FFFFFF',
+                  border: '1px solid #E2E8F0',
+                  borderRadius: '6px',
+                  display: 'flex',
+                  flexDirection: 'column',
+                  overflow: 'hidden'
+                }}>
+                  <div style={{
+                    padding: '3px 6px',
+                    background: '#F8FAFC',
+                    borderBottom: '1px solid #E2E8F0',
+                    fontSize: '7px',
+                    fontWeight: 900,
+                    color: '#0F172A',
+                    textAlign: 'center',
+                    letterSpacing: '0.3px'
+                  }}>
+                    CONSOLIDADO MENSAL ({selectedYears[0]})
                   </div>
-                  <span style={{ marginLeft: 8, color: '#94A3B8' }}>— fora do período</span>
+                  <div style={{ flex: 1, minHeight: 0, display: 'flex', flexDirection: 'column' }}>
+                    <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '7.5px', height: '100%' }}>
+                      <thead>
+                        <tr style={{ background: '#F8FAFC', borderBottom: '1px solid #E2E8F0' }}>
+                          <th style={{ padding: '2px 5px', textAlign: 'left', fontWeight: 900, color: '#475569', fontSize: '6.8px' }}>MÊS</th>
+                          <th style={{ padding: '2px 5px', textAlign: 'center', fontWeight: 900, color: '#475569', fontSize: '6.8px' }}>ACIDENTES</th>
+                          <th style={{ padding: '2px 5px', textAlign: 'right', fontWeight: 900, color: '#475569', fontSize: '6.8px' }}>DIAS AFAST.</th>
+                        </tr>
+                      </thead>
+                      <tbody>
+                        {MONTH_NAMES.map((mName, idx) => {
+                          const mStats = stats[selectedYears[0]]?.monthly[idx];
+                          const count = mStats?.count || 0;
+                          const lost = mStats?.lostDays || 0;
+                          return (
+                            <tr key={mName} style={{ borderBottom: '1px solid #F1F5F9' }}>
+                              <td style={{ padding: '1.5px 5px', fontWeight: count > 0 ? 800 : 600, color: count > 0 ? '#0F172A' : '#94A3B8' }}>
+                                {mName}
+                              </td>
+                              <td style={{ padding: '1.5px 5px', textAlign: 'center', fontWeight: 900, color: count > 0 ? '#B91C1C' : '#CBD5E1' }}>
+                                {count > 0 ? count : '—'}
+                              </td>
+                              <td style={{ padding: '1.5px 5px', textAlign: 'right', fontWeight: 800, color: lost > 0 ? '#0284C7' : '#CBD5E1' }}>
+                                {lost > 0 ? `${lost}d` : '0d'}
+                              </td>
+                            </tr>
+                          );
+                        })}
+                      </tbody>
+                      <tfoot>
+                        <tr style={{ background: '#F8FAFC', borderTop: '1.5px solid #CBD5E1' }}>
+                          <td style={{ padding: '2.5px 5px', fontWeight: 950, color: '#0F172A' }}>TOTAL</td>
+                          <td style={{ padding: '2.5px 5px', textAlign: 'center', fontWeight: 950, color: '#B91C1C' }}>
+                            {stats[selectedYears[0]]?.total || 0}
+                          </td>
+                          <td style={{ padding: '2.5px 5px', textAlign: 'right', fontWeight: 950, color: '#0284C7' }}>
+                            {stats[selectedYears[0]]?.totalLostDays || 0}d
+                          </td>
+                        </tr>
+                      </tfoot>
+                    </table>
+                  </div>
                 </div>
               </div>
             </div>
-          </div>
+          ) : (
+            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1.25fr', gap: '0.75rem', flex: 1, minHeight: 0 }}>
+              {/* Comparativo Mensal */}
+              <div className="panel-premium" style={{ display: 'flex', flexDirection: 'column', padding: '0.75rem' }}>
+                <h2 style={{ fontSize: '0.85rem', fontWeight: 900, color: 'var(--text)', margin: '0 0 0.15rem 0', textAlign: 'center' }}>Comparativo Mensal</h2>
+                <p style={{ fontSize: '0.58rem', color: 'var(--text-muted)', margin: '0 0 0.35rem 0', textAlign: 'center' }}>Distribuição de acidentes no período selecionado</p>
+                <div style={{ flex: 1, minHeight: 0 }}>
+                  <ResponsiveContainer width="100%" height="100%">
+                    <BarChart data={monthlyChartData} margin={{ top: 10, right: 10, left: -25, bottom: 0 }}>
+                      <XAxis dataKey="month" axisLine={false} tickLine={false} tick={{ fontSize: 8, fontWeight: 700, fill: '#64748B' }} />
+                      <YAxis axisLine={false} tickLine={false} tick={{ fontSize: 8, fill: '#64748B' }} />
+                      <Tooltip 
+                        cursor={{ fill: '#F1F5F9' }} 
+                        contentStyle={{ backgroundColor: '#FFFFFF', borderRadius: '8px', border: '1px solid #E2E8F0', boxShadow: '0 4px 12px rgba(0,0,0,0.1)', fontSize: '0.75rem' }} 
+                        itemStyle={{ color: '#0F172A', fontWeight: 600 }} 
+                        labelStyle={{ color: '#0F172A', fontWeight: 800, marginBottom: '2px' }} 
+                      />
+                      <Legend verticalAlign="top" align="center" iconType="circle" wrapperStyle={{ fontSize: 8, paddingBottom: 3 }} />
+                      {selectedYears.map((year, idx) => {
+                        const colors = ['#B91C1C', '#3B82F6', '#10B981', '#F59E0B'];
+                        return (
+                          <Bar 
+                            key={year} 
+                            dataKey={year} 
+                            name={String(year)} 
+                            fill={colors[idx % colors.length]} 
+                            radius={[3, 3, 0, 0]} 
+                          />
+                        );
+                      })}
+                    </BarChart>
+                  </ResponsiveContainer>
+                </div>
+              </div>
+
+              {/* Mapa de Intensidade */}
+              <div className="panel-premium" style={{ display: 'flex', flexDirection: 'column', padding: '0.75rem' }}>
+                <h2 style={{ fontSize: '0.85rem', fontWeight: 900, color: 'var(--text)', margin: '0 0 0.15rem 0', textAlign: 'center' }}>
+                  Mapa de <span style={{ color: 'var(--primary)' }}>Intensidade</span>
+                </h2>
+                <p style={{ fontSize: '0.58rem', color: 'var(--text-muted)', margin: '0 0 0.35rem 0', textAlign: 'center' }}>
+                  Frequência mensal de ocorrências (Mapa de Calor)
+                </p>
+                <div style={{ flex: 1, minHeight: 0, display: 'flex', flexDirection: 'column', justifyContent: 'center' }}>
+                  <table className="heatmap-table" style={{ width: '100%', borderCollapse: 'separate', borderSpacing: '3px' }}>
+                    <thead>
+                      <tr>
+                        <th style={{ width: '42px', minWidth: '42px', fontSize: '8px', fontWeight: 800, color: '#64748B', textAlign: 'center' }}></th>
+                        {MONTH_NAMES.map(m => (
+                          <th key={m} style={{ fontSize: '8px', fontWeight: 800, color: '#64748B', textAlign: 'center', padding: '1px' }}>
+                            {m.toUpperCase()}
+                          </th>
+                        ))}
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {selectedYears.map(year => {
+                        const s = stats[year];
+                        if (!s) return null;
+                        return (
+                          <tr key={year}>
+                            <td style={{ fontSize: '9px', fontWeight: 900, color: '#334155', verticalAlign: 'middle', textAlign: 'center', padding: '2px 0', width: '42px', minWidth: '42px' }}>
+                              {year}
+                            </td>
+                            {s.monthly.map((m, i) => (
+                              <td 
+                                key={i} 
+                                style={{ 
+                                  background: '#FFFFFF', 
+                                  border: m.count > 0 ? '1.5px solid #FECACA' : '1px solid #F1F5F9',
+                                  color: m.count > 0 ? '#B91C1C' : '#CBD5E1',
+                                  height: '22px',
+                                  borderRadius: '4px',
+                                  fontSize: '9.5px',
+                                  fontWeight: 900,
+                                  textAlign: 'center',
+                                  verticalAlign: 'middle',
+                                  boxShadow: m.count > 0 ? '0 1px 2px rgba(185, 28, 28, 0.05)' : 'none'
+                                }}
+                              >
+                                <div>{m.count > 0 ? m.count : '-'}</div>
+                              </td>
+                            ))}
+                          </tr>
+                        );
+                      })}
+                    </tbody>
+                  </table>
+                  <div style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', gap: '10px', marginTop: '0.45rem', fontSize: '7.5px', color: 'var(--text-muted)', fontWeight: 700 }}>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '5px' }}>
+                      <div style={{ width: 14, height: 14, borderRadius: 3, border: '1.5px solid #FECACA', background: '#FFFFFF', color: '#B91C1C', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '8.5px', fontWeight: 900 }}>
+                        N
+                      </div>
+                      <span>Ocorrências registradas no mês (em vermelho com fundo branco)</span>
+                    </div>
+                    <span style={{ marginLeft: 8, color: '#94A3B8' }}>— fora do período</span>
+                  </div>
+                </div>
+              </div>
+            </div>
+          )}
 
           {/* Extremo Inferior: Períodos de Atenção Storytelling */}
           <div style={{ display: 'flex', flexDirection: 'column', gap: '0.25rem' }}>

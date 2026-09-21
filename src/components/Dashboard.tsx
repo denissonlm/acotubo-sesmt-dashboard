@@ -1142,66 +1142,183 @@ export const Dashboard: React.FC<DashboardProps> = ({
                 {/* 2. NÍVEL MENSAL (PADRÃO) */}
                 {drillLevel === 'monthly' && (
                   <div>
-                    <div style={{ height: 350, overflowX: 'auto', overflowY: 'hidden', paddingBottom: '0.5rem' }}>
+                    <div style={{ 
+                      height: 350, 
+                      display: selectedYears.length === 1 ? 'grid' : 'block',
+                      gridTemplateColumns: selectedYears.length === 1 ? 'minmax(0, 1fr) 280px' : undefined,
+                      gap: '1.25rem',
+                      alignItems: 'stretch'
+                    }}>
                       <div style={{ 
-                        minWidth: selectedYears.length > 2 ? `${selectedYears.length * 400}px` : '100%', 
-                        height: '100%' 
+                        height: '100%',
+                        minWidth: 0,
+                        overflowX: selectedYears.length > 2 ? 'auto' : 'visible',
+                        overflowY: 'hidden', 
+                        paddingBottom: '0.5rem' 
                       }}>
-                        <ResponsiveContainer width="100%" height="100%">
-                          <BarChart 
-                            data={chartData} 
-                            margin={{ top: 25, right: 30, left: 0, bottom: 0 }}
-                            onClick={handleMonthlyChartClick}
-                            style={{ cursor: 'pointer' }}
-                          >
-                            <XAxis dataKey="month" axisLine={false} tickLine={false} tick={{fontSize: 12, fill: '#64748B'}} />
-                            <YAxis axisLine={false} tickLine={false} tick={{fontSize: 12, fill: '#64748B'}} domain={[0, monthlyMetric === 'accidents' ? 'dataMax + 2' : 'dataMax + 5']} />
-                            <Tooltip 
-                              cursor={{fill: '#F1F5F9'}} 
-                              contentStyle={{backgroundColor: '#FFFFFF', borderRadius: '12px', border: '1px solid #E2E8F0', boxShadow: '0 8px 20px rgba(0,0,0,0.1)'}} 
-                              itemStyle={{color: '#0F172A', fontWeight: 600}} 
-                              labelStyle={{color: '#0F172A', fontWeight: 800, marginBottom: '4px'}} 
-                              formatter={(value: any, name: any) => [
-                                monthlyMetric === 'accidents'
-                                  ? `${value} acidente${Number(value) !== 1 ? 's' : ''}`
-                                  : `${value} dia${Number(value) !== 1 ? 's' : ''} de afastamento`,
-                                `Ano ${name}`
-                              ]}
-                            />
-                            <Legend verticalAlign="top" align="center" iconType="circle" />
-                            {selectedYears.map((year, idx) => {
-                              const colors = ['#B91C1C', '#94A3B8', '#0F172A', '#3B82F6', '#10B981', '#F59E0B'];
-                              return (
-                                <Bar 
-                                  key={year}
-                                  dataKey={String(year)} 
-                                  fill={colors[idx % colors.length]} 
-                                  radius={[4, 4, 0, 0]} 
-                                  barSize={selectedYears.length > 3 ? 12 : 20}
-                                  cursor="pointer"
-                                  onClick={(data: any, barIndex: number) => {
-                                    let mIdx: number | null = null;
-                                    if (data && data.monthIndex) {
-                                      mIdx = data.monthIndex;
-                                    } else if (data && data.payload && data.payload.monthIndex) {
-                                      mIdx = data.payload.monthIndex;
-                                    } else if (barIndex !== undefined && barIndex >= 0 && barIndex < 12) {
-                                      mIdx = barIndex + 1;
-                                    }
-                                    if (mIdx) {
-                                      setDrillMonth(mIdx);
-                                      setDrillYear(year);
-                                      setDrillLevel('daily');
-                                      setSelectedDay(null);
-                                    }
-                                  }}
-                                  label={{ position: 'top', fill: '#64748B', fontSize: 10, fontWeight: 700 }}
-                                />
-                              );
-                            })}
-                          </BarChart>
-                        </ResponsiveContainer>
+                        <div style={{ 
+                          minWidth: selectedYears.length > 2 ? `${selectedYears.length * 400}px` : '100%', 
+                          height: '100%' 
+                        }}>
+                          <ResponsiveContainer width="100%" height="100%">
+                            <BarChart 
+                              data={chartData} 
+                              margin={{ top: 25, right: 25, left: 0, bottom: 0 }}
+                              onClick={handleMonthlyChartClick}
+                              style={{ cursor: 'pointer' }}
+                            >
+                              <XAxis dataKey="month" axisLine={false} tickLine={false} tick={{fontSize: 12, fill: '#64748B'}} />
+                              <YAxis axisLine={false} tickLine={false} tick={{fontSize: 12, fill: '#64748B'}} domain={[0, monthlyMetric === 'accidents' ? 'dataMax + 2' : 'dataMax + 5']} />
+                              <Tooltip 
+                                cursor={{fill: '#F1F5F9'}} 
+                                contentStyle={{backgroundColor: '#FFFFFF', borderRadius: '12px', border: '1px solid #E2E8F0', boxShadow: '0 8px 20px rgba(0,0,0,0.1)'}} 
+                                itemStyle={{color: '#0F172A', fontWeight: 600}} 
+                                labelStyle={{color: '#0F172A', fontWeight: 800, marginBottom: '4px'}} 
+                                formatter={(value: any, name: any) => [
+                                  monthlyMetric === 'accidents'
+                                    ? `${value} acidente${Number(value) !== 1 ? 's' : ''}`
+                                    : `${value} dia${Number(value) !== 1 ? 's' : ''} de afastamento`,
+                                  `Ano ${name}`
+                                ]}
+                              />
+                              <Legend verticalAlign="top" align="center" iconType="circle" />
+                              {selectedYears.map((year, idx) => {
+                                const colors = ['#B91C1C', '#94A3B8', '#0F172A', '#3B82F6', '#10B981', '#F59E0B'];
+                                return (
+                                  <Bar 
+                                    key={year}
+                                    dataKey={String(year)} 
+                                    fill={colors[idx % colors.length]} 
+                                    radius={[4, 4, 0, 0]} 
+                                    barSize={selectedYears.length > 3 ? 12 : selectedYears.length === 1 ? 36 : 20}
+                                    cursor="pointer"
+                                    onClick={(data: any, barIndex: number) => {
+                                      let mIdx: number | null = null;
+                                      if (data && data.monthIndex) {
+                                        mIdx = data.monthIndex;
+                                      } else if (data && data.payload && data.payload.monthIndex) {
+                                        mIdx = data.payload.monthIndex;
+                                      } else if (barIndex !== undefined && barIndex >= 0 && barIndex < 12) {
+                                        mIdx = barIndex + 1;
+                                      }
+                                      if (mIdx) {
+                                        setDrillMonth(mIdx);
+                                        setDrillYear(year);
+                                        setDrillLevel('daily');
+                                        setSelectedDay(null);
+                                      }
+                                    }}
+                                    label={{ position: 'top', fill: '#0F172A', fontSize: 11, fontWeight: 900 }}
+                                  />
+                                );
+                              })}
+                            </BarChart>
+                          </ResponsiveContainer>
+                        </div>
                       </div>
+
+                      {/* Tabela Vertical à direita quando selecionado apenas 1 ano */}
+                      {selectedYears.length === 1 && (
+                        <div style={{
+                          height: '100%',
+                          background: '#FFFFFF',
+                          border: '1px solid #E2E8F0',
+                          borderRadius: '12px',
+                          display: 'flex',
+                          flexDirection: 'column',
+                          overflow: 'hidden',
+                          boxShadow: '0 2px 8px rgba(0,0,0,0.04)'
+                        }}>
+                          <div style={{
+                            padding: '0.45rem 0.75rem',
+                            background: '#F8FAFC',
+                            borderBottom: '1px solid #E2E8F0',
+                            display: 'flex',
+                            alignItems: 'center',
+                            justifyContent: 'space-between'
+                          }}>
+                            <span style={{ fontSize: '0.74rem', fontWeight: 900, color: '#0F172A', display: 'flex', alignItems: 'center', gap: '6px' }}>
+                              <span style={{ width: '8px', height: '8px', borderRadius: '50%', background: 'var(--primary)' }}></span>
+                              Mês a Mês ({selectedYears[0]})
+                            </span>
+                            <span style={{ fontSize: '0.65rem', fontWeight: 700, color: '#64748B' }}>
+                              Consolidado
+                            </span>
+                          </div>
+
+                          <div style={{ flex: 1, overflowY: 'auto', overflowX: 'hidden' }}>
+                            <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '0.72rem' }}>
+                              <thead>
+                                <tr style={{ background: '#F8FAFC', borderBottom: '1px solid #E2E8F0', position: 'sticky', top: 0, zIndex: 1 }}>
+                                  <th style={{ padding: '3.5px 7px', textAlign: 'left', fontWeight: 800, color: '#64748B', fontSize: '0.66rem' }}>MÊS</th>
+                                  <th style={{ padding: '3.5px 7px', textAlign: 'center', fontWeight: 800, color: '#64748B', fontSize: '0.66rem' }}>ACIDENTES</th>
+                                  <th style={{ padding: '3.5px 7px', textAlign: 'right', fontWeight: 800, color: '#64748B', fontSize: '0.66rem' }}>DIAS AFAST.</th>
+                                </tr>
+                              </thead>
+                              <tbody>
+                                {MONTH_NAMES.map((mName, idx) => {
+                                  const mStats = stats[selectedYears[0]]?.monthly[idx];
+                                  const count = mStats?.count || 0;
+                                  const lost = mStats?.lostDays || 0;
+                                  const isSelectedDrill = drillMonth === (idx + 1);
+                                  return (
+                                    <tr 
+                                      key={mName}
+                                      onClick={() => {
+                                        setDrillMonth(idx + 1);
+                                        setDrillYear(selectedYears[0]);
+                                        setDrillLevel('daily');
+                                        setSelectedDay(null);
+                                      }}
+                                      title="Clique para detalhar este mês"
+                                      style={{
+                                        borderBottom: '1px solid #F1F5F9',
+                                        cursor: 'pointer',
+                                        background: isSelectedDrill ? '#FEF2F2' : (count > 0 ? 'rgba(254, 242, 242, 0.35)' : '#FFFFFF'),
+                                        transition: 'background 0.15s'
+                                      }}
+                                      onMouseEnter={(e) => { e.currentTarget.style.background = '#FEE2E2'; }}
+                                      onMouseLeave={(e) => { e.currentTarget.style.background = isSelectedDrill ? '#FEF2F2' : (count > 0 ? 'rgba(254, 242, 242, 0.35)' : '#FFFFFF'); }}
+                                    >
+                                      <td style={{ padding: '3.5px 7px', fontWeight: count > 0 ? 800 : 600, color: count > 0 ? '#0F172A' : '#64748B' }}>
+                                        {mName}
+                                      </td>
+                                      <td style={{ padding: '3.5px 7px', textAlign: 'center', fontWeight: 900, color: count > 0 ? 'var(--primary)' : '#94A3B8' }}>
+                                        {count > 0 ? count : '—'}
+                                      </td>
+                                      <td style={{ padding: '3.5px 7px', textAlign: 'right', fontWeight: 800, color: lost > 0 ? '#0284C7' : '#94A3B8' }}>
+                                        {lost > 0 ? `${lost}d` : '0d'}
+                                      </td>
+                                    </tr>
+                                  );
+                                })}
+                              </tbody>
+                            </table>
+                          </div>
+
+                          {/* Rodapé com Totais */}
+                          <div style={{
+                            padding: '0.4rem 0.75rem',
+                            background: '#F8FAFC',
+                            borderTop: '2px solid #E2E8F0',
+                            display: 'flex',
+                            alignItems: 'center',
+                            justifyContent: 'space-between',
+                            fontSize: '0.72rem',
+                            fontWeight: 900
+                          }}>
+                            <span style={{ color: '#0F172A' }}>TOTAL {selectedYears[0]}</span>
+                            <div style={{ display: 'flex', gap: '10px' }}>
+                              <span style={{ color: 'var(--primary)' }}>
+                                {stats[selectedYears[0]]?.total || 0} acd
+                              </span>
+                              <span style={{ color: '#0284C7' }}>
+                                {stats[selectedYears[0]]?.totalLostDays || 0}d
+                              </span>
+                            </div>
+                          </div>
+                        </div>
+                      )}
                     </div>
 
                     {/* Barra de Acesso Rápido aos Meses (Drill-Down Imediato) */}
