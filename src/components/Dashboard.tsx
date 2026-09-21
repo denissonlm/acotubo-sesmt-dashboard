@@ -31,6 +31,7 @@ interface DashboardProps {
   onLandscapePrint: () => void;
   catOnly?: boolean;
   onToggleCatOnly?: () => void;
+  dataSource?: 'supabase' | 'local' | 'none';
 }
 
 const MONTH_NAMES = ['Jan', 'Fev', 'Mar', 'Abr', 'Mai', 'Jun', 'Jul', 'Ago', 'Set', 'Out', 'Nov', 'Dez'];
@@ -48,7 +49,8 @@ export const Dashboard: React.FC<DashboardProps> = ({
   onReset, 
   onLandscapePrint,
   catOnly = false,
-  onToggleCatOnly
+  onToggleCatOnly,
+  dataSource = 'none'
 }) => {
   const [activeTab, setActiveTab] = useState<'monthly' | 'temporal' | 'safety' | 'breakdown' | 'frequency_severity'>('monthly');
   const [isBreakdownModalOpen, setIsBreakdownModalOpen] = useState(false);
@@ -336,7 +338,19 @@ export const Dashboard: React.FC<DashboardProps> = ({
             <img src={LOGO_BASE64} alt="Logo" style={{ height: '32px', filter: 'brightness(0) invert(1)' }} />
           </div>
           <div>
-            <h1 style={{ fontSize: '1.4rem', margin: 0, fontWeight: 900 }}>{dashboardTitle}</h1>
+            <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+              <h1 style={{ fontSize: '1.4rem', margin: 0, fontWeight: 900 }}>{dashboardTitle}</h1>
+              {dataSource === 'supabase' && (
+                <span style={{ fontSize: '0.68rem', background: 'rgba(16, 185, 129, 0.15)', color: '#34d399', border: '1px solid rgba(16, 185, 129, 0.3)', padding: '2px 8px', borderRadius: '12px', fontWeight: 700 }}>
+                  ☁️ Supabase Conectado
+                </span>
+              )}
+              {dataSource === 'local' && (
+                <span style={{ fontSize: '0.68rem', background: 'rgba(59, 130, 246, 0.15)', color: '#60a5fa', border: '1px solid rgba(59, 130, 246, 0.3)', padding: '2px 8px', borderRadius: '12px', fontWeight: 700 }}>
+                  📁 Local
+                </span>
+              )}
+            </div>
             <p style={{ margin: 0, fontSize: '0.8rem', fontWeight: 600, opacity: 0.8 }}>Grupo Açotubo</p>
           </div>
         </div>
