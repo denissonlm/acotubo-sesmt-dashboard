@@ -5,7 +5,7 @@ import {
 import { 
   AlertCircle, TrendingUp, Calendar, ShieldCheck, Upload, Monitor, Gauge, 
   FileSpreadsheet, Clock, ChevronRight, ChevronLeft, ArrowLeft, ArrowUp, 
-  Users, ExternalLink, Layers 
+  Users, ExternalLink, Layers, Key 
 } from 'lucide-react';
 import type { Accident } from '../types';
 import { calculateStats, generateInsights, generateTemporalInsights } from '../utils/dataLoader';
@@ -16,6 +16,7 @@ import { SafetyManagement } from './SafetyManagement';
 import { Breakdown } from './Breakdown';
 import { FrequencySeverityTab } from './FrequencySeverityTab';
 import { generateSafetyInsights } from '../utils/dataLoader';
+import { TokenExpirationModal, checkTokenNeedsRenewal } from './TokenExpirationModal';
 
 interface DashboardProps {
   accidents: Accident[];
@@ -59,6 +60,20 @@ export const Dashboard: React.FC<DashboardProps> = ({
   const [drillYear, setDrillYear] = useState<number>(() => selectedYears[0] || new Date().getFullYear());
   const [drillMonth, setDrillMonth] = useState<number>(() => new Date().getMonth() + 1);
   const [selectedDay, setSelectedDay] = useState<number | null>(null);
+  const [isTokenModalOpen, setIsTokenModalOpen] = useState(false);
+
+  const tokenRenewalInfo = useMemo(() => checkTokenNeedsRenewal(), []);
+
+  // Exibe popup automaticamente faltando 7 dias (ou se expirado), respeitando dispensa no dia
+  useEffect(() => {
+    if (tokenRenewalInfo.isExpiringSoon || tokenRenewalInfo.isExpired) {
+      const todayStr = new Date().toISOString().split('T')[0];
+      const dismissed = localStorage.getItem('token_renewal_dismissed_date');
+      if (dismissed !== todayStr) {
+        setIsTokenModalOpen(true);
+      }
+    }
+  }, [tokenRenewalInfo]);
 
   useEffect(() => {
     if (selectedYears.length > 0 && !selectedYears.includes(drillYear)) {
@@ -341,9 +356,44 @@ export const Dashboard: React.FC<DashboardProps> = ({
             <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
               <h1 style={{ fontSize: '1.4rem', margin: 0, fontWeight: 900 }}>{dashboardTitle}</h1>
               {dataSource === 'supabase' && (
-                <span style={{ fontSize: '0.68rem', background: 'rgba(16, 185, 129, 0.15)', color: '#34d399', border: '1px solid rgba(16, 185, 129, 0.3)', padding: '2px 8px', borderRadius: '12px', fontWeight: 700 }}>
-                  ☁️ Supabase Conectado
-                </span>
+                <button
+                  onClick={() => setIsTokenModalOpen(true)}
+                  title="Supabase Conectado - Clique para ver dados de acesso e renovação do Token MCP"
+                  style={{ 
+                    fontSize: '0.68rem', 
+                    background: tokenRenewalInfo.isExpired 
+                      ? 'rgba(239, 68, 68, 0.2)' 
+                      : tokenRenewalInfo.isExpiringSoon 
+                      ? 'rgba(245, 158, 11, 0.2)' 
+                      : 'rgba(16, 185, 129, 0.15)', 
+                    color: tokenRenewalInfo.isExpired 
+                      ? '#f87171' 
+                      : tokenRenewalInfo.isExpiringSoon 
+                      ? '#fbbf24' 
+                      : '#34d399', 
+                    border: '1px solid ' + (tokenRenewalInfo.isExpired 
+                      ? 'rgba(239, 68, 68, 0.4)' 
+                      : tokenRenewalInfo.isExpiringSoon 
+                      ? 'rgba(245, 158, 11, 0.4)' 
+                      : 'rgba(16, 185, 129, 0.3)'), 
+                    padding: '3px 10px', 
+                    borderRadius: '12px', 
+                    fontWeight: 700,
+                    cursor: 'pointer',
+                    display: 'inline-flex',
+                    alignItems: 'center',
+                    gap: '5px',
+                    transition: 'all 0.2s'
+                  }}
+                >
+                  {tokenRenewalInfo.isExpired ? (
+                    <>⚠️ Token MCP Expirado</>
+                  ) : tokenRenewalInfo.isExpiringSoon ? (
+                    <>⚠️ Renovar Token ({tokenRenewalInfo.daysRemaining}d)</>
+                  ) : (
+                    <>☁️ Supabase Conectado <Key size={11} style={{ opacity: 0.7 }} /></>
+                  )}
+                </button>
               )}
               {dataSource === 'local' && (
                 <span style={{ fontSize: '0.68rem', background: 'rgba(59, 130, 246, 0.15)', color: '#60a5fa', border: '1px solid rgba(59, 130, 246, 0.3)', padding: '2px 8px', borderRadius: '12px', fontWeight: 700 }}>
@@ -1623,6 +1673,11 @@ export const Dashboard: React.FC<DashboardProps> = ({
           onClose={() => setIsBreakdownModalOpen(false)} 
         />
       )}
+
+      <TokenExpirationModal
+        isOpen={isTokenModalOpen}
+        onClose={() => setIsTokenModalOpen(false)}
+      />
     </div>
   );
 };
