@@ -253,15 +253,6 @@ export const LandscapePrintView: React.FC<LandscapePrintViewProps> = ({
     }, {} as Record<string, number>);
   }, [filteredAccidents]);
 
-  const getHeatmapColor = (count: number) => {
-    if (count === 0) return '#F1F5F9';
-    if (count <= 2) return '#FEE2E2';
-    if (count <= 4) return '#FCA5A5';
-    if (count <= 6) return '#EF4444';
-    if (count <= 8) return '#B91C1C';
-    return '#7F1D1D';
-  };
-
   // Recharts specific formatters & maps
   const monthlyChartData = useMemo(() => {
     return Array.from({ length: 12 }, (_, i) => {
@@ -539,14 +530,16 @@ export const LandscapePrintView: React.FC<LandscapePrintViewProps> = ({
                             <td 
                               key={i} 
                               style={{ 
-                                background: getHeatmapColor(m.count), 
-                                color: m.count > 5 ? '#FFFFFF' : (m.count > 0 ? '#B91C1C' : '#94A3B8'),
+                                background: '#FFFFFF', 
+                                border: m.count > 0 ? '1.5px solid #FECACA' : '1px solid #F1F5F9',
+                                color: m.count > 0 ? '#B91C1C' : '#CBD5E1',
                                 height: '22px',
                                 borderRadius: '4px',
-                                fontSize: '9px',
+                                fontSize: '9.5px',
                                 fontWeight: 900,
                                 textAlign: 'center',
-                                verticalAlign: 'middle'
+                                verticalAlign: 'middle',
+                                boxShadow: m.count > 0 ? '0 1px 2px rgba(185, 28, 28, 0.05)' : 'none'
                               }}
                             >
                               <div>{m.count > 0 ? m.count : '-'}</div>
@@ -557,13 +550,14 @@ export const LandscapePrintView: React.FC<LandscapePrintViewProps> = ({
                     })}
                   </tbody>
                 </table>
-                <div style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', gap: '8px', marginTop: '0.4rem', fontSize: '7.5px', color: 'var(--text-muted)', fontWeight: 700 }}>
-                  <span>Menos</span>
-                  {[0, 2, 4, 6, 8, 10].map(c => (
-                    <div key={c} style={{ width: 16, height: 8, borderRadius: 2, backgroundColor: getHeatmapColor(c) }}></div>
-                  ))}
-                  <span>Mais</span>
-                  <span style={{ marginLeft: 12 }}>— fora do período</span>
+                <div style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', gap: '10px', marginTop: '0.45rem', fontSize: '7.5px', color: 'var(--text-muted)', fontWeight: 700 }}>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '5px' }}>
+                    <div style={{ width: 14, height: 14, borderRadius: 3, border: '1.5px solid #FECACA', background: '#FFFFFF', color: '#B91C1C', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '8.5px', fontWeight: 900 }}>
+                      N
+                    </div>
+                    <span>Ocorrências registradas no mês (em vermelho com fundo branco)</span>
+                  </div>
+                  <span style={{ marginLeft: 8, color: '#94A3B8' }}>— fora do período</span>
                 </div>
               </div>
             </div>
