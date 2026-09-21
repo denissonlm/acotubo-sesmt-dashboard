@@ -1,10 +1,10 @@
-import React, { useMemo, useState } from 'react';
+import React, { useMemo, useState, useEffect } from 'react';
 import { 
   BarChart, Bar, Cell, XAxis, YAxis, Tooltip, Legend, ResponsiveContainer
 } from 'recharts';
 import { 
   AlertCircle, TrendingUp, Calendar, ShieldCheck, Upload, Monitor, Gauge, 
-  FileSpreadsheet, Clock, ChevronRight, ArrowLeft, ArrowUp, 
+  FileSpreadsheet, Clock, ChevronRight, ChevronLeft, ArrowLeft, ArrowUp, 
   Users, ExternalLink, Layers 
 } from 'lucide-react';
 import type { Accident } from '../types';
@@ -57,6 +57,12 @@ export const Dashboard: React.FC<DashboardProps> = ({
   const [drillYear, setDrillYear] = useState<number>(() => selectedYears[0] || new Date().getFullYear());
   const [drillMonth, setDrillMonth] = useState<number>(() => new Date().getMonth() + 1);
   const [selectedDay, setSelectedDay] = useState<number | null>(null);
+
+  useEffect(() => {
+    if (selectedYears.length > 0 && !selectedYears.includes(drillYear)) {
+      setDrillYear(selectedYears[0]);
+    }
+  }, [selectedYears, drillYear]);
 
   const filteredAccidents = useMemo(() => {
     return accidents.filter(a => {
@@ -179,6 +185,121 @@ export const Dashboard: React.FC<DashboardProps> = ({
     }
     return [...list].sort((a, b) => a.date.getDate() - b.date.getDate());
   }, [filteredAccidents, drillYear, drillMonth, selectedDay]);
+
+  // Handler robusto para Drill-Down a partir do Gráfico Anual (Drill-Up)
+  const handleYearlyChartClick = (e: any) => {
+    if (!e) return;
+    let targetYear: number | null = null;
+
+    if (e.activePayload && e.activePayload.length > 0) {
+      targetYear = e.activePayload[0].payload?.yearNum || Number(e.activePayload[0].payload?.year);
+    }
+    const rawIdx = e.activeTooltipIndex !== undefined && e.activeTooltipIndex !== null 
+      ? e.activeTooltipIndex 
+      : e.activeIndex;
+    if (!targetYear && rawIdx !== undefined && rawIdx !== null) {
+      const idx = Number(rawIdx);
+      if (!isNaN(idx) && yearlyChartData[idx]) {
+        targetYear = yearlyChartData[idx].yearNum;
+      }
+    }
+    if (!targetYear && e.activeLabel) {
+      const parsed = Number(e.activeLabel);
+      if (!isNaN(parsed) && parsed > 2000) {
+        targetYear = parsed;
+      }
+    }
+
+    if (targetYear) {
+      setDrillYear(targetYear);
+      setDrillLevel('monthly');
+      setSelectedDay(null);
+    }
+  };
+
+  // Handler robusto para Drill-Down a partir do Gráfico Mensal
+  const handleMonthlyChartClick = (e: any) => {
+    if (!e) return;
+    let targetMonth: number | null = null;
+    let targetYear: number | null = null;
+
+    // 1. activePayload (se disponível)
+    if (e.activePayload && e.activePayload.length > 0) {
+      const p = e.activePayload[0];
+      targetMonth = p.payload?.monthIndex || (MONTH_NAMES.findIndex(m => m.toLowerCase() === String(e.activeLabel).toLowerCase()) + 1);
+      if (p.dataKey) {
+        const parsedYear = Number(p.dataKey);
+        if (!isNaN(parsedYear) && parsedYear > 2000) targetYear = parsedYear;
+      }
+    }
+
+    // 2. activeTooltipIndex / activeIndex (Recharts 3.x)
+    const rawIdx = e.activeTooltipIndex !== undefined && e.activeTooltipIndex !== null 
+      ? e.activeTooltipIndex 
+      : e.activeIndex;
+    if (!targetMonth && rawIdx !== undefined && rawIdx !== null) {
+      const idx = Number(rawIdx);
+      if (!isNaN(idx) && idx >= 0 && idx < 12) {
+        targetMonth = idx + 1;
+      }
+    }
+
+    // 3. activeLabel ("Jan", "Fev", etc.)
+    if (!targetMonth && e.activeLabel) {
+      const found = MONTH_NAMES.findIndex(m => m.toLowerCase() === String(e.activeLabel).toLowerCase());
+      if (found !== -1) {
+        targetMonth = found + 1;
+      }
+    }
+
+    // Identificar o ano clicado (dataKey)
+    if (e.activeDataKey) {
+      const parsedYear = Number(e.activeDataKey);
+      if (!isNaN(parsedYear) && parsedYear > 2000 && selectedYears.includes(parsedYear)) {
+        targetYear = parsedYear;
+      }
+    }
+
+    if (targetMonth && targetMonth >= 1 && targetMonth <= 12) {
+      setDrillMonth(targetMonth);
+      if (targetYear) {
+        setDrillYear(targetYear);
+      } else if (!selectedYears.includes(drillYear) && selectedYears.length > 0) {
+        setDrillYear(selectedYears[0]);
+      }
+      setDrillLevel('daily');
+      setSelectedDay(null);
+    }
+  };
+
+  // Handler robusto para Drill-Down no Gráfico Diário
+  const handleDailyChartClick = (e: any) => {
+    if (!e) return;
+    let targetDay: number | null = null;
+
+    if (e.activePayload && e.activePayload.length > 0) {
+      targetDay = e.activePayload[0].payload?.dayNum;
+    }
+    const rawIdx = e.activeTooltipIndex !== undefined && e.activeTooltipIndex !== null 
+      ? e.activeTooltipIndex 
+      : e.activeIndex;
+    if (targetDay === null && rawIdx !== undefined && rawIdx !== null) {
+      const idx = Number(rawIdx);
+      if (!isNaN(idx) && dailyChartData[idx]) {
+        targetDay = dailyChartData[idx].dayNum;
+      }
+    }
+    if (targetDay === null && e.activeLabel) {
+      const parsed = Number(e.activeLabel);
+      if (!isNaN(parsed) && parsed >= 1 && parsed <= 31) {
+        targetDay = parsed;
+      }
+    }
+
+    if (targetDay !== null && targetDay !== undefined) {
+      setSelectedDay(prev => prev === targetDay ? null : targetDay);
+    }
+  };
 
   const getHeatmapColor = (count: number) => {
     if (count === 0) return '#F1F5F9';
@@ -639,28 +760,70 @@ export const Dashboard: React.FC<DashboardProps> = ({
                   {/* Controles do Cabeçalho: Navegação Drill & Toggle Métrica */}
                   <div style={{ display: 'flex', alignItems: 'center', gap: '0.6rem', flexWrap: 'wrap' }}>
                     {drillLevel === 'monthly' && (
-                      <button
-                        type="button"
-                        onClick={() => { setDrillLevel('yearly'); setSelectedDay(null); }}
-                        title="Subir para visão comparativa entre anos"
-                        style={{
-                          display: 'flex',
-                          alignItems: 'center',
-                          gap: '5px',
-                          padding: '0.45rem 0.75rem',
-                          borderRadius: '8px',
-                          border: '1px solid #CBD5E1',
-                          background: '#FFFFFF',
-                          color: '#475569',
-                          fontWeight: 800,
-                          fontSize: '0.74rem',
-                          cursor: 'pointer',
-                          transition: 'all 0.2s'
-                        }}
-                      >
-                        <ArrowUp size={13} />
-                        <span>Comparar Anos (Drill Up)</span>
-                      </button>
+                      <>
+                        <button
+                          type="button"
+                          onClick={() => { setDrillLevel('yearly'); setSelectedDay(null); }}
+                          title="Subir para visão comparativa entre anos"
+                          style={{
+                            display: 'flex',
+                            alignItems: 'center',
+                            gap: '5px',
+                            padding: '0.45rem 0.75rem',
+                            borderRadius: '8px',
+                            border: '1px solid #CBD5E1',
+                            background: '#FFFFFF',
+                            color: '#475569',
+                            fontWeight: 800,
+                            fontSize: '0.74rem',
+                            cursor: 'pointer',
+                            transition: 'all 0.2s'
+                          }}
+                        >
+                          <ArrowUp size={13} />
+                          <span>Comparar Anos (Drill Up)</span>
+                        </button>
+
+                        <div style={{ display: 'flex', alignItems: 'center', gap: '4px' }}>
+                          <select
+                            value=""
+                            onChange={(e) => {
+                              if (e.target.value) {
+                                const [m, y] = e.target.value.split('-').map(Number);
+                                setDrillMonth(m);
+                                setDrillYear(y);
+                                setDrillLevel('daily');
+                                setSelectedDay(null);
+                              }
+                            }}
+                            style={{
+                              padding: '0.45rem 0.65rem',
+                              borderRadius: '8px',
+                              border: '1px solid #CBD5E1',
+                              background: '#FFFFFF',
+                              color: '#1E293B',
+                              fontWeight: 800,
+                              fontSize: '0.74rem',
+                              cursor: 'pointer'
+                            }}
+                          >
+                            <option value="">🔎 Detalhar Mês (Drill Down)...</option>
+                            {selectedYears.map(yr => (
+                              <optgroup key={yr} label={`Ano ${yr}`}>
+                                {MONTH_NAMES.map((mName, mIdx) => {
+                                  const count = stats[yr]?.monthly[mIdx]?.count || 0;
+                                  const lost = stats[yr]?.monthly[mIdx]?.lostDays || 0;
+                                  return (
+                                    <option key={`${mIdx + 1}-${yr}`} value={`${mIdx + 1}-${yr}`}>
+                                      {mName} / {yr} ({count} {count === 1 ? 'acidente' : 'acidentes'}{lost > 0 ? `, ${lost}d afast.` : ''})
+                                    </option>
+                                  );
+                                })}
+                              </optgroup>
+                            ))}
+                          </select>
+                        </div>
+                      </>
                     )}
 
                     {drillLevel === 'yearly' && (
@@ -689,7 +852,33 @@ export const Dashboard: React.FC<DashboardProps> = ({
                     )}
 
                     {drillLevel === 'daily' && (
-                      <div style={{ display: 'flex', alignItems: 'center', gap: '0.4rem' }}>
+                      <div style={{ display: 'flex', alignItems: 'center', gap: '0.35rem' }}>
+                        <button
+                          type="button"
+                          onClick={() => {
+                            if (drillMonth === 1) {
+                              setDrillMonth(12);
+                              setDrillYear(prev => prev - 1);
+                            } else {
+                              setDrillMonth(prev => prev - 1);
+                            }
+                            setSelectedDay(null);
+                          }}
+                          title="Mês Anterior"
+                          style={{
+                            padding: '0.4rem 0.5rem',
+                            borderRadius: '8px',
+                            border: '1px solid #CBD5E1',
+                            background: '#FFFFFF',
+                            color: '#1E293B',
+                            cursor: 'pointer',
+                            display: 'flex',
+                            alignItems: 'center'
+                          }}
+                        >
+                          <ChevronLeft size={14} />
+                        </button>
+
                         <select
                           value={drillMonth}
                           onChange={(e) => { setDrillMonth(Number(e.target.value)); setSelectedDay(null); }}
@@ -730,6 +919,32 @@ export const Dashboard: React.FC<DashboardProps> = ({
 
                         <button
                           type="button"
+                          onClick={() => {
+                            if (drillMonth === 12) {
+                              setDrillMonth(1);
+                              setDrillYear(prev => prev + 1);
+                            } else {
+                              setDrillMonth(prev => prev + 1);
+                            }
+                            setSelectedDay(null);
+                          }}
+                          title="Próximo Mês"
+                          style={{
+                            padding: '0.4rem 0.5rem',
+                            borderRadius: '8px',
+                            border: '1px solid #CBD5E1',
+                            background: '#FFFFFF',
+                            color: '#1E293B',
+                            cursor: 'pointer',
+                            display: 'flex',
+                            alignItems: 'center'
+                          }}
+                        >
+                          <ChevronRight size={14} />
+                        </button>
+
+                        <button
+                          type="button"
                           onClick={() => { setDrillLevel('monthly'); setSelectedDay(null); }}
                           title="Voltar para a visão mensal"
                           style={{
@@ -744,7 +959,8 @@ export const Dashboard: React.FC<DashboardProps> = ({
                             fontWeight: 800,
                             fontSize: '0.74rem',
                             cursor: 'pointer',
-                            transition: 'all 0.2s'
+                            transition: 'all 0.2s',
+                            marginLeft: '2px'
                           }}
                         >
                           <ArrowLeft size={13} />
@@ -813,15 +1029,7 @@ export const Dashboard: React.FC<DashboardProps> = ({
                         <BarChart 
                           data={yearlyChartData} 
                           margin={{ top: 25, right: 30, left: 0, bottom: 0 }}
-                          onClick={(e: any) => {
-                            if (e && e.activePayload && e.activePayload.length > 0) {
-                              const y = e.activePayload[0].payload?.yearNum;
-                              if (y) {
-                                setDrillYear(y);
-                                setDrillLevel('monthly');
-                              }
-                            }
-                          }}
+                          onClick={handleYearlyChartClick}
                           style={{ cursor: 'pointer' }}
                         >
                           <XAxis dataKey="year" axisLine={false} tickLine={false} tick={{ fontSize: 13, fill: '#334155', fontWeight: 800 }} />
@@ -844,13 +1052,73 @@ export const Dashboard: React.FC<DashboardProps> = ({
                             fill={monthlyMetric === 'accidents' ? 'var(--primary)' : '#0284C7'}
                             radius={[6, 6, 0, 0]}
                             barSize={50}
+                            cursor="pointer"
+                            onClick={(data: any, barIndex: number) => {
+                              const y = data?.yearNum || data?.payload?.yearNum || yearlyChartData[barIndex]?.yearNum || Number(data?.year);
+                              if (y) {
+                                setDrillYear(y);
+                                setDrillLevel('monthly');
+                                setSelectedDay(null);
+                              }
+                            }}
                             label={{ position: 'top', fill: '#0F172A', fontSize: 12, fontWeight: 900 }}
                           />
                         </BarChart>
                       </ResponsiveContainer>
                     </div>
-                    <div style={{ textAlign: 'center', fontSize: '0.72rem', color: '#64748B', marginTop: '0.5rem', fontWeight: 600 }}>
-                      💡 Dica: Clique em qualquer barra de ano para detalhar os meses correspondentes.
+
+                    {/* Barra de Acesso Rápido por Ano */}
+                    <div style={{
+                      marginTop: '0.75rem',
+                      paddingTop: '0.75rem',
+                      borderTop: '1px dashed #E2E8F0',
+                      display: 'flex',
+                      alignItems: 'center',
+                      justifyContent: 'center',
+                      gap: '8px',
+                      flexWrap: 'wrap'
+                    }}>
+                      <span style={{ fontSize: '0.73rem', color: '#475569', fontWeight: 700 }}>
+                        💡 Clique em uma barra acima ou selecione o ano para abrir os meses:
+                      </span>
+                      {yearlyChartData.map(item => (
+                        <button
+                          key={item.year}
+                          type="button"
+                          onClick={() => {
+                            setDrillYear(item.yearNum);
+                            setDrillLevel('monthly');
+                            setSelectedDay(null);
+                          }}
+                          style={{
+                            padding: '4px 10px',
+                            borderRadius: '6px',
+                            border: '1px solid #CBD5E1',
+                            background: '#FFFFFF',
+                            color: 'var(--primary)',
+                            fontWeight: 800,
+                            fontSize: '0.75rem',
+                            cursor: 'pointer',
+                            display: 'inline-flex',
+                            alignItems: 'center',
+                            gap: '6px',
+                            boxShadow: '0 1px 3px rgba(0,0,0,0.05)',
+                            transition: 'all 0.15s ease'
+                          }}
+                        >
+                          <span>Ano {item.year}</span>
+                          <span style={{
+                            background: monthlyMetric === 'accidents' ? 'rgba(185, 28, 28, 0.1)' : 'rgba(2, 132, 199, 0.1)',
+                            color: monthlyMetric === 'accidents' ? 'var(--primary)' : '#0284C7',
+                            borderRadius: '999px',
+                            padding: '1px 6px',
+                            fontSize: '0.65rem',
+                            fontWeight: 900
+                          }}>
+                            {item.value} {monthlyMetric === 'accidents' ? 'acid.' : 'dias'}
+                          </span>
+                        </button>
+                      ))}
                     </div>
                   </div>
                 )}
@@ -867,19 +1135,7 @@ export const Dashboard: React.FC<DashboardProps> = ({
                           <BarChart 
                             data={chartData} 
                             margin={{ top: 25, right: 30, left: 0, bottom: 0 }}
-                            onClick={(e: any) => {
-                              if (e && e.activePayload && e.activePayload.length > 0) {
-                                const payload = e.activePayload[0];
-                                const monthIdx = payload.payload?.monthIndex || (MONTH_NAMES.indexOf(String(e.activeLabel)) + 1);
-                                const clickedYear = Number(payload.dataKey) || drillYear;
-                                if (monthIdx >= 1 && monthIdx <= 12) {
-                                  setDrillMonth(monthIdx);
-                                  if (clickedYear && !isNaN(clickedYear)) setDrillYear(clickedYear);
-                                  setDrillLevel('daily');
-                                  setSelectedDay(null);
-                                }
-                              }
-                            }}
+                            onClick={handleMonthlyChartClick}
                             style={{ cursor: 'pointer' }}
                           >
                             <XAxis dataKey="month" axisLine={false} tickLine={false} tick={{fontSize: 12, fill: '#64748B'}} />
@@ -906,6 +1162,23 @@ export const Dashboard: React.FC<DashboardProps> = ({
                                   fill={colors[idx % colors.length]} 
                                   radius={[4, 4, 0, 0]} 
                                   barSize={selectedYears.length > 3 ? 12 : 20}
+                                  cursor="pointer"
+                                  onClick={(data: any, barIndex: number) => {
+                                    let mIdx: number | null = null;
+                                    if (data && data.monthIndex) {
+                                      mIdx = data.monthIndex;
+                                    } else if (data && data.payload && data.payload.monthIndex) {
+                                      mIdx = data.payload.monthIndex;
+                                    } else if (barIndex !== undefined && barIndex >= 0 && barIndex < 12) {
+                                      mIdx = barIndex + 1;
+                                    }
+                                    if (mIdx) {
+                                      setDrillMonth(mIdx);
+                                      setDrillYear(year);
+                                      setDrillLevel('daily');
+                                      setSelectedDay(null);
+                                    }
+                                  }}
                                   label={{ position: 'top', fill: '#64748B', fontSize: 10, fontWeight: 700 }}
                                 />
                               );
@@ -914,8 +1187,72 @@ export const Dashboard: React.FC<DashboardProps> = ({
                         </ResponsiveContainer>
                       </div>
                     </div>
-                    <div style={{ textAlign: 'center', fontSize: '0.72rem', color: '#64748B', marginTop: '0.5rem', fontWeight: 600 }}>
-                      💡 Dica: Clique em qualquer barra ou mês para fazer o <strong>Drill-Down</strong> e ver os acidentados dia a dia.
+
+                    {/* Barra de Acesso Rápido aos Meses (Drill-Down Imediato) */}
+                    <div style={{
+                      marginTop: '0.75rem',
+                      paddingTop: '0.75rem',
+                      borderTop: '1px dashed #E2E8F0',
+                      display: 'flex',
+                      alignItems: 'center',
+                      justifyContent: 'space-between',
+                      flexWrap: 'wrap',
+                      gap: '0.5rem'
+                    }}>
+                      <div style={{ display: 'flex', alignItems: 'center', gap: '6px', fontSize: '0.73rem', color: '#475569', fontWeight: 700 }}>
+                        <span>🖱️ <strong>Drill-Down:</strong> Clique em uma barra acima ou selecione o mês abaixo:</span>
+                      </div>
+                      <div style={{ display: 'flex', alignItems: 'center', gap: '4px', flexWrap: 'wrap' }}>
+                        {MONTH_NAMES.map((mName, idx) => {
+                          const mIdx = idx + 1;
+                          const monthAccs = selectedYears.reduce((sum, yr) => sum + (stats[yr]?.monthly[idx]?.count || 0), 0);
+                          const monthLost = selectedYears.reduce((sum, yr) => sum + (stats[yr]?.monthly[idx]?.lostDays || 0), 0);
+                          const hasAccs = monthAccs > 0;
+                          return (
+                            <button
+                              key={mName}
+                              type="button"
+                              onClick={() => {
+                                setDrillMonth(mIdx);
+                                if (selectedYears.length > 0 && !selectedYears.includes(drillYear)) {
+                                  setDrillYear(selectedYears[0]);
+                                }
+                                setDrillLevel('daily');
+                                setSelectedDay(null);
+                              }}
+                              style={{
+                                padding: '3px 8px',
+                                borderRadius: '6px',
+                                border: hasAccs ? '1px solid #FECACA' : '1px solid #E2E8F0',
+                                background: hasAccs ? '#FEF2F2' : '#FFFFFF',
+                                color: hasAccs ? '#991B1B' : '#64748B',
+                                fontWeight: 800,
+                                fontSize: '0.72rem',
+                                cursor: 'pointer',
+                                display: 'inline-flex',
+                                alignItems: 'center',
+                                gap: '4px',
+                                transition: 'all 0.15s ease'
+                              }}
+                              title={`${mName}: ${monthAccs} acidentes, ${monthLost} dias perdidos`}
+                            >
+                              <span>{mName}</span>
+                              {hasAccs && (
+                                <span style={{
+                                  background: 'var(--primary)',
+                                  color: '#FFFFFF',
+                                  borderRadius: '999px',
+                                  padding: '1px 5px',
+                                  fontSize: '0.62rem',
+                                  fontWeight: 900
+                                }}>
+                                  {monthlyMetric === 'accidents' ? monthAccs : `${monthLost}d`}
+                                </span>
+                              )}
+                            </button>
+                          );
+                        })}
+                      </div>
                     </div>
                   </div>
                 )}
@@ -929,14 +1266,7 @@ export const Dashboard: React.FC<DashboardProps> = ({
                           <BarChart 
                             data={dailyChartData} 
                             margin={{ top: 25, right: 15, left: -15, bottom: 0 }}
-                            onClick={(e: any) => {
-                              if (e && e.activePayload && e.activePayload.length > 0) {
-                                const d = e.activePayload[0].payload?.dayNum;
-                                if (d !== undefined) {
-                                  setSelectedDay(prev => prev === d ? null : d);
-                                }
-                              }
-                            }}
+                            onClick={handleDailyChartClick}
                             style={{ cursor: 'pointer' }}
                           >
                             <XAxis dataKey="day" axisLine={false} tickLine={false} tick={{ fontSize: 11, fill: '#64748B', fontWeight: 700 }} />
@@ -992,6 +1322,13 @@ export const Dashboard: React.FC<DashboardProps> = ({
                               dataKey="value"
                               radius={[4, 4, 0, 0]}
                               barSize={18}
+                              cursor="pointer"
+                              onClick={(data: any, barIndex: number) => {
+                                const d = data?.dayNum || data?.payload?.dayNum || (barIndex !== undefined && dailyChartData[barIndex]?.dayNum);
+                                if (d !== undefined && d !== null) {
+                                  setSelectedDay(prev => prev === d ? null : d);
+                                }
+                              }}
                               label={{ 
                                 position: 'top', 
                                 fill: '#475569', 
@@ -1012,7 +1349,14 @@ export const Dashboard: React.FC<DashboardProps> = ({
                                 if (selectedDay === entry.dayNum) {
                                   fill = '#F59E0B'; // Âmbar para o dia filtrado
                                 }
-                                return <Cell key={`cell-${entry.dayNum}`} fill={fill} />;
+                                return (
+                                  <Cell 
+                                    key={`cell-${entry.dayNum}`} 
+                                    fill={fill} 
+                                    cursor="pointer"
+                                    onClick={() => setSelectedDay(prev => prev === entry.dayNum ? null : entry.dayNum)}
+                                  />
+                                );
                               })}
                             </Bar>
                           </BarChart>
