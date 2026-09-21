@@ -5,6 +5,7 @@ import type { Accident } from './types'
 import { Dashboard } from './components/Dashboard'
 import { UploadSection } from './components/UploadSection'
 import { LandscapePrintView } from './components/LandscapePrintView'
+import { MonthDrilldownPrintView } from './components/MonthDrilldownPrintView'
 import { LandscapeFilterModal, type LandscapeFilterValues } from './components/LandscapeFilterModal'
 import { Loader2 } from 'lucide-react'
 
@@ -13,6 +14,7 @@ function App() {
   const [loading, setLoading] = useState(true)
   const [showUpload, setShowUpload] = useState(false)
   const [isLandscapePrinting, setIsLandscapePrinting] = useState(false)
+  const [monthPrintData, setMonthPrintData] = useState<{ year: number; month: number; metric: 'accidents' | 'lostDays' } | null>(null)
   const [isLandscapeModalOpen, setIsLandscapeModalOpen] = useState(false)
   const [catOnly, setCatOnly] = useState(false)
   const [dataSource, setDataSource] = useState<'supabase' | 'local' | 'none'>('none')
@@ -106,6 +108,22 @@ function App() {
           setShowUpload(false);
         }}
         onCancel={accidents.length > 0 ? () => setShowUpload(false) : undefined}
+      />
+    );
+  }
+
+  if (monthPrintData) {
+    return (
+      <MonthDrilldownPrintView 
+        accidents={effectiveAccidents}
+        year={monthPrintData.year}
+        month={monthPrintData.month}
+        metric={monthPrintData.metric}
+        filterDivision={filterDivision}
+        filterManager={filterManager}
+        filterArea={filterArea}
+        filterAreas={landscapeFilters.areas}
+        onBack={() => setMonthPrintData(null)}
       />
     );
   }
@@ -221,6 +239,7 @@ function App() {
         catOnly={catOnly}
         onToggleCatOnly={() => setCatOnly(prev => !prev)}
         dataSource={dataSource}
+        onPrintMonthDrilldown={setMonthPrintData}
       />
 
       <LandscapeFilterModal 

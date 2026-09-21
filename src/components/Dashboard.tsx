@@ -5,7 +5,7 @@ import {
 import { 
   AlertCircle, TrendingUp, Calendar, ShieldCheck, Upload, Monitor, Gauge, 
   FileSpreadsheet, Clock, ChevronRight, ChevronLeft, ArrowLeft, ArrowUp, 
-  Users, ExternalLink, Key 
+  Users, ExternalLink, Key, Printer 
 } from 'lucide-react';
 import type { Accident } from '../types';
 import { calculateStats, generateInsights, generateTemporalInsights } from '../utils/dataLoader';
@@ -33,6 +33,7 @@ interface DashboardProps {
   catOnly?: boolean;
   onToggleCatOnly?: () => void;
   dataSource?: 'supabase' | 'local' | 'none';
+  onPrintMonthDrilldown?: (data: { year: number; month: number; metric: 'accidents' | 'lostDays' }) => void;
 }
 
 const MONTH_NAMES = ['Jan', 'Fev', 'Mar', 'Abr', 'Mai', 'Jun', 'Jul', 'Ago', 'Set', 'Out', 'Nov', 'Dez'];
@@ -51,7 +52,8 @@ export const Dashboard: React.FC<DashboardProps> = ({
   onLandscapePrint,
   catOnly = false,
   onToggleCatOnly,
-  dataSource = 'none'
+  dataSource = 'none',
+  onPrintMonthDrilldown
 }) => {
   const [activeTab, setActiveTab] = useState<'monthly' | 'temporal' | 'safety' | 'breakdown' | 'frequency_severity'>('monthly');
   const [isBreakdownModalOpen, setIsBreakdownModalOpen] = useState(false);
@@ -987,6 +989,39 @@ export const Dashboard: React.FC<DashboardProps> = ({
                         >
                           <ArrowLeft size={13} />
                           <span>Voltar aos Meses</span>
+                        </button>
+
+                        <button
+                          type="button"
+                          onClick={() => onPrintMonthDrilldown?.({ year: drillYear, month: drillMonth, metric: monthlyMetric })}
+                          title="Gerar Quadro de Gestão à Vista deste Mês (Folha Única A4 Paisagem)"
+                          style={{
+                            display: 'flex',
+                            alignItems: 'center',
+                            gap: '6px',
+                            padding: '0.45rem 0.8rem',
+                            borderRadius: '8px',
+                            border: '1px solid #10B981',
+                            background: '#ECFDF5',
+                            color: '#065F46',
+                            fontWeight: 800,
+                            fontSize: '0.74rem',
+                            cursor: 'pointer',
+                            boxShadow: '0 1px 3px rgba(16, 185, 129, 0.15)',
+                            whiteSpace: 'nowrap',
+                            transition: 'all 0.2s'
+                          }}
+                          onMouseEnter={(e) => {
+                            e.currentTarget.style.background = '#D1FAE5';
+                            e.currentTarget.style.borderColor = '#059669';
+                          }}
+                          onMouseLeave={(e) => {
+                            e.currentTarget.style.background = '#ECFDF5';
+                            e.currentTarget.style.borderColor = '#10B981';
+                          }}
+                        >
+                          <Printer size={13} color="#059669" />
+                          <span>Quadro Gestão à Vista (A4)</span>
                         </button>
                       </div>
                     )}
