@@ -760,70 +760,28 @@ export const Dashboard: React.FC<DashboardProps> = ({
                   {/* Controles do Cabeçalho: Navegação Drill & Toggle Métrica */}
                   <div style={{ display: 'flex', alignItems: 'center', gap: '0.6rem', flexWrap: 'wrap' }}>
                     {drillLevel === 'monthly' && (
-                      <>
-                        <button
-                          type="button"
-                          onClick={() => { setDrillLevel('yearly'); setSelectedDay(null); }}
-                          title="Subir para visão comparativa entre anos"
-                          style={{
-                            display: 'flex',
-                            alignItems: 'center',
-                            gap: '5px',
-                            padding: '0.45rem 0.75rem',
-                            borderRadius: '8px',
-                            border: '1px solid #CBD5E1',
-                            background: '#FFFFFF',
-                            color: '#475569',
-                            fontWeight: 800,
-                            fontSize: '0.74rem',
-                            cursor: 'pointer',
-                            transition: 'all 0.2s'
-                          }}
-                        >
-                          <ArrowUp size={13} />
-                          <span>Comparar Anos (Drill Up)</span>
-                        </button>
-
-                        <div style={{ display: 'flex', alignItems: 'center', gap: '4px' }}>
-                          <select
-                            value=""
-                            onChange={(e) => {
-                              if (e.target.value) {
-                                const [m, y] = e.target.value.split('-').map(Number);
-                                setDrillMonth(m);
-                                setDrillYear(y);
-                                setDrillLevel('daily');
-                                setSelectedDay(null);
-                              }
-                            }}
-                            style={{
-                              padding: '0.45rem 0.65rem',
-                              borderRadius: '8px',
-                              border: '1px solid #CBD5E1',
-                              background: '#FFFFFF',
-                              color: '#1E293B',
-                              fontWeight: 800,
-                              fontSize: '0.74rem',
-                              cursor: 'pointer'
-                            }}
-                          >
-                            <option value="">🔎 Detalhar Mês (Drill Down)...</option>
-                            {selectedYears.map(yr => (
-                              <optgroup key={yr} label={`Ano ${yr}`}>
-                                {MONTH_NAMES.map((mName, mIdx) => {
-                                  const count = stats[yr]?.monthly[mIdx]?.count || 0;
-                                  const lost = stats[yr]?.monthly[mIdx]?.lostDays || 0;
-                                  return (
-                                    <option key={`${mIdx + 1}-${yr}`} value={`${mIdx + 1}-${yr}`}>
-                                      {mName} / {yr} ({count} {count === 1 ? 'acidente' : 'acidentes'}{lost > 0 ? `, ${lost}d afast.` : ''})
-                                    </option>
-                                  );
-                                })}
-                              </optgroup>
-                            ))}
-                          </select>
-                        </div>
-                      </>
+                      <button
+                        type="button"
+                        onClick={() => { setDrillLevel('yearly'); setSelectedDay(null); }}
+                        title="Subir para visão comparativa entre anos"
+                        style={{
+                          display: 'flex',
+                          alignItems: 'center',
+                          gap: '5px',
+                          padding: '0.45rem 0.75rem',
+                          borderRadius: '8px',
+                          border: '1px solid #CBD5E1',
+                          background: '#FFFFFF',
+                          color: '#475569',
+                          fontWeight: 800,
+                          fontSize: '0.74rem',
+                          cursor: 'pointer',
+                          transition: 'all 0.2s'
+                        }}
+                      >
+                        <ArrowUp size={13} />
+                        <span>Comparar Anos (Drill Up)</span>
+                      </button>
                     )}
 
                     {drillLevel === 'yearly' && (
@@ -1076,49 +1034,43 @@ export const Dashboard: React.FC<DashboardProps> = ({
                       alignItems: 'center',
                       justifyContent: 'center',
                       gap: '8px',
-                      flexWrap: 'wrap'
+                      flexWrap: 'nowrap',
+                      overflowX: 'auto'
                     }}>
-                      <span style={{ fontSize: '0.73rem', color: '#475569', fontWeight: 700 }}>
-                        💡 Clique em uma barra acima ou selecione o ano para abrir os meses:
+                      <span style={{ fontSize: '0.73rem', color: '#475569', fontWeight: 700, whiteSpace: 'nowrap', flexShrink: 0 }}>
+                        💡 Selecione o ano para detalhar:
                       </span>
-                      {yearlyChartData.map(item => (
-                        <button
-                          key={item.year}
-                          type="button"
-                          onClick={() => {
-                            setDrillYear(item.yearNum);
-                            setDrillLevel('monthly');
-                            setSelectedDay(null);
-                          }}
-                          style={{
-                            padding: '4px 10px',
-                            borderRadius: '6px',
-                            border: '1px solid #CBD5E1',
-                            background: '#FFFFFF',
-                            color: 'var(--primary)',
-                            fontWeight: 800,
-                            fontSize: '0.75rem',
-                            cursor: 'pointer',
-                            display: 'inline-flex',
-                            alignItems: 'center',
-                            gap: '6px',
-                            boxShadow: '0 1px 3px rgba(0,0,0,0.05)',
-                            transition: 'all 0.15s ease'
-                          }}
-                        >
-                          <span>Ano {item.year}</span>
-                          <span style={{
-                            background: monthlyMetric === 'accidents' ? 'rgba(185, 28, 28, 0.1)' : 'rgba(2, 132, 199, 0.1)',
-                            color: monthlyMetric === 'accidents' ? 'var(--primary)' : '#0284C7',
-                            borderRadius: '999px',
-                            padding: '1px 6px',
-                            fontSize: '0.65rem',
-                            fontWeight: 900
-                          }}>
-                            {item.value} {monthlyMetric === 'accidents' ? 'acid.' : 'dias'}
-                          </span>
-                        </button>
-                      ))}
+                      <div style={{ display: 'flex', alignItems: 'center', gap: '6px', flexWrap: 'nowrap', flexShrink: 0 }}>
+                        {yearlyChartData.map(item => (
+                          <button
+                            key={item.year}
+                            type="button"
+                            onClick={() => {
+                              setDrillYear(item.yearNum);
+                              setDrillLevel('monthly');
+                              setSelectedDay(null);
+                            }}
+                            style={{
+                              padding: '4px 12px',
+                              borderRadius: '6px',
+                              border: '1px solid #CBD5E1',
+                              background: '#FFFFFF',
+                              color: 'var(--primary)',
+                              fontWeight: 800,
+                              fontSize: '0.75rem',
+                              cursor: 'pointer',
+                              display: 'inline-flex',
+                              alignItems: 'center',
+                              boxShadow: '0 1px 3px rgba(0,0,0,0.05)',
+                              transition: 'all 0.15s ease',
+                              whiteSpace: 'nowrap',
+                              flexShrink: 0
+                            }}
+                          >
+                            <span>Ano {item.year}</span>
+                          </button>
+                        ))}
+                      </div>
                     </div>
                   </div>
                 )}
@@ -1195,14 +1147,15 @@ export const Dashboard: React.FC<DashboardProps> = ({
                       borderTop: '1px dashed #E2E8F0',
                       display: 'flex',
                       alignItems: 'center',
-                      justifyContent: 'space-between',
-                      flexWrap: 'wrap',
-                      gap: '0.5rem'
+                      justifyContent: 'center',
+                      gap: '8px',
+                      flexWrap: 'nowrap',
+                      overflowX: 'auto'
                     }}>
-                      <div style={{ display: 'flex', alignItems: 'center', gap: '6px', fontSize: '0.73rem', color: '#475569', fontWeight: 700 }}>
-                        <span>🖱️ <strong>Drill-Down:</strong> Clique em uma barra acima ou selecione o mês abaixo:</span>
-                      </div>
-                      <div style={{ display: 'flex', alignItems: 'center', gap: '4px', flexWrap: 'wrap' }}>
+                      <span style={{ fontSize: '0.73rem', color: '#475569', fontWeight: 700, whiteSpace: 'nowrap', flexShrink: 0 }}>
+                        🖱️ <strong>Drill-Down:</strong>
+                      </span>
+                      <div style={{ display: 'flex', alignItems: 'center', gap: '4px', flexWrap: 'nowrap', flexShrink: 0 }}>
                         {MONTH_NAMES.map((mName, idx) => {
                           const mIdx = idx + 1;
                           const monthAccs = selectedYears.reduce((sum, yr) => sum + (stats[yr]?.monthly[idx]?.count || 0), 0);
@@ -1221,34 +1174,24 @@ export const Dashboard: React.FC<DashboardProps> = ({
                                 setSelectedDay(null);
                               }}
                               style={{
-                                padding: '3px 8px',
+                                padding: '4px 9px',
                                 borderRadius: '6px',
                                 border: hasAccs ? '1px solid #FECACA' : '1px solid #E2E8F0',
                                 background: hasAccs ? '#FEF2F2' : '#FFFFFF',
                                 color: hasAccs ? '#991B1B' : '#64748B',
-                                fontWeight: 800,
-                                fontSize: '0.72rem',
+                                fontWeight: hasAccs ? 900 : 700,
+                                fontSize: '0.74rem',
                                 cursor: 'pointer',
                                 display: 'inline-flex',
                                 alignItems: 'center',
-                                gap: '4px',
-                                transition: 'all 0.15s ease'
+                                justifyContent: 'center',
+                                transition: 'all 0.15s ease',
+                                whiteSpace: 'nowrap',
+                                flexShrink: 0
                               }}
                               title={`${mName}: ${monthAccs} acidentes, ${monthLost} dias perdidos`}
                             >
                               <span>{mName}</span>
-                              {hasAccs && (
-                                <span style={{
-                                  background: 'var(--primary)',
-                                  color: '#FFFFFF',
-                                  borderRadius: '999px',
-                                  padding: '1px 5px',
-                                  fontSize: '0.62rem',
-                                  fontWeight: 900
-                                }}>
-                                  {monthlyMetric === 'accidents' ? monthAccs : `${monthLost}d`}
-                                </span>
-                              )}
                             </button>
                           );
                         })}
