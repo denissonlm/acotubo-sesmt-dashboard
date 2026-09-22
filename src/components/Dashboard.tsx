@@ -1683,10 +1683,7 @@ export const Dashboard: React.FC<DashboardProps> = ({
                         <div style={{ 
                           display: 'grid', 
                           gridTemplateColumns: 'repeat(auto-fill, minmax(310px, 1fr))', 
-                          gap: '0.5rem', 
-                          maxHeight: '340px', 
-                          overflowY: 'auto', 
-                          paddingRight: '4px' 
+                          gap: '0.5rem'
                         }}>
                           {monthAccidentsList.map((acc, idx) => {
                             const empName = acc.employee && acc.employee.trim() && acc.employee !== 'N/A' && acc.employee !== 'Não informado'
