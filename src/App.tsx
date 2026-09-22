@@ -26,7 +26,8 @@ function App() {
     years: [2024, 2025, 2026],
     division: 'ALL',
     manager: 'ALL',
-    areas: ['ALL']
+    areas: ['ALL'],
+    closedMonthsOnly: false
   })
   
   // Filtros ativos no painel principal
@@ -136,6 +137,7 @@ function App() {
         filterDivision={landscapeFilters.division} 
         filterManager={landscapeFilters.manager} 
         filterAreas={landscapeFilters.areas} 
+        closedMonthsOnly={landscapeFilters.closedMonthsOnly}
         onBack={() => setIsLandscapePrinting(false)} 
       />
     );
@@ -250,7 +252,8 @@ function App() {
           years: selectedYears,
           division: filterDivision,
           manager: filterManager,
-          areas: filterArea !== 'ALL' ? [filterArea] : ['ALL']
+          areas: filterArea !== 'ALL' ? [filterArea] : ['ALL'],
+          closedMonthsOnly: landscapeFilters.closedMonthsOnly
         }}
         onConfirm={(filters) => {
           setLandscapeFilters(filters);

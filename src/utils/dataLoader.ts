@@ -120,7 +120,11 @@ export const parseAccidentData = (data: ArrayBuffer): Accident[] => {
   }
 };
 
-export const calculateStats = (accidents: Accident[], targetYears: number[]): Record<number, YearStats> => {
+export const calculateStats = (
+  accidents: Accident[], 
+  targetYears: number[],
+  closedMonthsOnly: boolean = false
+): Record<number, YearStats> => {
   const stats: Record<number, YearStats> = {};
   const currentYear = new Date().getFullYear();
   const currentMonth = new Date().getMonth() + 1;
@@ -138,7 +142,7 @@ export const calculateStats = (accidents: Accident[], targetYears: number[]): Re
 
     let monthsToConsider = 12;
     if (year === currentYear) {
-      monthsToConsider = currentMonth;
+      monthsToConsider = closedMonthsOnly ? Math.max(1, currentMonth - 1) : currentMonth;
     } else if (year > currentYear) {
       monthsToConsider = 1; // Avoid division by zero
     }
@@ -357,7 +361,7 @@ export const generateTemporalInsights = (accidents: Accident[]): Insight[] => {
   return insights.slice(0, 4);
 };
 
-export const calculateSafetyRecords = (accidents: Accident[]) => {
+export const calculateSafetyRecords = (accidents: Accident[], referenceDate?: Date) => {
   if (accidents.length === 0) {
     return {
       currentStreak: 0,
@@ -368,7 +372,7 @@ export const calculateSafetyRecords = (accidents: Accident[]) => {
   }
 
   const sorted = [...accidents].sort((a, b) => a.date.getTime() - b.date.getTime());
-  const today = new Date();
+  const today = referenceDate ? new Date(referenceDate) : new Date();
   today.setHours(0, 0, 0, 0);
 
   const lastAccident = sorted[sorted.length - 1];
@@ -413,8 +417,8 @@ export const calculateSafetyRecords = (accidents: Accident[]) => {
   };
 };
 
-export const generateSafetyInsights = (accidents: Accident[]): Insight[] => {
-  const records = calculateSafetyRecords(accidents);
+export const generateSafetyInsights = (accidents: Accident[], referenceDate?: Date): Insight[] => {
+  const records = calculateSafetyRecords(accidents, referenceDate);
   const insights: Insight[] = [];
 
   if (records.currentStreak > records.historicalRecord * 0.8 && records.currentStreak < records.historicalRecord) {
@@ -450,11 +454,12 @@ export const generateSafetyInsights = (accidents: Accident[]): Insight[] => {
 
 export const calculateDaysWithoutAccidentsRanking = (
   accidents: Accident[], 
-  groupBy: 'area' | 'division'
+  groupBy: 'area' | 'division',
+  referenceDate?: Date
 ): SafetyRankingItem[] => {
   if (!accidents || accidents.length === 0) return [];
 
-  const today = new Date();
+  const today = referenceDate ? new Date(referenceDate) : new Date();
   today.setHours(0, 0, 0, 0);
 
   const groups: Record<string, { accidents: Accident[] }> = {};

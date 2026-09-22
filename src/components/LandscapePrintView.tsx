@@ -1,4 +1,4 @@
-import React, { useMemo } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 import { 
   BarChart, Bar, XAxis, YAxis, Tooltip, Legend, ResponsiveContainer,
   PieChart, Pie, Cell, AreaChart, Area, LineChart, Line, CartesianGrid, ReferenceLine
@@ -6,7 +6,7 @@ import {
 import { 
   Printer, ArrowLeft, ShieldCheck, Clock, Target, FileText, 
   AlertCircle, TrendingUp, Calendar, Trophy, Zap, Users, Activity, HardHat, GraduationCap, ClipboardList,
-  Gauge, FileSearch, ExternalLink
+  Gauge, FileSearch, ExternalLink, CalendarClock
 } from 'lucide-react';
 import type { Accident } from '../types';
 import { 
@@ -36,6 +36,7 @@ interface LandscapePrintViewProps {
   filterManager: string;
   filterArea?: string;
   filterAreas?: string[];
+  closedMonthsOnly?: boolean;
   onBack: () => void;
 }
 
@@ -48,8 +49,19 @@ export const LandscapePrintView: React.FC<LandscapePrintViewProps> = ({
   filterManager,
   filterArea,
   filterAreas,
+  closedMonthsOnly = false,
   onBack
 }) => {
+  const [isClosedMonthsOnly, setIsClosedMonthsOnly] = useState<boolean>(closedMonthsOnly);
+
+  useEffect(() => {
+    setIsClosedMonthsOnly(closedMonthsOnly);
+  }, [closedMonthsOnly]);
+
+  const now = new Date();
+  const currentYear = now.getFullYear();
+  const currentMonth = now.getMonth() + 1;
+
   const activeAreas = useMemo(() => {
     if (filterAreas && filterAreas.length > 0) {
       if (filterAreas.includes('ALL')) return [];
@@ -62,20 +74,29 @@ export const LandscapePrintView: React.FC<LandscapePrintViewProps> = ({
   // 1. Filtered Accidents (only print those matching filters, as requested in users first request)
   const filteredAccidents = useMemo(() => {
     return accidents.filter(a => {
+      if (isClosedMonthsOnly) {
+        if (a.year > currentYear) return false;
+        if (a.year === currentYear && a.month >= currentMonth) return false;
+      }
       const matchesYear = selectedYears.includes(a.year);
       const matchesDivision = filterDivision === 'ALL' || a.division === filterDivision;
       const matchesManager = filterManager === 'ALL' || a.manager === filterManager;
       const matchesArea = activeAreas.length === 0 || activeAreas.includes(a.area);
       return matchesYear && matchesDivision && matchesManager && matchesArea;
     });
-  }, [accidents, selectedYears, filterDivision, filterManager, activeAreas]);
+  }, [accidents, selectedYears, filterDivision, filterManager, activeAreas, isClosedMonthsOnly, currentYear, currentMonth]);
+
+  const closedSnapshotDate = useMemo(() => {
+    if (!isClosedMonthsOnly) return undefined;
+    return new Date(currentYear, currentMonth - 1, 0, 23, 59, 59);
+  }, [isClosedMonthsOnly, currentYear, currentMonth]);
 
   // 2. Calculations
-  const stats = useMemo(() => calculateStats(filteredAccidents, selectedYears), [filteredAccidents, selectedYears]);
+  const stats = useMemo(() => calculateStats(filteredAccidents, selectedYears, isClosedMonthsOnly), [filteredAccidents, selectedYears, isClosedMonthsOnly]);
   const temporalStats = useMemo(() => calculateTemporalStats(filteredAccidents), [filteredAccidents]);
-  const safetyRecords = useMemo(() => calculateSafetyRecords(filteredAccidents), [filteredAccidents]);
-  const areaRanking = useMemo(() => calculateDaysWithoutAccidentsRanking(filteredAccidents, 'area'), [filteredAccidents]);
-  const divisionRanking = useMemo(() => calculateDaysWithoutAccidentsRanking(filteredAccidents, 'division'), [filteredAccidents]);
+  const safetyRecords = useMemo(() => calculateSafetyRecords(filteredAccidents, closedSnapshotDate), [filteredAccidents, closedSnapshotDate]);
+  const areaRanking = useMemo(() => calculateDaysWithoutAccidentsRanking(filteredAccidents, 'area', closedSnapshotDate), [filteredAccidents, closedSnapshotDate]);
+  const divisionRanking = useMemo(() => calculateDaysWithoutAccidentsRanking(filteredAccidents, 'division', closedSnapshotDate), [filteredAccidents, closedSnapshotDate]);
   const maxAreaDays = useMemo(() => areaRanking.length > 0 ? Math.max(...areaRanking.map(r => r.daysWithout), 1) : 1, [areaRanking]);
   const maxDivDays = useMemo(() => divisionRanking.length > 0 ? Math.max(...divisionRanking.map(r => r.daysWithout), 1) : 1, [divisionRanking]);
 
@@ -91,7 +112,7 @@ export const LandscapePrintView: React.FC<LandscapePrintViewProps> = ({
   // 3. Insights
   const monthlyInsights = useMemo(() => generateInsights(filteredAccidents, selectedYears), [filteredAccidents, selectedYears]);
   const temporalInsights = useMemo(() => generateTemporalInsights(filteredAccidents), [filteredAccidents]);
-  const safetyInsights = useMemo(() => generateSafetyInsights(filteredAccidents), [filteredAccidents]);
+  const safetyInsights = useMemo(() => generateSafetyInsights(filteredAccidents, closedSnapshotDate), [filteredAccidents, closedSnapshotDate]);
   
   const breakdownInsights = useMemo(() => [
     { 
@@ -177,8 +198,12 @@ export const LandscapePrintView: React.FC<LandscapePrintViewProps> = ({
     }
     if (filterManager !== 'ALL') parts.push(`Sup: ${filterManager}`);
     parts.push(`Anos: ${selectedYears.join(', ')}`);
+    if (isClosedMonthsOnly) {
+      const closedMonthName = MONTH_NAMES[Math.max(0, currentMonth - 2)] || 'Mês Ant.';
+      parts.push(`Período: Meses Fechados (até ${closedMonthName}/${currentYear})`);
+    }
     return parts.join(' • ');
-  }, [filterDivision, activeAreas, filterManager, selectedYears]);
+  }, [filterDivision, activeAreas, filterManager, selectedYears, isClosedMonthsOnly, currentMonth, currentYear]);
 
   const availableMonths = useMemo(() => {
     const yearObj = hhtStore[primaryYear] || {};
@@ -186,9 +211,13 @@ export const LandscapePrintView: React.FC<LandscapePrintViewProps> = ({
     const accidentMonths = filteredAccidents
       .filter(a => a.year === primaryYear)
       .map(a => a.month);
-    const allMonths = Array.from(new Set([...hhtMonths, ...accidentMonths])).sort((a, b) => a - b);
-    return allMonths.length > 0 ? allMonths : [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12];
-  }, [hhtStore, primaryYear, filteredAccidents]);
+    let allMonths = Array.from(new Set([...hhtMonths, ...accidentMonths])).sort((a, b) => a - b);
+    if (allMonths.length === 0) allMonths = [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12];
+    if (isClosedMonthsOnly && primaryYear === currentYear) {
+      allMonths = allMonths.filter(m => m < currentMonth);
+    }
+    return allMonths;
+  }, [hhtStore, primaryYear, filteredAccidents, isClosedMonthsOnly, currentYear, currentMonth]);
 
   const unitForRates = useMemo(() => {
     if (filterDivision === 'ALL') return 'ALL';
@@ -420,6 +449,29 @@ export const LandscapePrintView: React.FC<LandscapePrintViewProps> = ({
           </button>
           <div style={{ height: '20px', width: '1px', background: 'rgba(255,255,255,0.2)' }}></div>
           <div style={{ fontSize: '0.85rem', fontWeight: 700, color: '#E2E8F0' }}>Modo Impressão do Quadro de Gestão à Vista (A4 Paisagem)</div>
+          
+          <button
+            onClick={() => setIsClosedMonthsOnly(!isClosedMonthsOnly)}
+            style={{
+              background: isClosedMonthsOnly ? '#10B981' : 'rgba(255,255,255,0.1)',
+              border: isClosedMonthsOnly ? '1px solid #10B981' : '1px solid rgba(255,255,255,0.2)',
+              color: 'white',
+              padding: '0.45rem 0.9rem',
+              borderRadius: '8px',
+              cursor: 'pointer',
+              display: 'flex',
+              alignItems: 'center',
+              gap: '0.5rem',
+              fontSize: '0.78rem',
+              fontWeight: 800,
+              transition: 'all 0.2s',
+              boxShadow: isClosedMonthsOnly ? '0 0 14px rgba(16, 185, 129, 0.4)' : 'none'
+            }}
+            title={isClosedMonthsOnly ? "Mostrando apenas meses fechados (exclui o mês atual incompleto)" : "Clique para considerar apenas meses fechados (excluir mês atual incompleto)"}
+          >
+            <CalendarClock size={16} />
+            <span>{isClosedMonthsOnly ? `Meses Fechados Ativo (até ${MONTH_NAMES[Math.max(0, currentMonth - 2)]})` : 'Apenas Meses Fechados'}</span>
+          </button>
         </div>
         <button onClick={() => window.print()} className="btn-pdf" style={{ padding: '0.5rem 1.8rem', background: '#10B981', color: 'white', border: 'none', borderRadius: '8px', cursor: 'pointer', fontWeight: 800, display: 'flex', alignItems: 'center', gap: '0.5rem', boxShadow: '0 4px 12px rgba(16, 185, 129, 0.2)' }}>
           <Printer size={18} />

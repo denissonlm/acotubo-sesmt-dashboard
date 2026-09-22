@@ -1,10 +1,12 @@
 import React, { useState, useEffect, useMemo } from 'react';
 import { 
   X, Monitor, Calendar, Building2, UserCheck, 
-  Briefcase, RotateCcw, AlertTriangle, CheckCircle2
+  Briefcase, RotateCcw, AlertTriangle, CheckCircle2, CalendarClock
 } from 'lucide-react';
 import { motion } from 'framer-motion';
 import type { Accident } from '../types';
+
+const MONTH_NAMES_FULL = ['Janeiro', 'Fevereiro', 'Março', 'Abril', 'Maio', 'Junho', 'Julho', 'Agosto', 'Setembro', 'Outubro', 'Novembro', 'Dezembro'];
 
 export interface LandscapeFilterValues {
   years: number[];
@@ -12,6 +14,7 @@ export interface LandscapeFilterValues {
   manager: string;
   areas: string[];
   area?: string;
+  closedMonthsOnly?: boolean;
 }
 
 interface LandscapeFilterModalProps {
@@ -24,6 +27,7 @@ interface LandscapeFilterModalProps {
     manager: string;
     area?: string;
     areas?: string[];
+    closedMonthsOnly?: boolean;
   };
   onConfirm: (filters: LandscapeFilterValues) => void;
 }
@@ -51,10 +55,17 @@ export const LandscapeFilterModal: React.FC<LandscapeFilterModalProps> = ({
     return Array.from(new Set(accidents.map(a => a.area).filter(Boolean))).sort();
   }, [accidents]);
 
+  const now = new Date();
+  const currentYear = now.getFullYear();
+  const currentMonth = now.getMonth() + 1; // 1-12 (Setembro = 9)
+  const currentMonthName = MONTH_NAMES_FULL[currentMonth - 1] || 'Mês Atual';
+  const closedMonthName = currentMonth === 1 ? `Dezembro/${currentYear - 1}` : MONTH_NAMES_FULL[currentMonth - 2];
+
   const [selectedYears, setSelectedYears] = useState<number[]>([]);
   const [selectedDivision, setSelectedDivision] = useState<string>('ALL');
   const [selectedManager, setSelectedManager] = useState<string>('ALL');
   const [selectedAreas, setSelectedAreas] = useState<string[]>(['ALL']);
+  const [closedMonthsOnly, setClosedMonthsOnly] = useState<boolean>(false);
 
   useEffect(() => {
     if (isOpen) {
@@ -64,6 +75,7 @@ export const LandscapeFilterModal: React.FC<LandscapeFilterModalProps> = ({
       setSelectedYears(validYears);
       setSelectedDivision(initialFilters.division || 'ALL');
       setSelectedManager(initialFilters.manager || 'ALL');
+      setClosedMonthsOnly(initialFilters.closedMonthsOnly || false);
       
       if (initialFilters.areas && initialFilters.areas.length > 0) {
         setSelectedAreas(initialFilters.areas);
@@ -80,13 +92,17 @@ export const LandscapeFilterModal: React.FC<LandscapeFilterModalProps> = ({
   // Cálculo em tempo real dos acidentes correspondentes
   const matchingAccidents = useMemo(() => {
     return accidents.filter(a => {
+      if (closedMonthsOnly) {
+        if (a.year > currentYear) return false;
+        if (a.year === currentYear && a.month >= currentMonth) return false;
+      }
       const matchYear = selectedYears.includes(a.year);
       const matchDiv = selectedDivision === 'ALL' || a.division === selectedDivision;
       const matchMgr = selectedManager === 'ALL' || a.manager === selectedManager;
       const matchArea = isAllAreas || selectedAreas.includes(a.area);
       return matchYear && matchDiv && matchMgr && matchArea;
     });
-  }, [accidents, selectedYears, selectedDivision, selectedManager, selectedAreas, isAllAreas]);
+  }, [accidents, selectedYears, selectedDivision, selectedManager, selectedAreas, isAllAreas, closedMonthsOnly, currentYear, currentMonth]);
 
   const totalMatching = matchingAccidents.length;
   const totalLostDays = useMemo(() => matchingAccidents.reduce((s, a) => s + (a.lostDays || 0), 0), [matchingAccidents]);
@@ -138,6 +154,7 @@ export const LandscapeFilterModal: React.FC<LandscapeFilterModalProps> = ({
     setSelectedDivision('ALL');
     setSelectedManager('ALL');
     setSelectedAreas(['ALL']);
+    setClosedMonthsOnly(false);
   };
 
   const handleConfirm = () => {
@@ -146,7 +163,8 @@ export const LandscapeFilterModal: React.FC<LandscapeFilterModalProps> = ({
       division: selectedDivision,
       manager: selectedManager,
       areas: selectedAreas,
-      area: selectedAreas.length === 1 ? selectedAreas[0] : (isAllAreas ? 'ALL' : selectedAreas.join(', '))
+      area: selectedAreas.length === 1 ? selectedAreas[0] : (isAllAreas ? 'ALL' : selectedAreas.join(', ')),
+      closedMonthsOnly
     });
   };
 
@@ -308,6 +326,99 @@ export const LandscapeFilterModal: React.FC<LandscapeFilterModalProps> = ({
                   </button>
                 );
               })}
+            </div>
+
+            {/* Opção: Meses Fechados */}
+            <div 
+              onClick={() => setClosedMonthsOnly(!closedMonthsOnly)}
+              style={{
+                marginTop: '0.85rem',
+                background: closedMonthsOnly ? '#F0FDF4' : '#F8FAFC',
+                border: closedMonthsOnly ? '1.5px solid #10B981' : '1.5px solid #CBD5E1',
+                borderRadius: '12px',
+                padding: '0.75rem 1rem',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'space-between',
+                cursor: 'pointer',
+                transition: 'all 0.2s ease',
+                boxShadow: closedMonthsOnly ? '0 2px 10px rgba(16, 185, 129, 0.15)' : 'none',
+                userSelect: 'none'
+              }}
+            >
+              <div style={{ display: 'flex', alignItems: 'center', gap: '0.85rem' }}>
+                <div style={{
+                  width: '36px',
+                  height: '36px',
+                  borderRadius: '10px',
+                  background: closedMonthsOnly ? '#10B981' : '#E2E8F0',
+                  color: closedMonthsOnly ? '#FFFFFF' : '#64748B',
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  transition: 'all 0.2s ease',
+                  flexShrink: 0
+                }}>
+                  <CalendarClock size={20} />
+                </div>
+                <div>
+                  <div style={{ fontSize: '0.88rem', fontWeight: 800, color: '#0F172A', display: 'flex', alignItems: 'center', gap: '8px', flexWrap: 'wrap' }}>
+                    <span>Apenas Meses Fechados</span>
+                    {closedMonthsOnly ? (
+                      <span style={{ 
+                        fontSize: '0.7rem', 
+                        fontWeight: 900, 
+                        background: '#DCFCE7', 
+                        color: '#15803D', 
+                        padding: '2px 8px', 
+                        borderRadius: '6px',
+                        border: '1px solid #BBF7D0' 
+                      }}>
+                        Ativo (até {closedMonthName}/{currentYear})
+                      </span>
+                    ) : (
+                      <span style={{ 
+                        fontSize: '0.7rem', 
+                        fontWeight: 700, 
+                        background: '#F1F5F9', 
+                        color: '#64748B', 
+                        padding: '2px 8px', 
+                        borderRadius: '6px' 
+                      }}>
+                        Mês corrente em aberto incluso ({currentMonthName}/{currentYear})
+                      </span>
+                    )}
+                  </div>
+                  <p style={{ margin: '3px 0 0 0', fontSize: '0.75rem', color: '#64748B', fontWeight: 500 }}>
+                    {closedMonthsOnly 
+                      ? `Reporta ocorrências consolidadas até ${closedMonthName} de ${currentYear}, desconsiderando os dados parciais de ${currentMonthName}.`
+                      : `Inclui os registros parciais do mês atual de ${currentMonthName} de ${currentYear}.`}
+                  </p>
+                </div>
+              </div>
+
+              {/* Visual Toggle Switch */}
+              <div style={{
+                width: '46px',
+                height: '26px',
+                borderRadius: '13px',
+                background: closedMonthsOnly ? '#10B981' : '#CBD5E1',
+                padding: '3px',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: closedMonthsOnly ? 'flex-end' : 'flex-start',
+                transition: 'background 0.2s ease',
+                flexShrink: 0,
+                marginLeft: '14px'
+              }}>
+                <div style={{
+                  width: '20px',
+                  height: '20px',
+                  borderRadius: '50%',
+                  background: '#FFFFFF',
+                  boxShadow: '0 1px 4px rgba(0,0,0,0.25)'
+                }}></div>
+              </div>
             </div>
           </div>
 
