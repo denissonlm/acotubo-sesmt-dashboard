@@ -1302,7 +1302,7 @@ export const Dashboard: React.FC<DashboardProps> = ({
                                         setSelectedDay(null);
                                       }
                                     }}
-                                    label={{ position: 'top', fill: '#0F172A', fontSize: 11, fontWeight: 900 }}
+                                    label={{ position: 'top', fill: '#0F172A', fontSize: 12, fontWeight: 900 }}
                                   />
                                 );
                               })}
@@ -1332,17 +1332,17 @@ export const Dashboard: React.FC<DashboardProps> = ({
                             alignItems: 'center',
                             justifyContent: 'space-between'
                           }}>
-                            <span style={{ fontSize: '0.74rem', fontWeight: 900, color: '#0F172A', display: 'flex', alignItems: 'center', gap: '6px' }}>
+                            <span style={{ fontSize: '0.76rem', fontWeight: 900, color: '#0F172A', display: 'flex', alignItems: 'center', gap: '6px' }}>
                               <span style={{ width: '7px', height: '7px', borderRadius: '50%', background: 'var(--primary)' }}></span>
                               Mês a Mês ({selectedYears[0]})
                             </span>
-                            <span style={{ fontSize: '0.66rem', fontWeight: 800, color: '#64748B' }}>
+                            <span style={{ fontSize: '0.68rem', fontWeight: 800, color: '#64748B' }}>
                               Consolidado Anual
                             </span>
                           </div>
 
                           <div style={{ flex: 1, minHeight: 0, overflow: 'hidden', display: 'flex', flexDirection: 'column' }}>
-                            <table style={{ width: '100%', height: '100%', borderCollapse: 'collapse', fontSize: '0.72rem', tableLayout: 'fixed' }}>
+                            <table style={{ width: '100%', height: '100%', borderCollapse: 'collapse', fontSize: '0.78rem', tableLayout: 'fixed' }}>
                               <colgroup>
                                 <col style={{ width: '30%' }} />
                                 <col style={{ width: '38%' }} />
@@ -1350,13 +1350,13 @@ export const Dashboard: React.FC<DashboardProps> = ({
                               </colgroup>
                               <thead>
                                 <tr style={{ background: '#F8FAFC', borderBottom: '1px solid #E2E8F0', height: '22px' }}>
-                                  <th style={{ padding: '0 8px', textAlign: 'left', fontWeight: 800, color: '#64748B', fontSize: '0.66rem', textTransform: 'uppercase', letterSpacing: '0.3px', whiteSpace: 'nowrap' }}>
+                                  <th style={{ padding: '0 8px', textAlign: 'left', fontWeight: 800, color: '#64748B', fontSize: '0.72rem', textTransform: 'uppercase', letterSpacing: '0.3px', whiteSpace: 'nowrap' }}>
                                     MÊS
                                   </th>
-                                  <th style={{ padding: '0 4px', textAlign: 'center', fontWeight: 800, color: '#64748B', fontSize: '0.66rem', textTransform: 'uppercase', letterSpacing: '0.3px', whiteSpace: 'nowrap' }}>
+                                  <th style={{ padding: '0 4px', textAlign: 'center', fontWeight: 800, color: '#64748B', fontSize: '0.72rem', textTransform: 'uppercase', letterSpacing: '0.3px', whiteSpace: 'nowrap' }}>
                                     ACIDENTES
                                   </th>
-                                  <th style={{ padding: '0 8px', textAlign: 'right', fontWeight: 800, color: '#64748B', fontSize: '0.66rem', textTransform: 'uppercase', letterSpacing: '0.3px', whiteSpace: 'nowrap' }}>
+                                  <th style={{ padding: '0 8px', textAlign: 'right', fontWeight: 800, color: '#64748B', fontSize: '0.72rem', textTransform: 'uppercase', letterSpacing: '0.3px', whiteSpace: 'nowrap' }}>
                                     AFAST
                                   </th>
                                 </tr>
@@ -1386,7 +1386,7 @@ export const Dashboard: React.FC<DashboardProps> = ({
                                       onMouseEnter={(e) => { e.currentTarget.style.background = '#FEE2E2'; }}
                                       onMouseLeave={(e) => { e.currentTarget.style.background = isSelectedDrill ? '#FEF2F2' : (count > 0 ? 'rgba(254, 242, 242, 0.45)' : (idx % 2 === 0 ? '#FFFFFF' : '#FAFAFA')); }}
                                     >
-                                      <td style={{ padding: '0 8px', fontWeight: count > 0 ? 800 : 600, color: count > 0 ? '#0F172A' : '#64748B', lineHeight: 1.15, whiteSpace: 'nowrap', verticalAlign: 'middle' }}>
+                                      <td style={{ padding: '0 8px', fontWeight: count > 0 ? 800 : 600, color: count > 0 ? '#0F172A' : '#64748B', lineHeight: 1.15, fontSize: '0.78rem', whiteSpace: 'nowrap', verticalAlign: 'middle' }}>
                                         {mName}
                                       </td>
                                       <td style={{ padding: '0 4px', textAlign: 'center', verticalAlign: 'middle' }}>
@@ -1398,14 +1398,14 @@ export const Dashboard: React.FC<DashboardProps> = ({
                                             padding: '1px 6px', 
                                             borderRadius: '4px', 
                                             fontWeight: 900, 
-                                            fontSize: '0.72rem',
+                                            fontSize: '0.78rem',
                                             border: '1px solid #FECACA',
                                             lineHeight: 1.1
                                           }}>
                                             {count}
                                           </span>
                                         ) : (
-                                          <span style={{ color: '#CBD5E1', fontWeight: 600 }}>—</span>
+                                          <span style={{ color: '#CBD5E1', fontWeight: 600, fontSize: '0.78rem' }}>—</span>
                                         )}
                                       </td>
                                       <td style={{ padding: '0 8px', textAlign: 'right', verticalAlign: 'middle' }}>
@@ -1417,14 +1417,14 @@ export const Dashboard: React.FC<DashboardProps> = ({
                                             padding: '1px 6px', 
                                             borderRadius: '4px', 
                                             fontWeight: 800, 
-                                            fontSize: '0.72rem',
+                                            fontSize: '0.78rem',
                                             border: '1px solid #BAE6FD',
                                             lineHeight: 1.1
                                           }}>
                                             {lost}d
                                           </span>
                                         ) : (
-                                          <span style={{ color: '#CBD5E1', fontWeight: 600 }}>0d</span>
+                                          <span style={{ color: '#CBD5E1', fontWeight: 600, fontSize: '0.78rem' }}>0d</span>
                                         )}
                                       </td>
                                     </tr>
@@ -1433,7 +1433,7 @@ export const Dashboard: React.FC<DashboardProps> = ({
                               </tbody>
                               <tfoot>
                                 <tr style={{ background: '#F8FAFC', borderTop: '2px solid #CBD5E1', height: '24px' }}>
-                                  <td style={{ padding: '0 8px', fontWeight: 900, color: '#0F172A', fontSize: '0.72rem', textTransform: 'uppercase', verticalAlign: 'middle' }}>
+                                  <td style={{ padding: '0 8px', fontWeight: 900, color: '#0F172A', fontSize: '0.8rem', textTransform: 'uppercase', verticalAlign: 'middle' }}>
                                     TOTAL
                                   </td>
                                   <td style={{ padding: '0 4px', textAlign: 'center', verticalAlign: 'middle' }}>
@@ -1441,10 +1441,10 @@ export const Dashboard: React.FC<DashboardProps> = ({
                                       display: 'inline-block',
                                       background: 'var(--primary)', 
                                       color: '#FFFFFF', 
-                                      padding: '1px 7px', 
+                                      padding: '1.5px 7px', 
                                       borderRadius: '4px', 
                                       fontWeight: 950, 
-                                      fontSize: '0.72rem',
+                                      fontSize: '0.8rem',
                                       lineHeight: 1.1
                                     }}>
                                       {stats[selectedYears[0]]?.total || 0}
@@ -1455,10 +1455,10 @@ export const Dashboard: React.FC<DashboardProps> = ({
                                       display: 'inline-block',
                                       background: '#0284C7', 
                                       color: '#FFFFFF', 
-                                      padding: '1px 7px', 
+                                      padding: '1.5px 7px', 
                                       borderRadius: '4px', 
                                       fontWeight: 950, 
-                                      fontSize: '0.72rem',
+                                      fontSize: '0.8rem',
                                       lineHeight: 1.1
                                     }}>
                                       {stats[selectedYears[0]]?.totalLostDays || 0}d

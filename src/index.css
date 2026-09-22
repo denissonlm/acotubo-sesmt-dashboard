@@ -1095,5 +1095,30 @@ body {
   padding: 1.15rem 0.65rem !important;
 }
 
+/* Vertical Monthly Table in A4 Landscape Report */
+.a4-landscape .vertical-monthly-table {
+  width: 100% !important;
+  height: 100% !important;
+  border-collapse: collapse !important;
+  table-layout: fixed !important;
+}
+
+.a4-landscape .vertical-monthly-table th {
+  padding: 1px 6px !important;
+  font-size: 8px !important;
+  font-weight: 900 !important;
+}
+
+.a4-landscape .vertical-monthly-table td {
+  padding: 0px 6px !important;
+  font-size: 8.5px !important;
+}
+
+.a4-landscape .vertical-monthly-table tfoot td {
+  padding: 1px 6px !important;
+  font-size: 9px !important;
+  font-weight: 950 !important;
+}
+
 
 .recharts-wrapper, .recharts-surface, .recharts-responsive-container { outline: none !important; }

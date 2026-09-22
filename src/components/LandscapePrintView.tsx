@@ -513,7 +513,7 @@ export const LandscapePrintView: React.FC<LandscapePrintViewProps> = ({
                 </div>
               </div>
 
-              <div style={{ flex: 1, minHeight: 0, display: 'grid', gridTemplateColumns: 'minmax(0, 1fr) 220px', gap: '0.75rem', alignItems: 'stretch' }}>
+              <div style={{ flex: 1, minHeight: 0, display: 'grid', gridTemplateColumns: 'minmax(0, 1fr) 235px', gap: '0.75rem', alignItems: 'stretch' }}>
                 {/* Gráfico de Barras nivelado em card idêntico à tabela */}
                 <div style={{
                   height: '100%',
@@ -528,9 +528,9 @@ export const LandscapePrintView: React.FC<LandscapePrintViewProps> = ({
                 }}>
                   <div style={{ flex: 1, minHeight: 0 }}>
                     <ResponsiveContainer width="100%" height="100%">
-                      <BarChart data={monthlyChartData} margin={{ top: 12, right: 10, left: -25, bottom: 0 }}>
-                        <XAxis dataKey="month" axisLine={false} tickLine={false} tick={{ fontSize: 7.5, fontWeight: 700, fill: '#64748B' }} />
-                        <YAxis axisLine={false} tickLine={false} tick={{ fontSize: 7.5, fill: '#64748B' }} />
+                      <BarChart data={monthlyChartData} margin={{ top: 18, right: 10, left: -25, bottom: 0 }}>
+                        <XAxis dataKey="month" axisLine={false} tickLine={false} tick={{ fontSize: 8.5, fontWeight: 800, fill: '#475569' }} />
+                        <YAxis axisLine={false} tickLine={false} tick={{ fontSize: 8, fill: '#64748B' }} />
                         <Tooltip 
                           cursor={{ fill: '#F1F5F9' }} 
                           contentStyle={{ backgroundColor: '#FFFFFF', borderRadius: '8px', border: '1px solid #E2E8F0', boxShadow: '0 4px 12px rgba(0,0,0,0.1)', fontSize: '0.75rem' }} 
@@ -542,7 +542,7 @@ export const LandscapePrintView: React.FC<LandscapePrintViewProps> = ({
                           name={`Ano ${selectedYears[0]}`} 
                           fill="#B91C1C" 
                           radius={[3, 3, 0, 0]} 
-                          label={{ position: 'top', fill: '#0F172A', fontSize: 8.5, fontWeight: 900 }}
+                          label={{ position: 'top', fill: '#0F172A', fontSize: 12, fontWeight: 900 }}
                         />
                       </BarChart>
                     </ResponsiveContainer>
@@ -561,21 +561,21 @@ export const LandscapePrintView: React.FC<LandscapePrintViewProps> = ({
                   overflow: 'hidden',
                   boxSizing: 'border-box'
                 }}>
-                  <table style={{ width: '100%', height: '100%', borderCollapse: 'collapse', fontSize: '6.8px', tableLayout: 'fixed' }}>
+                  <table className="vertical-monthly-table" style={{ width: '100%', height: '100%', borderCollapse: 'collapse', fontSize: '8.5px', tableLayout: 'fixed' }}>
                     <colgroup>
-                      <col style={{ width: '30%' }} />
+                      <col style={{ width: '28%' }} />
                       <col style={{ width: '38%' }} />
-                      <col style={{ width: '32%' }} />
+                      <col style={{ width: '34%' }} />
                     </colgroup>
                     <thead>
-                      <tr style={{ background: '#F8FAFC', borderBottom: '1.5px solid #E2E8F0', height: '18px' }}>
-                        <th style={{ padding: '0 6px', textAlign: 'left', fontWeight: 900, color: '#475569', fontSize: '6.2px', textTransform: 'uppercase', letterSpacing: '0.3px', whiteSpace: 'nowrap' }}>
+                      <tr style={{ background: '#F8FAFC', borderBottom: '1.5px solid #E2E8F0', height: '19px' }}>
+                        <th style={{ padding: '0 6px', textAlign: 'left', fontWeight: 900, color: '#334155', fontSize: '8px', textTransform: 'uppercase', letterSpacing: '0.3px', whiteSpace: 'nowrap' }}>
                           MÊS
                         </th>
-                        <th style={{ padding: '0 4px', textAlign: 'center', fontWeight: 900, color: '#475569', fontSize: '6.2px', textTransform: 'uppercase', letterSpacing: '0.3px', whiteSpace: 'nowrap' }}>
+                        <th style={{ padding: '0 4px', textAlign: 'center', fontWeight: 900, color: '#334155', fontSize: '8px', textTransform: 'uppercase', letterSpacing: '0.3px', whiteSpace: 'nowrap' }}>
                           ACIDENTES
                         </th>
-                        <th style={{ padding: '0 6px', textAlign: 'right', fontWeight: 900, color: '#475569', fontSize: '6.2px', textTransform: 'uppercase', letterSpacing: '0.3px', whiteSpace: 'nowrap' }}>
+                        <th style={{ padding: '0 6px', textAlign: 'right', fontWeight: 900, color: '#334155', fontSize: '8px', textTransform: 'uppercase', letterSpacing: '0.3px', whiteSpace: 'nowrap' }}>
                           AFAST
                         </th>
                       </tr>
@@ -593,7 +593,7 @@ export const LandscapePrintView: React.FC<LandscapePrintViewProps> = ({
                               background: count > 0 ? 'rgba(254, 242, 242, 0.45)' : (idx % 2 === 0 ? '#FFFFFF' : '#FAFAFA') 
                             }}
                           >
-                            <td style={{ padding: '0 6px', fontWeight: count > 0 ? 900 : 600, color: count > 0 ? '#0F172A' : '#64748B', fontSize: '6.8px', whiteSpace: 'nowrap', verticalAlign: 'middle' }}>
+                            <td style={{ padding: '0 6px', fontWeight: count > 0 ? 900 : 700, color: count > 0 ? '#0F172A' : '#64748B', fontSize: '8.5px', whiteSpace: 'nowrap', verticalAlign: 'middle' }}>
                               {mName}
                             </td>
                             <td style={{ padding: '0 4px', textAlign: 'center', verticalAlign: 'middle' }}>
@@ -602,17 +602,17 @@ export const LandscapePrintView: React.FC<LandscapePrintViewProps> = ({
                                   display: 'inline-block',
                                   background: '#FEF2F2', 
                                   color: '#B91C1C', 
-                                  padding: '0.5px 5px', 
+                                  padding: '1px 6px', 
                                   borderRadius: '3px', 
                                   fontWeight: 900, 
-                                  fontSize: '6.8px',
+                                  fontSize: '8.5px',
                                   border: '1px solid #FECACA',
                                   lineHeight: 1.1
                                 }}>
                                   {count}
                                 </span>
                               ) : (
-                                <span style={{ color: '#CBD5E1', fontWeight: 600 }}>—</span>
+                                <span style={{ color: '#CBD5E1', fontWeight: 700, fontSize: '8.5px' }}>—</span>
                               )}
                             </td>
                             <td style={{ padding: '0 6px', textAlign: 'right', verticalAlign: 'middle' }}>
@@ -621,17 +621,17 @@ export const LandscapePrintView: React.FC<LandscapePrintViewProps> = ({
                                   display: 'inline-block',
                                   background: '#F0F9FF', 
                                   color: '#0284C7', 
-                                  padding: '0.5px 5px', 
+                                  padding: '1px 6px', 
                                   borderRadius: '3px', 
                                   fontWeight: 800, 
-                                  fontSize: '6.8px',
+                                  fontSize: '8.5px',
                                   border: '1px solid #BAE6FD',
                                   lineHeight: 1.1
                                 }}>
                                   {lost}d
                                 </span>
                               ) : (
-                                <span style={{ color: '#CBD5E1', fontWeight: 600 }}>0d</span>
+                                <span style={{ color: '#CBD5E1', fontWeight: 700, fontSize: '8.5px' }}>0d</span>
                               )}
                             </td>
                           </tr>
@@ -639,8 +639,8 @@ export const LandscapePrintView: React.FC<LandscapePrintViewProps> = ({
                       })}
                     </tbody>
                     <tfoot>
-                      <tr style={{ background: '#F8FAFC', borderTop: '2px solid #CBD5E1', height: '18px' }}>
-                        <td style={{ padding: '0 6px', fontWeight: 950, color: '#0F172A', fontSize: '6.8px', textTransform: 'uppercase', verticalAlign: 'middle' }}>
+                      <tr style={{ background: '#F8FAFC', borderTop: '2px solid #CBD5E1', height: '19px' }}>
+                        <td style={{ padding: '0 6px', fontWeight: 950, color: '#0F172A', fontSize: '9px', textTransform: 'uppercase', verticalAlign: 'middle' }}>
                           TOTAL
                         </td>
                         <td style={{ padding: '0 4px', textAlign: 'center', verticalAlign: 'middle' }}>
@@ -648,10 +648,10 @@ export const LandscapePrintView: React.FC<LandscapePrintViewProps> = ({
                             display: 'inline-block',
                             background: '#B91C1C', 
                             color: '#FFFFFF', 
-                            padding: '1px 6px', 
+                            padding: '1.5px 7px', 
                             borderRadius: '3px', 
                             fontWeight: 950, 
-                            fontSize: '6.8px',
+                            fontSize: '9px',
                             lineHeight: 1.1
                           }}>
                             {stats[selectedYears[0]]?.total || 0}
@@ -662,10 +662,10 @@ export const LandscapePrintView: React.FC<LandscapePrintViewProps> = ({
                             display: 'inline-block',
                             background: '#0284C7', 
                             color: '#FFFFFF', 
-                            padding: '1px 6px', 
+                            padding: '1.5px 7px', 
                             borderRadius: '3px', 
                             fontWeight: 950, 
-                            fontSize: '6.8px',
+                            fontSize: '9px',
                             lineHeight: 1.1
                           }}>
                             {stats[selectedYears[0]]?.totalLostDays || 0}d
