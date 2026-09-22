@@ -79,6 +79,15 @@ export const LandscapePrintView: React.FC<LandscapePrintViewProps> = ({
   const maxAreaDays = useMemo(() => areaRanking.length > 0 ? Math.max(...areaRanking.map(r => r.daysWithout), 1) : 1, [areaRanking]);
   const maxDivDays = useMemo(() => divisionRanking.length > 0 ? Math.max(...divisionRanking.map(r => r.daysWithout), 1) : 1, [divisionRanking]);
 
+  const getHeatmapColor = (count: number) => {
+    if (count === 0) return '#F1F5F9';
+    if (count <= 2) return '#FEE2E2';
+    if (count <= 4) return '#FCA5A5';
+    if (count <= 6) return '#EF4444';
+    if (count <= 8) return '#B91C1C';
+    return '#7F1D1D';
+  };
+
   // 3. Insights
   const monthlyInsights = useMemo(() => generateInsights(filteredAccidents, selectedYears), [filteredAccidents, selectedYears]);
   const temporalInsights = useMemo(() => generateTemporalInsights(filteredAccidents), [filteredAccidents]);
@@ -746,38 +755,37 @@ export const LandscapePrintView: React.FC<LandscapePrintViewProps> = ({
                             <td style={{ fontSize: '9px', fontWeight: 900, color: '#334155', verticalAlign: 'middle', textAlign: 'center', padding: '2px 0', width: '42px', minWidth: '42px' }}>
                               {year}
                             </td>
-                            {s.monthly.map((m, i) => (
-                              <td 
-                                key={i} 
-                                style={{ 
-                                  background: '#FFFFFF', 
-                                  border: m.count > 0 ? '1.5px solid #FECACA' : '1px solid #F1F5F9',
-                                  color: m.count > 0 ? '#B91C1C' : '#CBD5E1',
-                                  height: '24px',
-                                  borderRadius: '4px',
-                                  fontSize: '11.5px',
-                                  fontWeight: 900,
-                                  textAlign: 'center',
-                                  verticalAlign: 'middle',
-                                  boxShadow: m.count > 0 ? '0 1px 2px rgba(185, 28, 28, 0.05)' : 'none'
-                                }}
-                              >
-                                <div style={{ fontSize: '11.5px', fontWeight: 900 }}>{m.count > 0 ? m.count : '-'}</div>
-                              </td>
-                            ))}
+                            {s.monthly.map((m, i) => {
+                              const textColor = m.count === 0 ? '#94A3B8' : m.count <= 4 ? '#7F1D1D' : '#FFFFFF';
+                              return (
+                                <td 
+                                  key={i} 
+                                  style={{ 
+                                    background: getHeatmapColor(m.count), 
+                                    color: textColor,
+                                    height: '24px',
+                                    borderRadius: '4px',
+                                    fontSize: '11.5px',
+                                    fontWeight: 900,
+                                    textAlign: 'center',
+                                    verticalAlign: 'middle',
+                                    boxShadow: m.count > 0 ? '0 1px 2px rgba(0, 0, 0, 0.08)' : 'none'
+                                  }}
+                                >
+                                  <div style={{ fontSize: '11.5px', fontWeight: 900 }}>{m.count > 0 ? m.count : '—'}</div>
+                                </td>
+                              );
+                            })}
                           </tr>
                         );
                       })}
                     </tbody>
                   </table>
-                  <div style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', gap: '10px', marginTop: '0.45rem', fontSize: '7.5px', color: 'var(--text-muted)', fontWeight: 700 }}>
-                    <div style={{ display: 'flex', alignItems: 'center', gap: '5px' }}>
-                      <div style={{ width: 14, height: 14, borderRadius: 3, border: '1.5px solid #FECACA', background: '#FFFFFF', color: '#B91C1C', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '8.5px', fontWeight: 900 }}>
-                        N
-                      </div>
-                      <span>Ocorrências registradas no mês (em vermelho com fundo branco)</span>
-                    </div>
-                    <span style={{ marginLeft: 8, color: '#94A3B8' }}>— fora do período</span>
+                  <div style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', gap: '8px', marginTop: '0.45rem', fontSize: '7.5px', color: 'var(--text-muted)', fontWeight: 700 }}>
+                    <span>Menos</span>
+                    {[0, 2, 4, 6, 8, 10].map(c => <div key={c} style={{ width: 14, height: 8, borderRadius: 2, backgroundColor: getHeatmapColor(c) }}></div>)}
+                    <span>Mais</span>
+                    <span style={{ marginLeft: 12, color: '#94A3B8' }}>— fora do período</span>
                   </div>
                 </div>
               </div>
@@ -1158,50 +1166,50 @@ export const LandscapePrintView: React.FC<LandscapePrintViewProps> = ({
         </header>
 
         {/* Top Summary Bar */}
-        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: '0.65rem', marginTop: '0.65rem' }}>
-          <div className="panel-premium" style={{ padding: '0.45rem 0.75rem', display: 'flex', alignItems: 'center', gap: '8px', borderLeft: '4px solid #D97706', background: '#FFF' }}>
-            <div style={{ background: '#FEF3C7', color: '#D97706', padding: '5px', borderRadius: '6px', display: 'flex' }}>
-              <Trophy size={14} />
+        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: '0.5rem', marginTop: '0.45rem' }}>
+          <div className="panel-premium" style={{ padding: '0.35rem 0.65rem', display: 'flex', alignItems: 'center', gap: '8px', borderLeft: '4px solid #D97706', background: '#FFF' }}>
+            <div style={{ background: '#FEF3C7', color: '#D97706', padding: '4px', borderRadius: '6px', display: 'flex' }}>
+              <Trophy size={13} />
             </div>
             <div style={{ minWidth: 0 }}>
-              <div style={{ fontSize: '0.55rem', fontWeight: 800, color: '#64748B', textTransform: 'uppercase' }}>Unidade Líder em DSA</div>
-              <div style={{ fontSize: '0.82rem', fontWeight: 950, color: '#0F172A', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
-                {divisionRanking[0]?.name || 'N/A'} <span style={{ color: '#059669', fontSize: '0.75rem' }}>({divisionRanking[0]?.daysWithout || 0}d)</span>
+              <div style={{ fontSize: '0.52rem', fontWeight: 800, color: '#64748B', textTransform: 'uppercase' }}>Unidade Líder em DSA</div>
+              <div style={{ fontSize: '0.8rem', fontWeight: 950, color: '#0F172A', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
+                {divisionRanking[0]?.name || 'N/A'} <span style={{ color: '#059669', fontSize: '0.72rem' }}>({divisionRanking[0]?.daysWithout || 0}d)</span>
               </div>
             </div>
           </div>
 
-          <div className="panel-premium" style={{ padding: '0.45rem 0.75rem', display: 'flex', alignItems: 'center', gap: '8px', borderLeft: '4px solid #059669', background: '#FFF' }}>
-            <div style={{ background: '#ECFDF5', color: '#059669', padding: '5px', borderRadius: '6px', display: 'flex' }}>
-              <ShieldCheck size={14} />
+          <div className="panel-premium" style={{ padding: '0.35rem 0.65rem', display: 'flex', alignItems: 'center', gap: '8px', borderLeft: '4px solid #059669', background: '#FFF' }}>
+            <div style={{ background: '#ECFDF5', color: '#059669', padding: '4px', borderRadius: '6px', display: 'flex' }}>
+              <ShieldCheck size={13} />
             </div>
             <div style={{ minWidth: 0 }}>
-              <div style={{ fontSize: '0.55rem', fontWeight: 800, color: '#64748B', textTransform: 'uppercase' }}>Área Líder em DSA</div>
-              <div style={{ fontSize: '0.82rem', fontWeight: 950, color: '#0F172A', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
-                {areaRanking[0]?.name || 'N/A'} <span style={{ color: '#059669', fontSize: '0.75rem' }}>({areaRanking[0]?.daysWithout || 0}d)</span>
+              <div style={{ fontSize: '0.52rem', fontWeight: 800, color: '#64748B', textTransform: 'uppercase' }}>Área Líder em DSA</div>
+              <div style={{ fontSize: '0.8rem', fontWeight: 950, color: '#0F172A', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
+                {areaRanking[0]?.name || 'N/A'} <span style={{ color: '#059669', fontSize: '0.72rem' }}>({areaRanking[0]?.daysWithout || 0}d)</span>
               </div>
             </div>
           </div>
 
-          <div className="panel-premium" style={{ padding: '0.45rem 0.75rem', display: 'flex', alignItems: 'center', gap: '8px', borderLeft: '4px solid #3B82F6', background: '#FFF' }}>
-            <div style={{ background: '#EFF6FF', color: '#3B82F6', padding: '5px', borderRadius: '6px', display: 'flex' }}>
-              <TrendingUp size={14} />
+          <div className="panel-premium" style={{ padding: '0.35rem 0.65rem', display: 'flex', alignItems: 'center', gap: '8px', borderLeft: '4px solid #3B82F6', background: '#FFF' }}>
+            <div style={{ background: '#EFF6FF', color: '#3B82F6', padding: '4px', borderRadius: '6px', display: 'flex' }}>
+              <TrendingUp size={13} />
             </div>
             <div style={{ minWidth: 0 }}>
-              <div style={{ fontSize: '0.55rem', fontWeight: 800, color: '#64748B', textTransform: 'uppercase' }}>Regra Oficial de Cálculo</div>
-              <div style={{ fontSize: '0.75rem', fontWeight: 900, color: '#1E293B', whiteSpace: 'nowrap' }}>
+              <div style={{ fontSize: '0.52rem', fontWeight: 800, color: '#64748B', textTransform: 'uppercase' }}>Regra Oficial de Cálculo</div>
+              <div style={{ fontSize: '0.72rem', fontWeight: 900, color: '#1E293B', whiteSpace: 'nowrap' }}>
                 Hoje - Último Acidente - 1
               </div>
             </div>
           </div>
 
-          <div className="panel-premium" style={{ padding: '0.45rem 0.75rem', display: 'flex', alignItems: 'center', gap: '8px', borderLeft: '4px solid #8B5CF6', background: '#FFF' }}>
-            <div style={{ background: '#F5F3FF', color: '#8B5CF6', padding: '5px', borderRadius: '6px', display: 'flex' }}>
-              <Activity size={14} />
+          <div className="panel-premium" style={{ padding: '0.35rem 0.65rem', display: 'flex', alignItems: 'center', gap: '8px', borderLeft: '4px solid #8B5CF6', background: '#FFF' }}>
+            <div style={{ background: '#F5F3FF', color: '#8B5CF6', padding: '4px', borderRadius: '6px', display: 'flex' }}>
+              <Activity size={13} />
             </div>
             <div style={{ minWidth: 0 }}>
-              <div style={{ fontSize: '0.55rem', fontWeight: 800, color: '#64748B', textTransform: 'uppercase' }}>Monitoramento Ativo</div>
-              <div style={{ fontSize: '0.82rem', fontWeight: 950, color: '#0F172A', whiteSpace: 'nowrap' }}>
+              <div style={{ fontSize: '0.52rem', fontWeight: 800, color: '#64748B', textTransform: 'uppercase' }}>Monitoramento Ativo</div>
+              <div style={{ fontSize: '0.8rem', fontWeight: 950, color: '#0F172A', whiteSpace: 'nowrap' }}>
                 {divisionRanking.length} Unidades • {areaRanking.length} Áreas
               </div>
             </div>
@@ -1209,28 +1217,28 @@ export const LandscapePrintView: React.FC<LandscapePrintViewProps> = ({
         </div>
 
         {/* Main Content: Both Rankings Side-by-Side */}
-        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1.22fr', gap: '0.75rem', marginTop: '0.65rem', flex: 1, minHeight: 0 }}>
+        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1.22fr', gap: '0.65rem', marginTop: '0.45rem', flex: 1, minHeight: 0 }}>
           {/* Coluna 1: Ranking por Divisão / Unidade */}
-          <div className="panel-premium" style={{ display: 'flex', flexDirection: 'column', padding: '0.65rem 0.85rem', minHeight: 0 }}>
-            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '0.45rem' }}>
-              <h3 style={{ fontSize: '0.82rem', fontWeight: 900, margin: 0, color: '#0F172A', display: 'flex', alignItems: 'center', gap: '6px' }}>
-                <span style={{ width: '8px', height: '8px', borderRadius: '50%', background: '#059669', display: 'inline-block' }}></span>
+          <div className="panel-premium" style={{ display: 'flex', flexDirection: 'column', padding: '0.5rem 0.75rem', minHeight: 0 }}>
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '0.35rem' }}>
+              <h3 style={{ fontSize: '0.8rem', fontWeight: 900, margin: 0, color: '#0F172A', display: 'flex', alignItems: 'center', gap: '6px' }}>
+                <span style={{ width: '7px', height: '7px', borderRadius: '50%', background: '#059669', display: 'inline-block' }}></span>
                 Ranking por Unidade / Divisão
               </h3>
-              <span style={{ fontSize: '0.62rem', fontWeight: 800, color: '#059669', background: '#ECFDF5', padding: '2px 6px', borderRadius: '4px' }}>
+              <span style={{ fontSize: '0.6rem', fontWeight: 800, color: '#059669', background: '#ECFDF5', padding: '2px 6px', borderRadius: '4px' }}>
                 {divisionRanking.length} Unidades
               </span>
             </div>
 
             <div style={{ flex: 1, overflow: 'hidden', minHeight: 0 }}>
-              <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '0.72rem', whiteSpace: 'nowrap' }}>
+              <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '0.7rem', whiteSpace: 'nowrap' }}>
                 <thead>
-                  <tr style={{ background: '#F8FAFC', borderBottom: '2px solid #E2E8F0', color: '#475569', fontWeight: 900, textAlign: 'left', fontSize: '0.64rem' }}>
-                    <th style={{ padding: '4px 6px', width: '28px', textAlign: 'center' }}>#</th>
-                    <th style={{ padding: '4px 6px' }}>UNIDADE</th>
-                    <th style={{ padding: '4px 6px', width: '120px' }}>DIAS S/ ACIDENTES</th>
-                    <th style={{ padding: '4px 6px', width: '75px' }}>ÚLTIMO</th>
-                    <th style={{ padding: '4px 6px', width: '50px', textAlign: 'center' }}>TOTAL</th>
+                  <tr style={{ background: '#F8FAFC', borderBottom: '2px solid #E2E8F0', color: '#475569', fontWeight: 900, textAlign: 'left', fontSize: '0.62rem' }}>
+                    <th style={{ padding: '3px 5px', width: '26px', textAlign: 'center' }}>#</th>
+                    <th style={{ padding: '3px 5px' }}>UNIDADE</th>
+                    <th style={{ padding: '3px 5px', width: '115px' }}>DIAS S/ ACIDENTES</th>
+                    <th style={{ padding: '3px 5px', width: '70px' }}>ÚLTIMO</th>
+                    <th style={{ padding: '3px 5px', width: '45px', textAlign: 'center' }}>TOTAL</th>
                   </tr>
                 </thead>
                 <tbody>
@@ -1241,37 +1249,37 @@ export const LandscapePrintView: React.FC<LandscapePrintViewProps> = ({
                     const rankColor = idx === 0 ? '#B45309' : idx === 1 ? '#475569' : idx === 2 ? '#C2410C' : '#64748B';
 
                     return (
-                      <tr key={item.name} style={{ borderBottom: '1px solid #F1F5F9', height: '26px' }}>
-                        <td style={{ padding: '3px 6px', textAlign: 'center' }}>
+                      <tr key={item.name} style={{ borderBottom: '1px solid #F1F5F9', height: '21px' }}>
+                        <td style={{ padding: '1.5px 5px', textAlign: 'center' }}>
                           <span style={{
                             display: 'inline-flex',
                             alignItems: 'center',
                             justifyContent: 'center',
-                            width: '18px',
-                            height: '18px',
+                            width: '16px',
+                            height: '16px',
                             borderRadius: '50%',
                             background: rankBg,
                             color: rankColor,
                             fontWeight: 950,
-                            fontSize: '0.64rem',
+                            fontSize: '0.62rem',
                             border: isTop3 ? `1px solid ${rankColor}44` : '1px solid #E2E8F0'
                           }}>
                             {idx + 1}
                           </span>
                         </td>
-                        <td style={{ padding: '3px 6px', fontWeight: isTop3 ? 900 : 700, color: '#0F172A', overflow: 'hidden', textOverflow: 'ellipsis', maxWidth: '110px' }} title={item.name}>
+                        <td style={{ padding: '1.5px 5px', fontWeight: isTop3 ? 900 : 700, color: '#0F172A', overflow: 'hidden', textOverflow: 'ellipsis', maxWidth: '110px' }} title={item.name}>
                           {item.name}
                         </td>
-                        <td style={{ padding: '3px 6px' }}>
-                          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '2px' }}>
-                            <span style={{ fontWeight: 950, fontSize: '0.78rem', color: '#059669' }}>
-                              {item.daysWithout} <span style={{ fontSize: '0.62rem', fontWeight: 700, color: '#64748B' }}>dias</span>
+                        <td style={{ padding: '1.5px 5px' }}>
+                          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '1px' }}>
+                            <span style={{ fontWeight: 950, fontSize: '0.74rem', color: '#059669' }}>
+                              {item.daysWithout} <span style={{ fontSize: '0.58rem', fontWeight: 700, color: '#64748B' }}>dias</span>
                             </span>
-                            <span style={{ fontSize: '0.58rem', color: '#94A3B8', fontWeight: 700 }}>
+                            <span style={{ fontSize: '0.55rem', color: '#94A3B8', fontWeight: 700 }}>
                               {pct}%
                             </span>
                           </div>
-                          <div style={{ height: '3.5px', background: '#F1F5F9', borderRadius: '2px', overflow: 'hidden' }}>
+                          <div style={{ height: '3px', background: '#F1F5F9', borderRadius: '2px', overflow: 'hidden' }}>
                             <div style={{
                               width: `${pct}%`,
                               height: '100%',
@@ -1284,11 +1292,11 @@ export const LandscapePrintView: React.FC<LandscapePrintViewProps> = ({
                             }}></div>
                           </div>
                         </td>
-                        <td style={{ padding: '3px 6px', color: '#64748B', fontSize: '0.66rem', fontWeight: 700 }}>
+                        <td style={{ padding: '1.5px 5px', color: '#64748B', fontSize: '0.64rem', fontWeight: 700 }}>
                           {item.lastDate.toLocaleDateString('pt-BR')}
                         </td>
-                        <td style={{ padding: '3px 6px', textAlign: 'center' }}>
-                          <span style={{ background: '#F1F5F9', color: '#334155', padding: '1.5px 5px', borderRadius: '3px', fontSize: '0.65rem', fontWeight: 800 }}>
+                        <td style={{ padding: '1.5px 5px', textAlign: 'center' }}>
+                          <span style={{ background: '#F1F5F9', color: '#334155', padding: '1px 4px', borderRadius: '3px', fontSize: '0.62rem', fontWeight: 800 }}>
                             {item.totalAccidents}
                           </span>
                         </td>
@@ -1301,26 +1309,26 @@ export const LandscapePrintView: React.FC<LandscapePrintViewProps> = ({
           </div>
 
           {/* Coluna 2: Ranking por Área Operacional */}
-          <div className="panel-premium" style={{ display: 'flex', flexDirection: 'column', padding: '0.65rem 0.85rem', minHeight: 0 }}>
-            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '0.45rem' }}>
-              <h3 style={{ fontSize: '0.82rem', fontWeight: 900, margin: 0, color: '#0F172A', display: 'flex', alignItems: 'center', gap: '6px' }}>
-                <span style={{ width: '8px', height: '8px', borderRadius: '50%', background: '#2563EB', display: 'inline-block' }}></span>
+          <div className="panel-premium" style={{ display: 'flex', flexDirection: 'column', padding: '0.5rem 0.75rem', minHeight: 0 }}>
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '0.35rem' }}>
+              <h3 style={{ fontSize: '0.8rem', fontWeight: 900, margin: 0, color: '#0F172A', display: 'flex', alignItems: 'center', gap: '6px' }}>
+                <span style={{ width: '7px', height: '7px', borderRadius: '50%', background: '#2563EB', display: 'inline-block' }}></span>
                 Ranking por Área / Setor Operacional
               </h3>
-              <span style={{ fontSize: '0.62rem', fontWeight: 800, color: '#2563EB', background: '#EFF6FF', padding: '2px 6px', borderRadius: '4px' }}>
+              <span style={{ fontSize: '0.6rem', fontWeight: 800, color: '#2563EB', background: '#EFF6FF', padding: '2px 6px', borderRadius: '4px' }}>
                 {areaRanking.length} Áreas
               </span>
             </div>
 
             <div style={{ flex: 1, overflow: 'hidden', minHeight: 0 }}>
-              <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '0.72rem', whiteSpace: 'nowrap' }}>
+              <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '0.7rem', whiteSpace: 'nowrap' }}>
                 <thead>
-                  <tr style={{ background: '#F8FAFC', borderBottom: '2px solid #E2E8F0', color: '#475569', fontWeight: 900, textAlign: 'left', fontSize: '0.64rem' }}>
-                    <th style={{ padding: '4px 6px', width: '28px', textAlign: 'center' }}>#</th>
-                    <th style={{ padding: '4px 6px' }}>ÁREA / SETOR</th>
-                    <th style={{ padding: '4px 6px', width: '130px' }}>DIAS S/ ACIDENTES</th>
-                    <th style={{ padding: '4px 6px', width: '75px' }}>ÚLTIMO</th>
-                    <th style={{ padding: '4px 6px', width: '50px', textAlign: 'center' }}>TOTAL</th>
+                  <tr style={{ background: '#F8FAFC', borderBottom: '2px solid #E2E8F0', color: '#475569', fontWeight: 900, textAlign: 'left', fontSize: '0.62rem' }}>
+                    <th style={{ padding: '3px 5px', width: '26px', textAlign: 'center' }}>#</th>
+                    <th style={{ padding: '3px 5px' }}>ÁREA / SETOR</th>
+                    <th style={{ padding: '3px 5px', width: '120px' }}>DIAS S/ ACIDENTES</th>
+                    <th style={{ padding: '3px 5px', width: '70px' }}>ÚLTIMO</th>
+                    <th style={{ padding: '3px 5px', width: '45px', textAlign: 'center' }}>TOTAL</th>
                   </tr>
                 </thead>
                 <tbody>
@@ -1331,37 +1339,37 @@ export const LandscapePrintView: React.FC<LandscapePrintViewProps> = ({
                     const rankColor = idx === 0 ? '#B45309' : idx === 1 ? '#475569' : idx === 2 ? '#C2410C' : '#64748B';
 
                     return (
-                      <tr key={item.name} style={{ borderBottom: '1px solid #F1F5F9', height: '24px' }}>
-                        <td style={{ padding: '2.5px 6px', textAlign: 'center' }}>
+                      <tr key={item.name} style={{ borderBottom: '1px solid #F1F5F9', height: '21px' }}>
+                        <td style={{ padding: '1.5px 5px', textAlign: 'center' }}>
                           <span style={{
                             display: 'inline-flex',
                             alignItems: 'center',
                             justifyContent: 'center',
-                            width: '18px',
-                            height: '18px',
+                            width: '16px',
+                            height: '16px',
                             borderRadius: '50%',
                             background: rankBg,
                             color: rankColor,
                             fontWeight: 950,
-                            fontSize: '0.64rem',
+                            fontSize: '0.62rem',
                             border: isTop3 ? `1px solid ${rankColor}44` : '1px solid #E2E8F0'
                           }}>
                             {idx + 1}
                           </span>
                         </td>
-                        <td style={{ padding: '2.5px 6px', fontWeight: isTop3 ? 900 : 700, color: '#0F172A', overflow: 'hidden', textOverflow: 'ellipsis', maxWidth: '120px' }} title={item.name}>
+                        <td style={{ padding: '1.5px 5px', fontWeight: isTop3 ? 900 : 700, color: '#0F172A', overflow: 'hidden', textOverflow: 'ellipsis', maxWidth: '120px' }} title={item.name}>
                           {item.name}
                         </td>
-                        <td style={{ padding: '2.5px 6px' }}>
-                          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '2px' }}>
-                            <span style={{ fontWeight: 950, fontSize: '0.78rem', color: '#059669' }}>
-                              {item.daysWithout} <span style={{ fontSize: '0.62rem', fontWeight: 700, color: '#64748B' }}>dias</span>
+                        <td style={{ padding: '1.5px 5px' }}>
+                          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '1px' }}>
+                            <span style={{ fontWeight: 950, fontSize: '0.74rem', color: '#059669' }}>
+                              {item.daysWithout} <span style={{ fontSize: '0.58rem', fontWeight: 700, color: '#64748B' }}>dias</span>
                             </span>
-                            <span style={{ fontSize: '0.58rem', color: '#94A3B8', fontWeight: 700 }}>
+                            <span style={{ fontSize: '0.55rem', color: '#94A3B8', fontWeight: 700 }}>
                               {pct}%
                             </span>
                           </div>
-                          <div style={{ height: '3.5px', background: '#F1F5F9', borderRadius: '2px', overflow: 'hidden' }}>
+                          <div style={{ height: '3px', background: '#F1F5F9', borderRadius: '2px', overflow: 'hidden' }}>
                             <div style={{
                               width: `${pct}%`,
                               height: '100%',
@@ -1374,11 +1382,11 @@ export const LandscapePrintView: React.FC<LandscapePrintViewProps> = ({
                             }}></div>
                           </div>
                         </td>
-                        <td style={{ padding: '2.5px 6px', color: '#64748B', fontSize: '0.66rem', fontWeight: 700 }}>
+                        <td style={{ padding: '1.5px 5px', color: '#64748B', fontSize: '0.64rem', fontWeight: 700 }}>
                           {item.lastDate.toLocaleDateString('pt-BR')}
                         </td>
-                        <td style={{ padding: '2.5px 6px', textAlign: 'center' }}>
-                          <span style={{ background: '#F1F5F9', color: '#334155', padding: '1.5px 5px', borderRadius: '3px', fontSize: '0.65rem', fontWeight: 800 }}>
+                        <td style={{ padding: '1.5px 5px', textAlign: 'center' }}>
+                          <span style={{ background: '#F1F5F9', color: '#334155', padding: '1px 4px', borderRadius: '3px', fontSize: '0.62rem', fontWeight: 800 }}>
                             {item.totalAccidents}
                           </span>
                         </td>

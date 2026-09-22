@@ -5,17 +5,17 @@ import {
 import { 
   AlertCircle, TrendingUp, Calendar, ShieldCheck, Upload, Monitor, Gauge, 
   FileSpreadsheet, Clock, ChevronRight, ChevronLeft, ArrowLeft, ArrowUp, 
-  Users, ExternalLink, Key, Printer 
+  Users, ExternalLink, Key, Printer, Trophy 
 } from 'lucide-react';
 import type { Accident } from '../types';
-import { calculateStats, generateInsights, generateTemporalInsights } from '../utils/dataLoader';
+import { calculateStats, generateInsights, generateTemporalInsights, generateSafetyInsights, calculateDaysWithoutAccidentsRanking } from '../utils/dataLoader';
 import { motion } from 'framer-motion';
 import { LOGO_BASE64 } from '../constants';
 import { TemporalAnalysis } from './TemporalAnalysis';
 import { SafetyManagement } from './SafetyManagement';
+import { RankingView } from './RankingView';
 import { Breakdown } from './Breakdown';
 import { FrequencySeverityTab } from './FrequencySeverityTab';
-import { generateSafetyInsights } from '../utils/dataLoader';
 import { TokenExpirationModal, checkTokenNeedsRenewal } from './TokenExpirationModal';
 
 interface DashboardProps {
@@ -55,7 +55,7 @@ export const Dashboard: React.FC<DashboardProps> = ({
   dataSource = 'none',
   onPrintMonthDrilldown
 }) => {
-  const [activeTab, setActiveTab] = useState<'monthly' | 'temporal' | 'safety' | 'breakdown' | 'frequency_severity'>('monthly');
+  const [activeTab, setActiveTab] = useState<'monthly' | 'temporal' | 'safety' | 'ranking' | 'breakdown' | 'frequency_severity'>('monthly');
   const [isBreakdownModalOpen, setIsBreakdownModalOpen] = useState(false);
   const [monthlyMetric, setMonthlyMetric] = useState<'accidents' | 'lostDays'>('accidents');
   const [drillLevel, setDrillLevel] = useState<'yearly' | 'monthly' | 'daily'>('monthly');
@@ -109,6 +109,32 @@ export const Dashboard: React.FC<DashboardProps> = ({
     return generateSafetyInsights(filteredAccidents);
   }, [filteredAccidents]);
 
+  const rankingInsights = useMemo(() => {
+    const areaRanking = calculateDaysWithoutAccidentsRanking(filteredAccidents, 'area');
+    const topArea = areaRanking[0];
+    const lowestArea = areaRanking[areaRanking.length - 1];
+    const unitRanking = calculateDaysWithoutAccidentsRanking(filteredAccidents, 'division');
+    const topUnit = unitRanking[0];
+
+    return [
+      {
+        title: 'Destaque Geral (Área)',
+        text: topArea ? `${topArea.name} lidera com ${topArea.daysWithout} dias sem acidentes (${topArea.totalAccidents} ocorrência${topArea.totalAccidents === 1 ? '' : 's'}).` : 'Sem registros no período selecionado.',
+        type: 'success'
+      },
+      {
+        title: 'Destaque por Unidade',
+        text: topUnit ? `A unidade ${topUnit.name} está na liderança com ${topUnit.daysWithout} dias sem acidentes.` : 'Sem dados para unidades.',
+        type: 'info'
+      },
+      {
+        title: 'Atenção e Foco',
+        text: lowestArea ? `${lowestArea.name} possui a marca mais recente (${lowestArea.daysWithout} dias sem acidentes, total de ${lowestArea.totalAccidents} acidentes).` : 'Nenhuma área com ocorrências recentes.',
+        type: 'warning'
+      }
+    ];
+  }, [filteredAccidents]);
+
   const breakdownInsights = useMemo(() => [
     { 
       title: 'Perfil de Risco', 
@@ -136,8 +162,9 @@ export const Dashboard: React.FC<DashboardProps> = ({
     if (activeTab === 'monthly') return monthlyInsights;
     if (activeTab === 'temporal') return temporalInsights;
     if (activeTab === 'safety') return safetyInsights;
+    if (activeTab === 'ranking') return rankingInsights;
     return breakdownInsights;
-  }, [activeTab, monthlyInsights, temporalInsights, safetyInsights, breakdownInsights]);
+  }, [activeTab, monthlyInsights, temporalInsights, safetyInsights, rankingInsights, breakdownInsights]);
   
   const allAvailableYears = useMemo(() => Array.from(new Set(accidents.map(a => a.year))).sort((a, b) => b - a), [accidents]);
   
@@ -633,6 +660,27 @@ export const Dashboard: React.FC<DashboardProps> = ({
             }}
           >
             Gestão de Segurança
+          </button>
+          <button
+            onClick={() => setActiveTab('ranking')}
+            style={{
+              padding: '0.6rem 1.2rem',
+              borderRadius: '8px',
+              border: 'none',
+              background: activeTab === 'ranking' ? 'white' : 'transparent',
+              color: activeTab === 'ranking' ? 'var(--primary)' : 'var(--text-muted)',
+              fontWeight: 800,
+              fontSize: '0.8rem',
+              cursor: 'pointer',
+              boxShadow: activeTab === 'ranking' ? '0 2px 8px rgba(0,0,0,0.05)' : 'none',
+              transition: 'all 0.2s',
+              display: 'flex',
+              alignItems: 'center',
+              gap: '0.4rem'
+            }}
+          >
+            <Trophy size={15} />
+            Ranking
           </button>
           <button
             onClick={() => setActiveTab('breakdown')}
@@ -1897,6 +1945,8 @@ export const Dashboard: React.FC<DashboardProps> = ({
             <TemporalAnalysis accidents={filteredAccidents} />
           ) : activeTab === 'safety' ? (
             <SafetyManagement accidents={filteredAccidents} />
+          ) : activeTab === 'ranking' ? (
+            <RankingView accidents={filteredAccidents} />
           ) : (
             <Breakdown 
               accidents={filteredAccidents} 
@@ -1912,9 +1962,9 @@ export const Dashboard: React.FC<DashboardProps> = ({
         <aside className="insights-panel">
           <div style={{ marginBottom: '1.5rem' }}>
             <h2 style={{ fontSize: '1.4rem', fontWeight: 900, color: 'var(--text)', margin: 0, letterSpacing: '-0.02em' }}>
-              {activeTab === 'monthly' ? 'Períodos de ' : activeTab === 'temporal' ? 'Análise de ' : activeTab === 'safety' ? 'Gestão de ' : 'Detalhes de '}
+              {activeTab === 'monthly' ? 'Períodos de ' : activeTab === 'temporal' ? 'Análise de ' : activeTab === 'safety' ? 'Gestão de ' : activeTab === 'ranking' ? 'Ranking de ' : 'Detalhes de '}
               <span style={{ color: 'var(--primary)' }}>
-                {activeTab === 'monthly' ? 'Atenção' : activeTab === 'temporal' ? 'Padrões' : activeTab === 'safety' ? 'Indicadores' : 'Causas'}
+                {activeTab === 'monthly' ? 'Atenção' : activeTab === 'temporal' ? 'Padrões' : activeTab === 'safety' ? 'Indicadores' : activeTab === 'ranking' ? 'Desempenho' : 'Causas'}
               </span>
             </h2>
             <p style={{ fontSize: '0.8rem', color: 'var(--text-muted)', marginTop: '0.25rem', fontWeight: 500 }}>
@@ -1924,7 +1974,9 @@ export const Dashboard: React.FC<DashboardProps> = ({
                   ? 'Storytelling baseado em horários e dias' 
                   : activeTab === 'safety'
                     ? 'Fatores críticos de performance de segurança'
-                    : 'Fatores causais e perfil de experiência'}
+                    : activeTab === 'ranking'
+                      ? 'Desempenho e marcas ativas de dias sem acidentes'
+                      : 'Fatores causais e perfil de experiência'}
             </p>
           </div>
           
