@@ -1,5 +1,5 @@
 import * as XLSX from 'xlsx';
-import type { Accident, YearStats, MonthlyStats, Insight } from '../types';
+import type { Accident, YearStats, MonthlyStats, Insight, SafetyRankingItem } from '../types';
 import { DEFAULT_EXCEL_BASE64 } from '../constants';
 
 export const loadAccidentData = async (filePath: string): Promise<Accident[]> => {
@@ -446,4 +446,53 @@ export const generateSafetyInsights = (accidents: Accident[]): Insight[] => {
   }
 
   return insights;
+};
+
+export const calculateDaysWithoutAccidentsRanking = (
+  accidents: Accident[], 
+  groupBy: 'area' | 'division'
+): SafetyRankingItem[] => {
+  if (!accidents || accidents.length === 0) return [];
+
+  const today = new Date();
+  today.setHours(0, 0, 0, 0);
+
+  const groups: Record<string, { accidents: Accident[] }> = {};
+
+  accidents.forEach(a => {
+    const rawKey = groupBy === 'area' ? a.area : a.division;
+    const key = (rawKey && rawKey.trim()) ? rawKey.trim() : (groupBy === 'area' ? 'Operacional' : 'Geral');
+    if (!groups[key]) groups[key] = { accidents: [] };
+    groups[key].accidents.push(a);
+  });
+
+  const ranking: SafetyRankingItem[] = Object.keys(groups).map(name => {
+    const itemAccidents = groups[name].accidents;
+    const sorted = [...itemAccidents].sort((a, b) => a.date.getTime() - b.date.getTime());
+    const lastAccident = sorted[sorted.length - 1];
+    const lastDate = new Date(lastAccident.date);
+    lastDate.setHours(0, 0, 0, 0);
+
+    const diffTime = today.getTime() - lastDate.getTime();
+    const diffDays = Math.floor(diffTime / (1000 * 60 * 60 * 24));
+    
+    // Regra oficial: Hoje - Último Acidente - 1 (se no mesmo dia, 0)
+    let daysWithout = Math.max(0, diffDays - 1);
+    if (diffDays === 0) daysWithout = 0;
+
+    return {
+      name,
+      daysWithout,
+      lastDate: lastAccident.date,
+      totalAccidents: itemAccidents.length
+    };
+  });
+
+  // Ordenar decrescente: do maior número de dias sem acidentes para o menor
+  return ranking.sort((a, b) => {
+    if (b.daysWithout !== a.daysWithout) {
+      return b.daysWithout - a.daysWithout;
+    }
+    return a.totalAccidents - b.totalAccidents;
+  });
 };

@@ -15,6 +15,7 @@ import {
   generateInsights,
   generateTemporalInsights, 
   calculateSafetyRecords,
+  calculateDaysWithoutAccidentsRanking,
   generateSafetyInsights
 } from '../utils/dataLoader';
 import { LOGO_BASE64 } from '../constants';
@@ -73,6 +74,10 @@ export const LandscapePrintView: React.FC<LandscapePrintViewProps> = ({
   const stats = useMemo(() => calculateStats(filteredAccidents, selectedYears), [filteredAccidents, selectedYears]);
   const temporalStats = useMemo(() => calculateTemporalStats(filteredAccidents), [filteredAccidents]);
   const safetyRecords = useMemo(() => calculateSafetyRecords(filteredAccidents), [filteredAccidents]);
+  const areaRanking = useMemo(() => calculateDaysWithoutAccidentsRanking(filteredAccidents, 'area'), [filteredAccidents]);
+  const divisionRanking = useMemo(() => calculateDaysWithoutAccidentsRanking(filteredAccidents, 'division'), [filteredAccidents]);
+  const maxAreaDays = useMemo(() => areaRanking.length > 0 ? Math.max(...areaRanking.map(r => r.daysWithout), 1) : 1, [areaRanking]);
+  const maxDivDays = useMemo(() => divisionRanking.length > 0 ? Math.max(...divisionRanking.map(r => r.daysWithout), 1) : 1, [divisionRanking]);
 
   // 3. Insights
   const monthlyInsights = useMemo(() => generateInsights(filteredAccidents, selectedYears), [filteredAccidents, selectedYears]);
@@ -134,7 +139,7 @@ export const LandscapePrintView: React.FC<LandscapePrintViewProps> = ({
   }, [filteredAccidents]);
 
   const totalPages = useMemo(() => {
-    return 5 + occurrenceChunks.length;
+    return 6 + occurrenceChunks.length;
   }, [occurrenceChunks]);
 
   const hhtStore = useMemo(() => loadHHTStore(), []);
@@ -1127,7 +1132,273 @@ export const LandscapePrintView: React.FC<LandscapePrintViewProps> = ({
         </footer>
       </div>
 
-      {/* PAGE 4: Indicadores Regulamentares (NBR 14280 / OIT) */}
+      {/* PAGE 4: Gestão de Segurança — Ranking de Dias Sem Acidentes (Unidades & Áreas) */}
+      <div className="a4-landscape">
+        {/* Header */}
+        <header style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', borderBottom: '2px solid #059669', paddingBottom: '0.4rem' }}>
+          <div style={{ display: 'flex', gap: '0.6rem', alignItems: 'center' }}>
+            <div style={{ background: '#059669', padding: '0.4rem', borderRadius: '6px', color: 'white', display: 'flex', alignItems: 'center' }}>
+              <ShieldCheck size={20} />
+            </div>
+            <div>
+              <h1 style={{ color: '#0F172A', fontSize: '1.15rem', fontWeight: 900, textTransform: 'uppercase', margin: 0, letterSpacing: '0.5px' }}>
+                {reportTitle} — Ranking de Dias Sem Acidentes (DSA)
+              </h1>
+              <div style={{ fontSize: '0.65rem', color: '#64748B', fontWeight: 700 }}>
+                Sequência ativa de dias sem ocorrências por Unidade/Divisão e por Área Operacional • {filterSubtitle}
+              </div>
+            </div>
+          </div>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+            <img src={LOGO_BASE64} alt="Açotubo" style={{ height: '22px' }} />
+            <span style={{ fontSize: '0.65rem', fontWeight: 900, background: '#F1F5F9', padding: '3px 8px', borderRadius: '4px', color: '#475569' }}>
+              FOLHA 04 / {String(totalPages).padStart(2, '0')}
+            </span>
+          </div>
+        </header>
+
+        {/* Top Summary Bar */}
+        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: '0.65rem', marginTop: '0.65rem' }}>
+          <div className="panel-premium" style={{ padding: '0.45rem 0.75rem', display: 'flex', alignItems: 'center', gap: '8px', borderLeft: '4px solid #D97706', background: '#FFF' }}>
+            <div style={{ background: '#FEF3C7', color: '#D97706', padding: '5px', borderRadius: '6px', display: 'flex' }}>
+              <Trophy size={14} />
+            </div>
+            <div style={{ minWidth: 0 }}>
+              <div style={{ fontSize: '0.55rem', fontWeight: 800, color: '#64748B', textTransform: 'uppercase' }}>Unidade Líder em DSA</div>
+              <div style={{ fontSize: '0.82rem', fontWeight: 950, color: '#0F172A', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
+                {divisionRanking[0]?.name || 'N/A'} <span style={{ color: '#059669', fontSize: '0.75rem' }}>({divisionRanking[0]?.daysWithout || 0}d)</span>
+              </div>
+            </div>
+          </div>
+
+          <div className="panel-premium" style={{ padding: '0.45rem 0.75rem', display: 'flex', alignItems: 'center', gap: '8px', borderLeft: '4px solid #059669', background: '#FFF' }}>
+            <div style={{ background: '#ECFDF5', color: '#059669', padding: '5px', borderRadius: '6px', display: 'flex' }}>
+              <ShieldCheck size={14} />
+            </div>
+            <div style={{ minWidth: 0 }}>
+              <div style={{ fontSize: '0.55rem', fontWeight: 800, color: '#64748B', textTransform: 'uppercase' }}>Área Líder em DSA</div>
+              <div style={{ fontSize: '0.82rem', fontWeight: 950, color: '#0F172A', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
+                {areaRanking[0]?.name || 'N/A'} <span style={{ color: '#059669', fontSize: '0.75rem' }}>({areaRanking[0]?.daysWithout || 0}d)</span>
+              </div>
+            </div>
+          </div>
+
+          <div className="panel-premium" style={{ padding: '0.45rem 0.75rem', display: 'flex', alignItems: 'center', gap: '8px', borderLeft: '4px solid #3B82F6', background: '#FFF' }}>
+            <div style={{ background: '#EFF6FF', color: '#3B82F6', padding: '5px', borderRadius: '6px', display: 'flex' }}>
+              <TrendingUp size={14} />
+            </div>
+            <div style={{ minWidth: 0 }}>
+              <div style={{ fontSize: '0.55rem', fontWeight: 800, color: '#64748B', textTransform: 'uppercase' }}>Regra Oficial de Cálculo</div>
+              <div style={{ fontSize: '0.75rem', fontWeight: 900, color: '#1E293B', whiteSpace: 'nowrap' }}>
+                Hoje - Último Acidente - 1
+              </div>
+            </div>
+          </div>
+
+          <div className="panel-premium" style={{ padding: '0.45rem 0.75rem', display: 'flex', alignItems: 'center', gap: '8px', borderLeft: '4px solid #8B5CF6', background: '#FFF' }}>
+            <div style={{ background: '#F5F3FF', color: '#8B5CF6', padding: '5px', borderRadius: '6px', display: 'flex' }}>
+              <Activity size={14} />
+            </div>
+            <div style={{ minWidth: 0 }}>
+              <div style={{ fontSize: '0.55rem', fontWeight: 800, color: '#64748B', textTransform: 'uppercase' }}>Monitoramento Ativo</div>
+              <div style={{ fontSize: '0.82rem', fontWeight: 950, color: '#0F172A', whiteSpace: 'nowrap' }}>
+                {divisionRanking.length} Unidades • {areaRanking.length} Áreas
+              </div>
+            </div>
+          </div>
+        </div>
+
+        {/* Main Content: Both Rankings Side-by-Side */}
+        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1.22fr', gap: '0.75rem', marginTop: '0.65rem', flex: 1, minHeight: 0 }}>
+          {/* Coluna 1: Ranking por Divisão / Unidade */}
+          <div className="panel-premium" style={{ display: 'flex', flexDirection: 'column', padding: '0.65rem 0.85rem', minHeight: 0 }}>
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '0.45rem' }}>
+              <h3 style={{ fontSize: '0.82rem', fontWeight: 900, margin: 0, color: '#0F172A', display: 'flex', alignItems: 'center', gap: '6px' }}>
+                <span style={{ width: '8px', height: '8px', borderRadius: '50%', background: '#059669', display: 'inline-block' }}></span>
+                Ranking por Unidade / Divisão
+              </h3>
+              <span style={{ fontSize: '0.62rem', fontWeight: 800, color: '#059669', background: '#ECFDF5', padding: '2px 6px', borderRadius: '4px' }}>
+                {divisionRanking.length} Unidades
+              </span>
+            </div>
+
+            <div style={{ flex: 1, overflow: 'hidden', minHeight: 0 }}>
+              <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '0.72rem', whiteSpace: 'nowrap' }}>
+                <thead>
+                  <tr style={{ background: '#F8FAFC', borderBottom: '2px solid #E2E8F0', color: '#475569', fontWeight: 900, textAlign: 'left', fontSize: '0.64rem' }}>
+                    <th style={{ padding: '4px 6px', width: '28px', textAlign: 'center' }}>#</th>
+                    <th style={{ padding: '4px 6px' }}>UNIDADE</th>
+                    <th style={{ padding: '4px 6px', width: '120px' }}>DIAS S/ ACIDENTES</th>
+                    <th style={{ padding: '4px 6px', width: '75px' }}>ÚLTIMO</th>
+                    <th style={{ padding: '4px 6px', width: '50px', textAlign: 'center' }}>TOTAL</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {divisionRanking.map((item, idx) => {
+                    const pct = Math.min(100, Math.round((item.daysWithout / maxDivDays) * 100));
+                    const isTop3 = idx < 3;
+                    const rankBg = idx === 0 ? '#FEF3C7' : idx === 1 ? '#F1F5F9' : idx === 2 ? '#FFEDD5' : '#FFFFFF';
+                    const rankColor = idx === 0 ? '#B45309' : idx === 1 ? '#475569' : idx === 2 ? '#C2410C' : '#64748B';
+
+                    return (
+                      <tr key={item.name} style={{ borderBottom: '1px solid #F1F5F9', height: '26px' }}>
+                        <td style={{ padding: '3px 6px', textAlign: 'center' }}>
+                          <span style={{
+                            display: 'inline-flex',
+                            alignItems: 'center',
+                            justifyContent: 'center',
+                            width: '18px',
+                            height: '18px',
+                            borderRadius: '50%',
+                            background: rankBg,
+                            color: rankColor,
+                            fontWeight: 950,
+                            fontSize: '0.64rem',
+                            border: isTop3 ? `1px solid ${rankColor}44` : '1px solid #E2E8F0'
+                          }}>
+                            {idx + 1}
+                          </span>
+                        </td>
+                        <td style={{ padding: '3px 6px', fontWeight: isTop3 ? 900 : 700, color: '#0F172A', overflow: 'hidden', textOverflow: 'ellipsis', maxWidth: '110px' }} title={item.name}>
+                          {item.name}
+                        </td>
+                        <td style={{ padding: '3px 6px' }}>
+                          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '2px' }}>
+                            <span style={{ fontWeight: 950, fontSize: '0.78rem', color: '#059669' }}>
+                              {item.daysWithout} <span style={{ fontSize: '0.62rem', fontWeight: 700, color: '#64748B' }}>dias</span>
+                            </span>
+                            <span style={{ fontSize: '0.58rem', color: '#94A3B8', fontWeight: 700 }}>
+                              {pct}%
+                            </span>
+                          </div>
+                          <div style={{ height: '3.5px', background: '#F1F5F9', borderRadius: '2px', overflow: 'hidden' }}>
+                            <div style={{
+                              width: `${pct}%`,
+                              height: '100%',
+                              background: item.daysWithout >= 300 
+                                ? '#059669' 
+                                : item.daysWithout >= 60 
+                                  ? '#2563EB' 
+                                  : '#EF4444',
+                              borderRadius: '2px'
+                            }}></div>
+                          </div>
+                        </td>
+                        <td style={{ padding: '3px 6px', color: '#64748B', fontSize: '0.66rem', fontWeight: 700 }}>
+                          {item.lastDate.toLocaleDateString('pt-BR')}
+                        </td>
+                        <td style={{ padding: '3px 6px', textAlign: 'center' }}>
+                          <span style={{ background: '#F1F5F9', color: '#334155', padding: '1.5px 5px', borderRadius: '3px', fontSize: '0.65rem', fontWeight: 800 }}>
+                            {item.totalAccidents}
+                          </span>
+                        </td>
+                      </tr>
+                    );
+                  })}
+                </tbody>
+              </table>
+            </div>
+          </div>
+
+          {/* Coluna 2: Ranking por Área Operacional */}
+          <div className="panel-premium" style={{ display: 'flex', flexDirection: 'column', padding: '0.65rem 0.85rem', minHeight: 0 }}>
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '0.45rem' }}>
+              <h3 style={{ fontSize: '0.82rem', fontWeight: 900, margin: 0, color: '#0F172A', display: 'flex', alignItems: 'center', gap: '6px' }}>
+                <span style={{ width: '8px', height: '8px', borderRadius: '50%', background: '#2563EB', display: 'inline-block' }}></span>
+                Ranking por Área / Setor Operacional
+              </h3>
+              <span style={{ fontSize: '0.62rem', fontWeight: 800, color: '#2563EB', background: '#EFF6FF', padding: '2px 6px', borderRadius: '4px' }}>
+                {areaRanking.length} Áreas
+              </span>
+            </div>
+
+            <div style={{ flex: 1, overflow: 'hidden', minHeight: 0 }}>
+              <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '0.72rem', whiteSpace: 'nowrap' }}>
+                <thead>
+                  <tr style={{ background: '#F8FAFC', borderBottom: '2px solid #E2E8F0', color: '#475569', fontWeight: 900, textAlign: 'left', fontSize: '0.64rem' }}>
+                    <th style={{ padding: '4px 6px', width: '28px', textAlign: 'center' }}>#</th>
+                    <th style={{ padding: '4px 6px' }}>ÁREA / SETOR</th>
+                    <th style={{ padding: '4px 6px', width: '130px' }}>DIAS S/ ACIDENTES</th>
+                    <th style={{ padding: '4px 6px', width: '75px' }}>ÚLTIMO</th>
+                    <th style={{ padding: '4px 6px', width: '50px', textAlign: 'center' }}>TOTAL</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {areaRanking.map((item, idx) => {
+                    const pct = Math.min(100, Math.round((item.daysWithout / maxAreaDays) * 100));
+                    const isTop3 = idx < 3;
+                    const rankBg = idx === 0 ? '#FEF3C7' : idx === 1 ? '#F1F5F9' : idx === 2 ? '#FFEDD5' : '#FFFFFF';
+                    const rankColor = idx === 0 ? '#B45309' : idx === 1 ? '#475569' : idx === 2 ? '#C2410C' : '#64748B';
+
+                    return (
+                      <tr key={item.name} style={{ borderBottom: '1px solid #F1F5F9', height: '24px' }}>
+                        <td style={{ padding: '2.5px 6px', textAlign: 'center' }}>
+                          <span style={{
+                            display: 'inline-flex',
+                            alignItems: 'center',
+                            justifyContent: 'center',
+                            width: '18px',
+                            height: '18px',
+                            borderRadius: '50%',
+                            background: rankBg,
+                            color: rankColor,
+                            fontWeight: 950,
+                            fontSize: '0.64rem',
+                            border: isTop3 ? `1px solid ${rankColor}44` : '1px solid #E2E8F0'
+                          }}>
+                            {idx + 1}
+                          </span>
+                        </td>
+                        <td style={{ padding: '2.5px 6px', fontWeight: isTop3 ? 900 : 700, color: '#0F172A', overflow: 'hidden', textOverflow: 'ellipsis', maxWidth: '120px' }} title={item.name}>
+                          {item.name}
+                        </td>
+                        <td style={{ padding: '2.5px 6px' }}>
+                          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '2px' }}>
+                            <span style={{ fontWeight: 950, fontSize: '0.78rem', color: '#059669' }}>
+                              {item.daysWithout} <span style={{ fontSize: '0.62rem', fontWeight: 700, color: '#64748B' }}>dias</span>
+                            </span>
+                            <span style={{ fontSize: '0.58rem', color: '#94A3B8', fontWeight: 700 }}>
+                              {pct}%
+                            </span>
+                          </div>
+                          <div style={{ height: '3.5px', background: '#F1F5F9', borderRadius: '2px', overflow: 'hidden' }}>
+                            <div style={{
+                              width: `${pct}%`,
+                              height: '100%',
+                              background: item.daysWithout >= 300 
+                                ? '#059669' 
+                                : item.daysWithout >= 60 
+                                  ? '#2563EB' 
+                                  : '#EF4444',
+                              borderRadius: '2px'
+                            }}></div>
+                          </div>
+                        </td>
+                        <td style={{ padding: '2.5px 6px', color: '#64748B', fontSize: '0.66rem', fontWeight: 700 }}>
+                          {item.lastDate.toLocaleDateString('pt-BR')}
+                        </td>
+                        <td style={{ padding: '2.5px 6px', textAlign: 'center' }}>
+                          <span style={{ background: '#F1F5F9', color: '#334155', padding: '1.5px 5px', borderRadius: '3px', fontSize: '0.65rem', fontWeight: 800 }}>
+                            {item.totalAccidents}
+                          </span>
+                        </td>
+                      </tr>
+                    );
+                  })}
+                </tbody>
+              </table>
+            </div>
+          </div>
+        </div>
+
+        {/* Footer */}
+        <footer style={{ display: 'flex', justifyContent: 'space-between', borderTop: '1px solid #E2E8F0', paddingTop: '0.4rem', fontSize: '0.55rem', color: '#94A3B8', fontWeight: 800, marginTop: 'auto' }}>
+          <span>QUADRO DE GESTÃO À VISTA — GRUPO AÇOTUBO</span>
+          <span>SISTEMA DE SEGURANÇA E MEDICINA DO TRABALHO (SESMT)</span>
+        </footer>
+      </div>
+
+      {/* PAGE 5: Indicadores Regulamentares (NBR 14280 / OIT) */}
       <div className="a4-landscape">
         {/* Header */}
         <header style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', borderBottom: '2px solid #0284C7', paddingBottom: '0.4rem' }}>
@@ -1142,7 +1413,7 @@ export const LandscapePrintView: React.FC<LandscapePrintViewProps> = ({
           </div>
           <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
             <img src={LOGO_BASE64} alt="Açotubo" style={{ height: '22px' }} />
-            <span style={{ fontSize: '0.65rem', fontWeight: 900, background: '#F1F5F9', padding: '3px 8px', borderRadius: '4px', color: '#475569' }}>FOLHA 04 / {String(totalPages).padStart(2, '0')}</span>
+            <span style={{ fontSize: '0.65rem', fontWeight: 900, background: '#F1F5F9', padding: '3px 8px', borderRadius: '4px', color: '#475569' }}>FOLHA 05 / {String(totalPages).padStart(2, '0')}</span>
           </div>
         </header>
 
@@ -1519,7 +1790,7 @@ export const LandscapePrintView: React.FC<LandscapePrintViewProps> = ({
           </div>
           <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
             <img src={LOGO_BASE64} alt="Açotubo" style={{ height: '22px' }} />
-            <span style={{ fontSize: '0.65rem', fontWeight: 900, background: '#F1F5F9', padding: '3px 8px', borderRadius: '4px', color: '#475569' }}>FOLHA 05 / {String(totalPages).padStart(2, '0')}</span>
+            <span style={{ fontSize: '0.65rem', fontWeight: 900, background: '#F1F5F9', padding: '3px 8px', borderRadius: '4px', color: '#475569' }}>FOLHA 06 / {String(totalPages).padStart(2, '0')}</span>
           </div>
         </header>
 
@@ -1606,9 +1877,9 @@ export const LandscapePrintView: React.FC<LandscapePrintViewProps> = ({
         </footer>
       </div>
 
-      {/* Dynamic PAGE 6+: Detalhamento Geral de Ocorrências */}
+      {/* Dynamic PAGE 7+: Detalhamento Geral de Ocorrências */}
       {occurrenceChunks.map((chunk, chunkIdx) => {
-        const pageNum = 6 + chunkIdx;
+        const pageNum = 7 + chunkIdx;
         const pageLabel = `FOLHA ${String(pageNum).padStart(2, '0')} / ${String(totalPages).padStart(2, '0')}`;
         
         return (

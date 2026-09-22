@@ -94,3 +94,9 @@ export interface FrequencySeverityOverview {
   unitRecords: UnitRateRecord[];
 }
 
+export interface SafetyRankingItem {
+  name: string;
+  daysWithout: number;
+  lastDate: Date;
+  totalAccidents: number;
+}
