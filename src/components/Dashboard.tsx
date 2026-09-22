@@ -1857,15 +1857,28 @@ export const Dashboard: React.FC<DashboardProps> = ({
                       if (!s) return null;
                       return (
                         <tr key={year}>
-                          <td style={{fontWeight: 700, color: 'var(--text-muted)'}}>{year}</td>
-                          {stats[year]?.monthly.map((m, i) => (
-                            <td 
-                              key={i} 
-                              style={{ background: getHeatmapColor(m.count), color: m.count > 5 ? 'white' : 'var(--text)' }}
-                            >
-                              <div>{m.count > 0 ? m.count : '-'}</div>
-                            </td>
-                          ))}
+                          <td style={{fontWeight: 900, color: '#1E293B', fontSize: '0.95rem', minWidth: '55px', textAlign: 'center'}}>{year}</td>
+                          {stats[year]?.monthly.map((m, i) => {
+                            const textColor = m.count === 0 ? '#94A3B8' : m.count <= 4 ? '#7F1D1D' : '#FFFFFF';
+                            return (
+                              <td 
+                                key={i} 
+                                style={{ 
+                                  background: getHeatmapColor(m.count), 
+                                  color: textColor,
+                                  minWidth: '42px',
+                                  height: '46px',
+                                  borderRadius: '8px',
+                                  boxShadow: m.count > 0 ? '0 1px 3px rgba(0,0,0,0.06)' : 'none'
+                                }}
+                                title={`${MONTH_NAMES[i]}/${year}: ${m.count} acidentes`}
+                              >
+                                <div style={{ fontSize: '1.25rem', fontWeight: 900, lineHeight: 1 }}>
+                                  {m.count > 0 ? m.count : '—'}
+                                </div>
+                              </td>
+                            );
+                          })}
                         </tr>
                       );
                     })}

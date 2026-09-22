@@ -748,16 +748,16 @@ export const LandscapePrintView: React.FC<LandscapePrintViewProps> = ({
                                   background: '#FFFFFF', 
                                   border: m.count > 0 ? '1.5px solid #FECACA' : '1px solid #F1F5F9',
                                   color: m.count > 0 ? '#B91C1C' : '#CBD5E1',
-                                  height: '22px',
+                                  height: '24px',
                                   borderRadius: '4px',
-                                  fontSize: '9.5px',
+                                  fontSize: '11.5px',
                                   fontWeight: 900,
                                   textAlign: 'center',
                                   verticalAlign: 'middle',
                                   boxShadow: m.count > 0 ? '0 1px 2px rgba(185, 28, 28, 0.05)' : 'none'
                                 }}
                               >
-                                <div>{m.count > 0 ? m.count : '-'}</div>
+                                <div style={{ fontSize: '11.5px', fontWeight: 900 }}>{m.count > 0 ? m.count : '-'}</div>
                               </td>
                             ))}
                           </tr>
