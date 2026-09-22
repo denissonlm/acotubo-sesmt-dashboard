@@ -6,7 +6,7 @@ import {
 import { 
   Printer, ArrowLeft, ShieldCheck, Clock, Target, FileText, 
   AlertCircle, TrendingUp, Calendar, Trophy, Zap, Users, Activity, HardHat, GraduationCap, ClipboardList,
-  Gauge
+  Gauge, FileSearch, ExternalLink
 } from 'lucide-react';
 import type { Accident } from '../types';
 import { 
@@ -1646,11 +1646,16 @@ export const LandscapePrintView: React.FC<LandscapePrintViewProps> = ({
                   <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '0.75rem', whiteSpace: 'nowrap' }}>
                     <thead>
                       <tr style={{ textAlign: 'left', background: '#F8FAFC', borderBottom: '2px solid #E2E8F0' }}>
-                        <th style={{ padding: '6px 8px', fontWeight: 900, width: '80px', color: '#475569' }}>DATA</th>
-                        <th style={{ padding: '6px 8px', fontWeight: 900, width: '220px', color: '#475569' }}>COLABORADOR</th>
+                        <th style={{ padding: '6px 4px', fontWeight: 900, width: '32px', textAlign: 'center', color: '#475569' }} title="Investigação de Acidente">
+                          <div style={{ display: 'inline-flex', alignItems: 'center', justifyContent: 'center' }}>
+                            <FileSearch size={13} strokeWidth={2.2} color="#475569" />
+                          </div>
+                        </th>
+                        <th style={{ padding: '6px 8px', fontWeight: 900, width: '78px', color: '#475569' }}>DATA</th>
+                        <th style={{ padding: '6px 8px', fontWeight: 900, width: '210px', color: '#475569' }}>COLABORADOR</th>
                         <th style={{ padding: '6px 8px', fontWeight: 900, color: '#475569' }}>CARGO</th>
-                        <th style={{ padding: '6px 8px', fontWeight: 900, width: '115px', color: '#475569' }}>DIVISÃO</th>
-                        <th style={{ padding: '6px 8px', fontWeight: 900, width: '120px', color: '#475569' }}>ÁREA / SETOR</th>
+                        <th style={{ padding: '6px 8px', fontWeight: 900, width: '110px', color: '#475569' }}>DIVISÃO</th>
+                        <th style={{ padding: '6px 8px', fontWeight: 900, width: '115px', color: '#475569' }}>ÁREA / SETOR</th>
                         <th style={{ padding: '6px 8px', fontWeight: 900, width: '85px', color: '#475569' }}>TIPO</th>
                         <th style={{ padding: '6px 8px', fontWeight: 900, color: '#475569' }}>PARTE ATINGIDA</th>
                         <th style={{ padding: '6px 8px', fontWeight: 900, width: '70px', textAlign: 'center', color: '#475569' }}>AFAST.</th>
@@ -1659,11 +1664,35 @@ export const LandscapePrintView: React.FC<LandscapePrintViewProps> = ({
                     <tbody>
                       {chunk.length === 0 ? (
                         <tr>
-                          <td colSpan={8} style={{ textAlign: 'center', padding: '2.5rem', color: '#64748B' }}>Nenhum evento registrado.</td>
+                          <td colSpan={9} style={{ textAlign: 'center', padding: '2.5rem', color: '#64748B' }}>Nenhum evento registrado.</td>
                         </tr>
                       ) : (
                         chunk.map((a, idx) => (
                           <tr key={idx} style={{ borderBottom: '1px solid #F1F5F9', height: '29px' }}>
+                            <td style={{ padding: '4px 4px', textAlign: 'center' }}>
+                              {a.investigationLink ? (
+                                <a 
+                                  href={a.investigationLink} 
+                                  target="_blank" 
+                                  rel="noopener noreferrer" 
+                                  title="Abrir Investigação de Acidente"
+                                  style={{ 
+                                    display: 'inline-flex', 
+                                    alignItems: 'center', 
+                                    justifyContent: 'center', 
+                                    width: '20px', 
+                                    height: '20px', 
+                                    borderRadius: '4px', 
+                                    background: '#EFF6FF', 
+                                    color: '#2563EB', 
+                                    border: '1px solid #BFDBFE',
+                                    textDecoration: 'none'
+                                  }}
+                                >
+                                  <ExternalLink size={11} strokeWidth={2.5} />
+                                </a>
+                              ) : null}
+                            </td>
                             <td style={{ padding: '4px 8px', fontWeight: 700, color: '#0F172A' }}>
                               {a.date.toLocaleDateString('pt-BR')}
                             </td>
