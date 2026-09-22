@@ -1646,21 +1646,20 @@ export const LandscapePrintView: React.FC<LandscapePrintViewProps> = ({
                   <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '0.75rem', whiteSpace: 'nowrap' }}>
                     <thead>
                       <tr style={{ textAlign: 'left', background: '#F8FAFC', borderBottom: '2px solid #E2E8F0' }}>
-                        <th style={{ padding: '6px 8px', fontWeight: 900, width: '75px', color: '#475569' }}>DATA</th>
-                        <th style={{ padding: '6px 8px', fontWeight: 900, width: '200px', color: '#475569' }}>COLABORADOR</th>
+                        <th style={{ padding: '6px 8px', fontWeight: 900, width: '80px', color: '#475569' }}>DATA</th>
+                        <th style={{ padding: '6px 8px', fontWeight: 900, width: '220px', color: '#475569' }}>COLABORADOR</th>
                         <th style={{ padding: '6px 8px', fontWeight: 900, color: '#475569' }}>CARGO</th>
-                        <th style={{ padding: '6px 8px', fontWeight: 900, width: '110px', color: '#475569' }}>DIVISÃO</th>
-                        <th style={{ padding: '6px 8px', fontWeight: 900, width: '110px', color: '#475569' }}>ÁREA / SETOR</th>
+                        <th style={{ padding: '6px 8px', fontWeight: 900, width: '115px', color: '#475569' }}>DIVISÃO</th>
+                        <th style={{ padding: '6px 8px', fontWeight: 900, width: '120px', color: '#475569' }}>ÁREA / SETOR</th>
                         <th style={{ padding: '6px 8px', fontWeight: 900, width: '85px', color: '#475569' }}>TIPO</th>
                         <th style={{ padding: '6px 8px', fontWeight: 900, color: '#475569' }}>PARTE ATINGIDA</th>
-                        <th style={{ padding: '6px 8px', fontWeight: 900, width: '55px', textAlign: 'center', color: '#475569' }}>CAT</th>
-                        <th style={{ padding: '6px 8px', fontWeight: 900, width: '65px', textAlign: 'center', color: '#475569' }}>AFAST.</th>
+                        <th style={{ padding: '6px 8px', fontWeight: 900, width: '70px', textAlign: 'center', color: '#475569' }}>AFAST.</th>
                       </tr>
                     </thead>
                     <tbody>
                       {chunk.length === 0 ? (
                         <tr>
-                          <td colSpan={9} style={{ textAlign: 'center', padding: '2.5rem', color: '#64748B' }}>Nenhum evento registrado.</td>
+                          <td colSpan={8} style={{ textAlign: 'center', padding: '2.5rem', color: '#64748B' }}>Nenhum evento registrado.</td>
                         </tr>
                       ) : (
                         chunk.map((a, idx) => (
@@ -1692,19 +1691,6 @@ export const LandscapePrintView: React.FC<LandscapePrintViewProps> = ({
                               </span>
                             </td>
                             <td style={{ padding: '4px 8px', color: '#475569' }}>{a.partAffected || '—'}</td>
-                            <td style={{ padding: '4px 8px', textAlign: 'center' }}>
-                              <span style={{ 
-                                padding: '1.5px 5px', 
-                                borderRadius: '4px', 
-                                fontSize: '0.66rem', 
-                                fontWeight: 800,
-                                background: a.hasCat ? '#ECFDF5' : '#F8FAFC',
-                                color: a.hasCat ? '#059669' : '#94A3B8',
-                                border: '1px solid ' + (a.hasCat ? '#A7F3D0' : '#E2E8F0')
-                              }}>
-                                {a.hasCat ? (a.cat && a.cat.length > 3 ? a.cat : 'SIM') : 'NÃO'}
-                              </span>
-                            </td>
                             <td style={{ padding: '4px 8px', textAlign: 'center', fontWeight: 900, color: a.lostDays > 0 ? '#B91C1C' : '#64748B' }}>
                               {a.lostDays > 0 ? (
                                 <span style={{ background: '#FEE2E2', color: '#B91C1C', padding: '1.5px 5px', borderRadius: '4px', fontSize: '0.7rem' }}>
