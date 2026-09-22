@@ -1910,8 +1910,8 @@ export const LandscapePrintView: React.FC<LandscapePrintViewProps> = ({
             </header>
 
             <div style={{ flex: 1, display: 'flex', flexDirection: 'column', marginTop: '0.75rem', minHeight: 0 }}>
-              <div className="panel-premium" style={{ flex: 1, display: 'flex', flexDirection: 'column', minHeight: 0, padding: '0.85rem 1.25rem' }}>
-                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '0.65rem' }}>
+              <div className="panel-premium" style={{ flex: 1, display: 'flex', flexDirection: 'column', minHeight: 0, padding: '0.75rem 1rem' }}>
+                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '0.55rem' }}>
                   <h3 style={{ fontSize: '0.9rem', fontWeight: 900, margin: 0, color: '#0F172A', display: 'flex', alignItems: 'center', gap: '8px' }}>
                     <span style={{ width: '8px', height: '8px', borderRadius: '50%', background: '#6366F1', display: 'inline-block' }}></span>
                     Detalhamento de Acidentes e Afastamentos (Parte {chunkIdx + 1} de {occurrenceChunks.length})
@@ -1922,22 +1922,22 @@ export const LandscapePrintView: React.FC<LandscapePrintViewProps> = ({
                 </div>
 
                 <div style={{ flex: 1, overflow: 'hidden', minHeight: 0 }}>
-                  <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '0.75rem', whiteSpace: 'nowrap' }}>
+                  <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '0.72rem', tableLayout: 'fixed' }}>
                     <thead>
                       <tr style={{ textAlign: 'left', background: '#F8FAFC', borderBottom: '2px solid #E2E8F0' }}>
-                        <th style={{ padding: '6px 4px', fontWeight: 900, width: '32px', textAlign: 'center', color: '#475569' }} title="Investigação de Acidente">
+                        <th style={{ padding: '6px 2px', fontWeight: 900, width: '28px', textAlign: 'center', color: '#475569' }} title="Investigação de Acidente">
                           <div style={{ display: 'inline-flex', alignItems: 'center', justifyContent: 'center' }}>
                             <FileSearch size={13} strokeWidth={2.2} color="#475569" />
                           </div>
                         </th>
-                        <th style={{ padding: '6px 8px', fontWeight: 900, width: '78px', color: '#475569' }}>DATA</th>
-                        <th style={{ padding: '6px 8px', fontWeight: 900, width: '210px', color: '#475569' }}>COLABORADOR</th>
-                        <th style={{ padding: '6px 8px', fontWeight: 900, color: '#475569' }}>CARGO</th>
-                        <th style={{ padding: '6px 8px', fontWeight: 900, width: '110px', color: '#475569' }}>DIVISÃO</th>
-                        <th style={{ padding: '6px 8px', fontWeight: 900, width: '115px', color: '#475569' }}>ÁREA / SETOR</th>
-                        <th style={{ padding: '6px 8px', fontWeight: 900, width: '85px', color: '#475569' }}>TIPO</th>
-                        <th style={{ padding: '6px 8px', fontWeight: 900, color: '#475569' }}>PARTE ATINGIDA</th>
-                        <th style={{ padding: '6px 8px', fontWeight: 900, width: '70px', textAlign: 'center', color: '#475569' }}>AFAST.</th>
+                        <th style={{ padding: '6px 6px', fontWeight: 900, width: '74px', color: '#475569' }}>DATA</th>
+                        <th style={{ padding: '6px 6px', fontWeight: 900, width: '195px', color: '#475569' }}>COLABORADOR</th>
+                        <th style={{ padding: '6px 6px', fontWeight: 900, width: '160px', color: '#475569' }}>CARGO</th>
+                        <th style={{ padding: '6px 6px', fontWeight: 900, width: '105px', color: '#475569' }}>DIVISÃO</th>
+                        <th style={{ padding: '6px 6px', fontWeight: 900, width: '105px', color: '#475569' }}>ÁREA / SETOR</th>
+                        <th style={{ padding: '6px 6px', fontWeight: 900, width: '75px', color: '#475569' }}>TIPO</th>
+                        <th style={{ padding: '6px 6px', fontWeight: 900, width: '110px', color: '#475569' }}>PARTE ATINGIDA</th>
+                        <th style={{ padding: '6px 6px', fontWeight: 900, width: '58px', textAlign: 'center', color: '#475569' }}>AFAST.</th>
                       </tr>
                     </thead>
                     <tbody>
@@ -1947,8 +1947,8 @@ export const LandscapePrintView: React.FC<LandscapePrintViewProps> = ({
                         </tr>
                       ) : (
                         chunk.map((a, idx) => (
-                          <tr key={idx} style={{ borderBottom: '1px solid #F1F5F9', height: '29px' }}>
-                            <td style={{ padding: '4px 4px', textAlign: 'center' }}>
+                          <tr key={idx} style={{ borderBottom: '1px solid #F1F5F9', height: '28px' }}>
+                            <td style={{ padding: '3px 2px', textAlign: 'center' }}>
                               {a.investigationLink ? (
                                 <a 
                                   href={a.investigationLink} 
@@ -1959,8 +1959,8 @@ export const LandscapePrintView: React.FC<LandscapePrintViewProps> = ({
                                     display: 'inline-flex', 
                                     alignItems: 'center', 
                                     justifyContent: 'center', 
-                                    width: '20px', 
-                                    height: '20px', 
+                                    width: '18px', 
+                                    height: '18px', 
                                     borderRadius: '4px', 
                                     background: '#EFF6FF', 
                                     color: '#2563EB', 
@@ -1968,29 +1968,72 @@ export const LandscapePrintView: React.FC<LandscapePrintViewProps> = ({
                                     textDecoration: 'none'
                                   }}
                                 >
-                                  <ExternalLink size={11} strokeWidth={2.5} />
+                                  <ExternalLink size={10} strokeWidth={2.5} />
                                 </a>
                               ) : null}
                             </td>
-                            <td style={{ padding: '4px 8px', fontWeight: 700, color: '#0F172A' }}>
+                            <td style={{ padding: '3px 6px', fontWeight: 700, color: '#0F172A', whiteSpace: 'nowrap' }}>
                               {a.date.toLocaleDateString('pt-BR')}
                             </td>
-                            <td style={{ padding: '4px 8px', fontWeight: 800, color: '#0F172A' }}>
-                              {a.employee}
+                            <td 
+                              style={{ 
+                                padding: '3px 6px', 
+                                fontWeight: 800, 
+                                color: '#0F172A',
+                                overflow: 'hidden',
+                                textOverflow: 'ellipsis',
+                                whiteSpace: 'nowrap'
+                              }}
+                              title={a.employee}
+                            >
+                              <span>{a.employee}</span>
                               {employeeCounts[a.employee] > 1 && (
-                                <span style={{ marginLeft: '6px', background: '#FEE2E2', color: '#B91C1C', padding: '1.5px 4.5px', borderRadius: '4px', fontSize: '8px', fontWeight: 950 }}>
+                                <span style={{ marginLeft: '4px', background: '#FEE2E2', color: '#B91C1C', padding: '1px 4px', borderRadius: '3px', fontSize: '7.5px', fontWeight: 950 }}>
                                   {employeeCounts[a.employee]}x
                                 </span>
                               )}
                             </td>
-                            <td style={{ padding: '4px 8px', color: '#475569' }}>{a.role || 'N/A'}</td>
-                            <td style={{ padding: '4px 8px', color: '#475569' }}>{a.division}</td>
-                            <td style={{ padding: '4px 8px', color: '#475569' }}>{a.area}</td>
-                            <td style={{ padding: '4px 8px', color: '#334155' }}>
+                            <td 
+                              style={{ 
+                                padding: '3px 6px', 
+                                color: '#475569',
+                                overflow: 'hidden',
+                                textOverflow: 'ellipsis',
+                                whiteSpace: 'nowrap'
+                              }}
+                              title={a.role || 'N/A'}
+                            >
+                              {a.role || 'N/A'}
+                            </td>
+                            <td 
+                              style={{ 
+                                padding: '3px 6px', 
+                                color: '#475569',
+                                overflow: 'hidden',
+                                textOverflow: 'ellipsis',
+                                whiteSpace: 'nowrap'
+                              }}
+                              title={a.division}
+                            >
+                              {a.division}
+                            </td>
+                            <td 
+                              style={{ 
+                                padding: '3px 6px', 
+                                color: '#475569',
+                                overflow: 'hidden',
+                                textOverflow: 'ellipsis',
+                                whiteSpace: 'nowrap'
+                              }}
+                              title={a.area}
+                            >
+                              {a.area}
+                            </td>
+                            <td style={{ padding: '3px 6px', color: '#334155', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
                               <span style={{ 
-                                padding: '2px 6px', 
+                                padding: '2px 5px', 
                                 borderRadius: '4px', 
-                                fontSize: '0.68rem', 
+                                fontSize: '0.65rem', 
                                 fontWeight: 700,
                                 background: a.type?.toLowerCase().includes('trajeto') ? '#F1F5F9' : '#FEF2F2',
                                 color: a.type?.toLowerCase().includes('trajeto') ? '#475569' : '#991B1B'
@@ -1998,14 +2041,25 @@ export const LandscapePrintView: React.FC<LandscapePrintViewProps> = ({
                                 {a.type || 'TÍPICO'}
                               </span>
                             </td>
-                            <td style={{ padding: '4px 8px', color: '#475569' }}>{a.partAffected || '—'}</td>
-                            <td style={{ padding: '4px 8px', textAlign: 'center', fontWeight: 900, color: a.lostDays > 0 ? '#B91C1C' : '#64748B' }}>
+                            <td 
+                              style={{ 
+                                padding: '3px 6px', 
+                                color: '#475569',
+                                overflow: 'hidden',
+                                textOverflow: 'ellipsis',
+                                whiteSpace: 'nowrap'
+                              }}
+                              title={a.partAffected || '—'}
+                            >
+                              {a.partAffected || '—'}
+                            </td>
+                            <td style={{ padding: '3px 6px', textAlign: 'center', fontWeight: 900, color: a.lostDays > 0 ? '#B91C1C' : '#64748B', whiteSpace: 'nowrap' }}>
                               {a.lostDays > 0 ? (
-                                <span style={{ background: '#FEE2E2', color: '#B91C1C', padding: '1.5px 5px', borderRadius: '4px', fontSize: '0.7rem' }}>
+                                <span style={{ background: '#FEE2E2', color: '#B91C1C', padding: '1px 5px', borderRadius: '4px', fontSize: '0.68rem' }}>
                                   {a.lostDays}d
                                 </span>
                               ) : (
-                                <span style={{ color: '#94A3B8', fontSize: '0.7rem' }}>0d</span>
+                                <span style={{ color: '#94A3B8', fontSize: '0.68rem' }}>0d</span>
                               )}
                             </td>
                           </tr>
