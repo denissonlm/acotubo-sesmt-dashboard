@@ -424,7 +424,7 @@ export const processFrequencyAndSeverity = (
 ): FrequencySeverityOverview => {
   const rawStore = multiYearStore || loadHHTStore(config);
   const store = applyGroupingToStore(rawStore, config);
-  const yearHHT = store[year] || store[2026] || {};
+  const yearHHT = store[year] || {};
 
   const yearAccidents = accidents.filter(a => a.year === year && selectedMonths.includes(a.month));
 
@@ -469,8 +469,8 @@ export const processFrequencyAndSeverity = (
       }
     }
 
-    const freqRate = calculateF(mN, mH);
-    const sevRate = calculateG(mT, mH);
+    const freqRate = mH > 0 ? calculateF(mN, mH) : 0;
+    const sevRate = mH > 0 ? calculateG(mT, mH) : 0;
 
     monthlyRecords.push({
       month: m,
@@ -482,9 +482,9 @@ export const processFrequencyAndSeverity = (
       previsto: mPrevisto,
       horasAusencia: mAusencia,
       frequencyRate: freqRate,
-      frequencyStatus: getFrequencyStatus(freqRate),
+      frequencyStatus: mH > 0 ? getFrequencyStatus(freqRate) : "SEM DADOS",
       severityRate: sevRate,
-      severityStatus: getSeverityStatus(sevRate)
+      severityStatus: mH > 0 ? getSeverityStatus(sevRate) : "SEM DADOS"
     });
 
     totalAccidents += mN;
@@ -494,8 +494,10 @@ export const processFrequencyAndSeverity = (
     totalHorasAusencia += mAusencia;
   });
 
-  const overallFrequencyRate = calculateF(totalAccidents, totalHHT);
-  const overallSeverityRate = calculateG(totalLostDays, totalHHT);
+  const overallFrequencyRate = totalHHT > 0 ? calculateF(totalAccidents, totalHHT) : 0;
+  const overallSeverityRate = totalHHT > 0 ? calculateG(totalLostDays, totalHHT) : 0;
+  const overallFrequencyStatus: OITClassification = totalHHT > 0 ? getFrequencyStatus(overallFrequencyRate) : "SEM DADOS";
+  const overallSeverityStatus: OITClassification = totalHHT > 0 ? getSeverityStatus(overallSeverityRate) : "SEM DADOS";
 
   // Estudo por Unidade de Negócio com a lista dinâmica de unidades configuradas
   const unitRecords: UnitRateRecord[] = [];
@@ -521,8 +523,8 @@ export const processFrequencyAndSeverity = (
 
     const uN = unitAccidents.length;
     const uT = unitAccidents.reduce((sum, a) => sum + (a.lostDays || 0), 0);
-    const uFreq = calculateF(uN, unitH);
-    const uSev = calculateG(uT, unitH);
+    const uFreq = unitH > 0 ? calculateF(uN, unitH) : 0;
+    const uSev = unitH > 0 ? calculateG(uT, unitH) : 0;
 
     unitRecords.push({
       unitName,
@@ -532,9 +534,9 @@ export const processFrequencyAndSeverity = (
       accidents: uN,
       lostDays: uT,
       frequencyRate: uFreq,
-      frequencyStatus: getFrequencyStatus(uFreq),
+      frequencyStatus: unitH > 0 ? getFrequencyStatus(uFreq) : "SEM DADOS",
       severityRate: uSev,
-      severityStatus: getSeverityStatus(uSev)
+      severityStatus: unitH > 0 ? getSeverityStatus(uSev) : "SEM DADOS"
     });
   });
 
@@ -545,15 +547,19 @@ export const processFrequencyAndSeverity = (
     totalPrevisto,
     totalHorasAusencia,
     overallFrequencyRate,
-    overallFrequencyStatus: getFrequencyStatus(overallFrequencyRate),
+    overallFrequencyStatus,
     overallSeverityRate,
-    overallSeverityStatus: getSeverityStatus(overallSeverityRate),
+    overallSeverityStatus,
     monthlyRecords,
     unitRecords
   };
 };
 
 export const generateFrequencySeverityStory = (overview: FrequencySeverityOverview, year: number = 2026): string => {
+  if (overview.totalHHT <= 0) {
+    return `[Exercício de ${year}]. Não há registros de Horas Trabalhadas (HHT) para o ano de ${year} cadastrados na base de dados (registros disponíveis exclusivamente para o ano de 2026). No período foram contabilizados ${overview.totalAccidents} acidente(s) e ${overview.totalLostDays} dia(s) de afastamento. Para obter os cálculos oficiais das Taxas de Frequência (F) e Gravidade (G) de ${year}, utilize a importação de planilhas mensais de HHT deste exercício.`;
+  }
+
   const hFormatted = overview.totalHHT.toLocaleString("pt-BR", { minimumFractionDigits: 2, maximumFractionDigits: 2 });
   const fFormatted = overview.overallFrequencyRate.toLocaleString("pt-BR", { minimumFractionDigits: 2, maximumFractionDigits: 2 });
   const gFormatted = overview.overallSeverityRate.toLocaleString("pt-BR", { minimumFractionDigits: 2, maximumFractionDigits: 2 });

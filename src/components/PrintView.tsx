@@ -68,6 +68,8 @@ export const PrintView: React.FC<PrintViewProps> = ({
       case 'PÉSSIMA':
       case 'PÉSSIMO':
         return '#EF4444'; // Péssima = Vermelho
+      case 'SEM DADOS':
+        return '#94A3B8';
       default:
         return '#64748B';
     }
@@ -86,6 +88,8 @@ export const PrintView: React.FC<PrintViewProps> = ({
       case 'PÉSSIMA':
       case 'PÉSSIMO':
         return '#FEF2F2';
+      case 'SEM DADOS':
+        return '#F1F5F9';
       default:
         return '#F1F5F9';
     }
@@ -554,11 +558,11 @@ export const PrintView: React.FC<PrintViewProps> = ({
                 </span>
               </div>
               <div style={{ fontSize: '1.75rem', fontWeight: 900, color: '#0F172A', lineHeight: 1 }}>
-                {freqOverview.overallFrequencyRate.toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+                {freqOverview.totalHHT > 0 ? freqOverview.overallFrequencyRate.toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 }) : '—'}
               </div>
               <div style={{ fontSize: '0.62rem', color: '#64748B', marginTop: '0.5rem', paddingTop: '0.4rem', borderTop: '1px solid #E2E8F0', display: 'flex', justifyContent: 'space-between' }}>
                 <span>N: <strong>{freqOverview.totalAccidents} acd</strong></span>
-                <span>Meta: ≤ 20</span>
+                <span>{freqOverview.totalHHT > 0 ? 'Meta: ≤ 20' : 'Sem HHT'}</span>
               </div>
             </div>
 
@@ -571,11 +575,11 @@ export const PrintView: React.FC<PrintViewProps> = ({
                 </span>
               </div>
               <div style={{ fontSize: '1.75rem', fontWeight: 900, color: '#0F172A', lineHeight: 1 }}>
-                {freqOverview.overallSeverityRate.toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+                {freqOverview.totalHHT > 0 ? freqOverview.overallSeverityRate.toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 }) : '—'}
               </div>
               <div style={{ fontSize: '0.62rem', color: '#64748B', marginTop: '0.5rem', paddingTop: '0.4rem', borderTop: '1px solid #E2E8F0', display: 'flex', justifyContent: 'space-between' }}>
                 <span>T: <strong>{freqOverview.totalLostDays} dias</strong></span>
-                <span>Meta: ≤ 500</span>
+                <span>{freqOverview.totalHHT > 0 ? 'Meta: ≤ 500' : 'Sem HHT'}</span>
               </div>
             </div>
 
@@ -583,10 +587,10 @@ export const PrintView: React.FC<PrintViewProps> = ({
             <div style={{ background: '#0F172A', padding: '0.85rem', borderRadius: '12px', color: 'white' }}>
               <div style={{ fontSize: '0.65rem', fontWeight: 800, opacity: 0.7, textTransform: 'uppercase', marginBottom: '0.35rem', whiteSpace: 'nowrap' }}>Horas Trabalhadas</div>
               <div style={{ fontSize: '1.3rem', fontWeight: 900, lineHeight: 1.1 }}>
-                {freqOverview.totalHHT.toLocaleString('pt-BR', { maximumFractionDigits: 0 })} h
+                {freqOverview.totalHHT > 0 ? `${freqOverview.totalHHT.toLocaleString('pt-BR', { maximumFractionDigits: 0 })} h` : '0 h (Sem dados)'}
               </div>
               <div style={{ fontSize: '0.62rem', opacity: 0.75, marginTop: '0.65rem', paddingTop: '0.4rem', borderTop: '1px solid rgba(255,255,255,0.1)' }}>
-                Exposição efetiva (HH)
+                {freqOverview.totalHHT > 0 ? 'Exposição efetiva (HH)' : 'HHT não cadastrado'}
               </div>
             </div>
 
@@ -650,11 +654,11 @@ export const PrintView: React.FC<PrintViewProps> = ({
                       <td style={{ padding: '3px 5px', textAlign: 'center', fontWeight: m.lostDays > 0 ? 800 : 500, color: m.lostDays > 0 ? '#B91C1C' : '#64748B' }}>
                         {m.lostDays}
                       </td>
-                      <td style={{ padding: '3px 5px', textAlign: 'right', fontWeight: 800, color: getOITStatusColor(m.frequencyStatus) }}>
-                        {m.frequencyRate.toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+                      <td style={{ padding: '3px 5px', textAlign: 'right', fontWeight: 800, color: m.hht > 0 ? getOITStatusColor(m.frequencyStatus) : '#94A3B8' }}>
+                        {m.hht > 0 ? m.frequencyRate.toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 }) : '—'}
                       </td>
-                      <td style={{ padding: '3px 5px', textAlign: 'right', fontWeight: 800, color: getOITStatusColor(m.severityStatus) }}>
-                        {m.severityRate.toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+                      <td style={{ padding: '3px 5px', textAlign: 'right', fontWeight: 800, color: m.hht > 0 ? getOITStatusColor(m.severityStatus) : '#94A3B8' }}>
+                        {m.hht > 0 ? m.severityRate.toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 }) : '—'}
                       </td>
                     </tr>
                   ))}
@@ -662,11 +666,11 @@ export const PrintView: React.FC<PrintViewProps> = ({
                 <tfoot>
                   <tr style={{ background: '#F8FAFC', borderTop: '2px solid #E2E8F0', fontWeight: 900 }}>
                     <td style={{ padding: '4px 5px' }}>TOTAL</td>
-                    <td style={{ padding: '4px 5px', textAlign: 'right' }}>{freqOverview.totalHHT.toLocaleString('pt-BR', { maximumFractionDigits: 0 })}</td>
+                    <td style={{ padding: '4px 5px', textAlign: 'right' }}>{freqOverview.totalHHT > 0 ? freqOverview.totalHHT.toLocaleString('pt-BR', { maximumFractionDigits: 0 }) : '—'}</td>
                     <td style={{ padding: '4px 5px', textAlign: 'center', color: '#B91C1C' }}>{freqOverview.totalAccidents}</td>
                     <td style={{ padding: '4px 5px', textAlign: 'center', color: '#B91C1C' }}>{freqOverview.totalLostDays}</td>
-                    <td style={{ padding: '4px 5px', textAlign: 'right', color: getOITStatusColor(freqOverview.overallFrequencyStatus) }}>{freqOverview.overallFrequencyRate.toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</td>
-                    <td style={{ padding: '4px 5px', textAlign: 'right', color: getOITStatusColor(freqOverview.overallSeverityStatus) }}>{freqOverview.overallSeverityRate.toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</td>
+                    <td style={{ padding: '4px 5px', textAlign: 'right', color: freqOverview.totalHHT > 0 ? getOITStatusColor(freqOverview.overallFrequencyStatus) : '#94A3B8' }}>{freqOverview.totalHHT > 0 ? freqOverview.overallFrequencyRate.toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 }) : '—'}</td>
+                    <td style={{ padding: '4px 5px', textAlign: 'right', color: freqOverview.totalHHT > 0 ? getOITStatusColor(freqOverview.overallSeverityStatus) : '#94A3B8' }}>{freqOverview.totalHHT > 0 ? freqOverview.overallSeverityRate.toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 }) : '—'}</td>
                   </tr>
                 </tfoot>
               </table>
@@ -693,11 +697,11 @@ export const PrintView: React.FC<PrintViewProps> = ({
                       </div>
                       <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', flexShrink: 0 }}>
                         <span style={{ color: '#64748B' }}>N: <strong>{u.accidents}</strong></span>
-                        <span style={{ fontWeight: 800, color: getOITStatusColor(u.frequencyStatus) }}>
-                          F: {u.frequencyRate.toFixed(1)}
+                        <span style={{ fontWeight: 800, color: u.hht > 0 ? getOITStatusColor(u.frequencyStatus) : '#94A3B8' }}>
+                          F: {u.hht > 0 ? u.frequencyRate.toFixed(1) : '—'}
                         </span>
-                        <span style={{ fontWeight: 800, color: getOITStatusColor(u.severityStatus) }}>
-                          G: {u.severityRate.toFixed(0)}
+                        <span style={{ fontWeight: 800, color: u.hht > 0 ? getOITStatusColor(u.severityStatus) : '#94A3B8' }}>
+                          G: {u.hht > 0 ? u.severityRate.toFixed(0) : '—'}
                         </span>
                       </div>
                     </div>

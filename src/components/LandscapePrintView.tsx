@@ -266,6 +266,8 @@ export const LandscapePrintView: React.FC<LandscapePrintViewProps> = ({
       case 'PÉSSIMA':
       case 'PÉSSIMO':
         return '#EF4444'; // Péssima = Vermelho
+      case 'SEM DADOS':
+        return '#94A3B8';
       default:
         return '#64748B';
     }
@@ -284,6 +286,8 @@ export const LandscapePrintView: React.FC<LandscapePrintViewProps> = ({
       case 'PÉSSIMA':
       case 'PÉSSIMO':
         return '#FEF2F2';
+      case 'SEM DADOS':
+        return '#F1F5F9';
       default:
         return '#F1F5F9';
     }
@@ -1502,10 +1506,10 @@ export const LandscapePrintView: React.FC<LandscapePrintViewProps> = ({
               </div>
               <div style={{ display: 'flex', alignItems: 'baseline', justifyContent: 'space-between', width: '100%' }}>
                 <div style={{ fontSize: '1.65rem', fontWeight: 900, color: '#0F172A', lineHeight: 1, whiteSpace: 'nowrap' }}>
-                  {freqOverview.overallFrequencyRate.toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+                  {freqOverview.totalHHT > 0 ? freqOverview.overallFrequencyRate.toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 }) : '—'}
                 </div>
                 <div style={{ fontSize: '0.58rem', fontWeight: 800, color: '#94A3B8', textTransform: 'uppercase', whiteSpace: 'nowrap' }}>
-                  N: {freqOverview.totalAccidents} acd • Meta ≤ 20
+                  {freqOverview.totalHHT > 0 ? `N: ${freqOverview.totalAccidents} acd • Meta ≤ 20` : `N: ${freqOverview.totalAccidents} acd • Sem HHT`}
                 </div>
               </div>
             </div>
@@ -1532,10 +1536,10 @@ export const LandscapePrintView: React.FC<LandscapePrintViewProps> = ({
               </div>
               <div style={{ display: 'flex', alignItems: 'baseline', justifyContent: 'space-between', width: '100%' }}>
                 <div style={{ fontSize: '1.65rem', fontWeight: 900, color: '#0F172A', lineHeight: 1, whiteSpace: 'nowrap' }}>
-                  {freqOverview.overallSeverityRate.toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+                  {freqOverview.totalHHT > 0 ? freqOverview.overallSeverityRate.toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 }) : '—'}
                 </div>
                 <div style={{ fontSize: '0.58rem', fontWeight: 800, color: '#94A3B8', textTransform: 'uppercase', whiteSpace: 'nowrap' }}>
-                  T: {freqOverview.totalLostDays} dias • Meta ≤ 500
+                  {freqOverview.totalHHT > 0 ? `T: ${freqOverview.totalLostDays} dias • Meta ≤ 500` : `T: ${freqOverview.totalLostDays} dias • Sem HHT`}
                 </div>
               </div>
             </div>
@@ -1563,10 +1567,14 @@ export const LandscapePrintView: React.FC<LandscapePrintViewProps> = ({
               </div>
               <div style={{ display: 'flex', alignItems: 'baseline', justifyContent: 'space-between', width: '100%' }}>
                 <div style={{ fontSize: '1.45rem', fontWeight: 900, color: '#FFFFFF', lineHeight: 1, whiteSpace: 'nowrap' }}>
-                  {freqOverview.totalHHT.toLocaleString('pt-BR', { maximumFractionDigits: 0 })} <span style={{ fontSize: '0.75rem', fontWeight: 700, color: '#94A3B8' }}>h</span>
+                  {freqOverview.totalHHT > 0 ? (
+                    <>{freqOverview.totalHHT.toLocaleString('pt-BR', { maximumFractionDigits: 0 })} <span style={{ fontSize: '0.75rem', fontWeight: 700, color: '#94A3B8' }}>h</span></>
+                  ) : (
+                    '0 h (Sem dados)'
+                  )}
                 </div>
                 <div style={{ fontSize: '0.58rem', fontWeight: 800, color: '#94A3B8', textTransform: 'uppercase', whiteSpace: 'nowrap' }}>
-                  exposição ao risco
+                  {freqOverview.totalHHT > 0 ? 'exposição ao risco' : 'HHT não cadastrado'}
                 </div>
               </div>
             </div>
@@ -1625,35 +1633,42 @@ export const LandscapePrintView: React.FC<LandscapePrintViewProps> = ({
                   Acidentados por milhão de horas trabalhadas • Janeiro a Dezembro
                 </div>
                 <div style={{ flex: 1, minHeight: 0 }}>
-                  <ResponsiveContainer width="100%" height="100%">
-                    <BarChart data={monthlyFreqRates12} margin={{ top: 14, right: 10, left: -25, bottom: 0 }}>
-                      <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#F1F5F9" />
-                      <XAxis dataKey="monthName" axisLine={false} tickLine={false} tick={{ fontSize: 8, fontWeight: 700, fill: '#64748B' }} />
-                      <YAxis axisLine={false} tickLine={false} tick={{ fontSize: 8, fill: '#64748B' }} />
-                      <Tooltip 
-                        cursor={{ fill: '#F8FAFC' }}
-                        contentStyle={{ backgroundColor: '#FFFFFF', borderRadius: '8px', border: '1px solid #E2E8F0', fontSize: '0.72rem', boxShadow: '0 4px 12px rgba(0,0,0,0.08)' }} 
-                        formatter={(val: any) => [`${Number(val).toFixed(2)}`, 'Frequência (F)']}
-                        labelFormatter={(lbl: any) => `Mês: ${lbl}`}
-                      />
-                      <Bar 
-                        dataKey="frequencyRate" 
-                        radius={[3, 3, 0, 0]} 
-                        barSize={16} 
-                        label={{ 
-                          position: 'top', 
-                          fill: '#334155', 
-                          fontSize: 8, 
-                          fontWeight: 800, 
-                          formatter: (v: any) => Number(v) > 0 ? Number(v).toFixed(1) : '' 
-                        }} 
-                      >
-                        {monthlyFreqRates12.map((m, idx) => (
-                          <Cell key={`f-cell-${idx}`} fill={getFrequencyRateColor(m.frequencyRate)} />
-                        ))}
-                      </Bar>
-                    </BarChart>
-                  </ResponsiveContainer>
+                  {freqOverview.totalHHT === 0 ? (
+                    <div style={{ height: '100%', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', background: '#F8FAFC', borderRadius: '6px', border: '1px dashed #CBD5E1', padding: '0.5rem', textAlign: 'center' }}>
+                      <span style={{ fontSize: '0.68rem', fontWeight: 800, color: '#475569' }}>Sem Horas Trabalhadas em {primaryYear}</span>
+                      <span style={{ fontSize: '0.55rem', color: '#94A3B8', marginTop: '2px' }}>A NBR 14280 exige HHT para apurar a frequência.</span>
+                    </div>
+                  ) : (
+                    <ResponsiveContainer width="100%" height="100%">
+                      <BarChart data={monthlyFreqRates12} margin={{ top: 14, right: 10, left: -25, bottom: 0 }}>
+                        <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#F1F5F9" />
+                        <XAxis dataKey="monthName" axisLine={false} tickLine={false} tick={{ fontSize: 8, fontWeight: 700, fill: '#64748B' }} />
+                        <YAxis axisLine={false} tickLine={false} tick={{ fontSize: 8, fill: '#64748B' }} />
+                        <Tooltip 
+                          cursor={{ fill: '#F8FAFC' }}
+                          contentStyle={{ backgroundColor: '#FFFFFF', borderRadius: '8px', border: '1px solid #E2E8F0', fontSize: '0.72rem', boxShadow: '0 4px 12px rgba(0,0,0,0.08)' }} 
+                          formatter={(val: any) => [`${Number(val).toFixed(2)}`, 'Frequência (F)']}
+                          labelFormatter={(lbl: any) => `Mês: ${lbl}`}
+                        />
+                        <Bar 
+                          dataKey="frequencyRate" 
+                          radius={[3, 3, 0, 0]} 
+                          barSize={16} 
+                          label={{ 
+                            position: 'top', 
+                            fill: '#334155', 
+                            fontSize: 8, 
+                            fontWeight: 800, 
+                            formatter: (v: any) => Number(v) > 0 ? Number(v).toFixed(1) : '' 
+                          }} 
+                        >
+                          {monthlyFreqRates12.map((m, idx) => (
+                            <Cell key={`f-cell-${idx}`} fill={getFrequencyRateColor(m.frequencyRate)} />
+                          ))}
+                        </Bar>
+                      </BarChart>
+                    </ResponsiveContainer>
+                  )}
                 </div>
               </div>
 
@@ -1674,35 +1689,42 @@ export const LandscapePrintView: React.FC<LandscapePrintViewProps> = ({
                   Dias perdidos por milhão de horas trabalhadas • Janeiro a Dezembro
                 </div>
                 <div style={{ flex: 1, minHeight: 0 }}>
-                  <ResponsiveContainer width="100%" height="100%">
-                    <BarChart data={monthlyFreqRates12} margin={{ top: 14, right: 10, left: -25, bottom: 0 }}>
-                      <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#F1F5F9" />
-                      <XAxis dataKey="monthName" axisLine={false} tickLine={false} tick={{ fontSize: 8, fontWeight: 700, fill: '#64748B' }} />
-                      <YAxis axisLine={false} tickLine={false} tick={{ fontSize: 8, fill: '#64748B' }} />
-                      <Tooltip 
-                        cursor={{ fill: '#F8FAFC' }}
-                        contentStyle={{ backgroundColor: '#FFFFFF', borderRadius: '8px', border: '1px solid #E2E8F0', fontSize: '0.72rem', boxShadow: '0 4px 12px rgba(0,0,0,0.08)' }} 
-                        formatter={(val: any) => [`${Number(val).toFixed(0)}`, 'Gravidade (G)']}
-                        labelFormatter={(lbl: any) => `Mês: ${lbl}`}
-                      />
-                      <Bar 
-                        dataKey="severityRate" 
-                        radius={[3, 3, 0, 0]} 
-                        barSize={16} 
-                        label={{ 
-                          position: 'top', 
-                          fill: '#334155', 
-                          fontSize: 8, 
-                          fontWeight: 800, 
-                          formatter: (v: any) => Number(v) > 0 ? Number(v).toFixed(0) : '' 
-                        }} 
-                      >
-                        {monthlyFreqRates12.map((m, idx) => (
-                          <Cell key={`g-cell-${idx}`} fill={getSeverityRateColor(m.severityRate)} />
-                        ))}
-                      </Bar>
-                    </BarChart>
-                  </ResponsiveContainer>
+                  {freqOverview.totalHHT === 0 ? (
+                    <div style={{ height: '100%', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', background: '#F8FAFC', borderRadius: '6px', border: '1px dashed #CBD5E1', padding: '0.5rem', textAlign: 'center' }}>
+                      <span style={{ fontSize: '0.68rem', fontWeight: 800, color: '#475569' }}>Sem Horas Trabalhadas em {primaryYear}</span>
+                      <span style={{ fontSize: '0.55rem', color: '#94A3B8', marginTop: '2px' }}>A NBR 14280 exige HHT para apurar a gravidade.</span>
+                    </div>
+                  ) : (
+                    <ResponsiveContainer width="100%" height="100%">
+                      <BarChart data={monthlyFreqRates12} margin={{ top: 14, right: 10, left: -25, bottom: 0 }}>
+                        <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#F1F5F9" />
+                        <XAxis dataKey="monthName" axisLine={false} tickLine={false} tick={{ fontSize: 8, fontWeight: 700, fill: '#64748B' }} />
+                        <YAxis axisLine={false} tickLine={false} tick={{ fontSize: 8, fill: '#64748B' }} />
+                        <Tooltip 
+                          cursor={{ fill: '#F8FAFC' }}
+                          contentStyle={{ backgroundColor: '#FFFFFF', borderRadius: '8px', border: '1px solid #E2E8F0', fontSize: '0.72rem', boxShadow: '0 4px 12px rgba(0,0,0,0.08)' }} 
+                          formatter={(val: any) => [`${Number(val).toFixed(0)}`, 'Gravidade (G)']}
+                          labelFormatter={(lbl: any) => `Mês: ${lbl}`}
+                        />
+                        <Bar 
+                          dataKey="severityRate" 
+                          radius={[3, 3, 0, 0]} 
+                          barSize={16} 
+                          label={{ 
+                            position: 'top', 
+                            fill: '#334155', 
+                            fontSize: 8, 
+                            fontWeight: 800, 
+                            formatter: (v: any) => Number(v) > 0 ? Number(v).toFixed(0) : '' 
+                          }} 
+                        >
+                          {monthlyFreqRates12.map((m, idx) => (
+                            <Cell key={`g-cell-${idx}`} fill={getSeverityRateColor(m.severityRate)} />
+                          ))}
+                        </Bar>
+                      </BarChart>
+                    </ResponsiveContainer>
+                  )}
                 </div>
               </div>
             </div>
@@ -1769,10 +1791,10 @@ export const LandscapePrintView: React.FC<LandscapePrintViewProps> = ({
                       <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginTop: '1px' }}>
                         <div style={{ display: 'flex', gap: '0.4rem', alignItems: 'center' }}>
                           <span style={{ fontSize: '0.58rem', fontWeight: 800, color: '#0284C7', background: '#F0F9FF', padding: '1px 6px', borderRadius: '3px', border: '1px solid #BAE6FD', whiteSpace: 'nowrap' }}>
-                            F: {u.frequencyRate.toLocaleString('pt-BR', { minimumFractionDigits: 1, maximumFractionDigits: 1 })}
+                            F: {u.hht > 0 ? u.frequencyRate.toLocaleString('pt-BR', { minimumFractionDigits: 1, maximumFractionDigits: 1 }) : '—'}
                           </span>
                           <span style={{ fontSize: '0.58rem', fontWeight: 800, color: '#D97706', background: '#FFFBEB', padding: '1px 6px', borderRadius: '3px', border: '1px solid #FDE68A', whiteSpace: 'nowrap' }}>
-                            G: {u.severityRate.toLocaleString('pt-BR', { maximumFractionDigits: 0 })}
+                            G: {u.hht > 0 ? u.severityRate.toLocaleString('pt-BR', { maximumFractionDigits: 0 }) : '—'}
                           </span>
                         </div>
                         <span style={{ fontSize: '0.56rem', fontWeight: 900, color: getOITStatusColor(u.frequencyStatus), background: getOITStatusBg(u.frequencyStatus), padding: '1px 6px', borderRadius: '3px', whiteSpace: 'nowrap' }}>

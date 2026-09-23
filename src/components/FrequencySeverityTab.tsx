@@ -6,7 +6,7 @@ import {
 import { 
   Activity, Gauge, Clock, ShieldCheck, 
   TrendingUp, Filter, Upload, RotateCcw, Calendar, CheckCircle2,
-  Building2, Target, SlidersHorizontal
+  Building2, Target, SlidersHorizontal, AlertCircle
 } from "lucide-react";
 import type { Accident, OITClassification } from "../types";
 import { 
@@ -39,6 +39,7 @@ const getStatusColor = (status: OITClassification): string => {
     case "RUIM":
     case "REGULAR": return "#D97706";   // Ruim = Amarelo (Dourado de alto contraste)
     case "PÉSSIMA": return "#EF4444";   // Péssimo = Vermelho
+    case "SEM DADOS": return "#94A3B8"; // Sem HHT
     default: return "#64748B";
   }
 };
@@ -50,6 +51,7 @@ const getStatusBg = (status: OITClassification): string => {
     case "RUIM":
     case "REGULAR": return "rgba(234, 179, 8, 0.15)";
     case "PÉSSIMA": return "rgba(239, 68, 68, 0.12)";
+    case "SEM DADOS": return "rgba(148, 163, 184, 0.15)";
     default: return "rgba(100, 116, 139, 0.12)";
   }
 };
@@ -442,6 +444,7 @@ export const FrequencySeverityTab: React.FC<FrequencySeverityTabProps> = ({
             <div style={{ display: "flex", gap: "0.3rem" }}>
               {allYears.map(y => {
                 const active = y === selectedYear;
+                const yearHasHHT = Boolean(hhtStore[y] && Object.keys(hhtStore[y]).length > 0);
                 return (
                   <button
                     key={y}
@@ -455,10 +458,26 @@ export const FrequencySeverityTab: React.FC<FrequencySeverityTabProps> = ({
                       fontWeight: 800,
                       fontSize: "0.85rem",
                       cursor: "pointer",
-                      boxShadow: active ? "0 2px 6px rgba(185, 28, 28, 0.25)" : "none"
+                      boxShadow: active ? "0 2px 6px rgba(185, 28, 28, 0.25)" : "none",
+                      display: "flex",
+                      alignItems: "center",
+                      gap: "6px"
                     }}
+                    title={yearHasHHT ? `Exercício ${y} (com base de HHT cadastrada)` : `Exercício ${y} (sem base de HHT cadastrada)`}
                   >
-                    {y}
+                    <span>{y}</span>
+                    {!yearHasHHT && (
+                      <span style={{
+                        fontSize: "0.6rem",
+                        padding: "1px 5px",
+                        borderRadius: "4px",
+                        background: active ? "rgba(255,255,255,0.25)" : "#F1F5F9",
+                        color: active ? "white" : "#94A3B8",
+                        fontWeight: 700
+                      }}>
+                        Sem HHT
+                      </span>
+                    )}
                   </button>
                 );
               })}
@@ -647,6 +666,55 @@ export const FrequencySeverityTab: React.FC<FrequencySeverityTabProps> = ({
         </motion.div>
       )}
 
+      {/* Banner de Aviso quando não houver HHT cadastrado */}
+      {overview.totalHHT === 0 && (
+        <div style={{
+          background: "#FFFBEB",
+          border: "1.5px solid #FDE68A",
+          borderRadius: "12px",
+          padding: "1rem 1.5rem",
+          display: "flex",
+          alignItems: "center",
+          justifyContent: "space-between",
+          gap: "1rem",
+          boxShadow: "0 2px 8px rgba(217, 119, 6, 0.06)"
+        }}>
+          <div style={{ display: "flex", alignItems: "center", gap: "0.75rem" }}>
+            <div style={{ background: "#FEF3C7", color: "#D97706", padding: "0.5rem", borderRadius: "10px", flexShrink: 0 }}>
+              <AlertCircle size={22} />
+            </div>
+            <div>
+              <h4 style={{ margin: 0, fontSize: "0.95rem", fontWeight: 900, color: "#92400E" }}>
+                Sem dados de Horas-Homem Trabalhadas (HHT) para o exercício de {selectedYear}
+              </h4>
+              <p style={{ margin: "0.25rem 0 0", fontSize: "0.82rem", color: "#B45309", fontWeight: 600 }}>
+                O banco de dados oficial possui registros de HHT exclusivamente para o ano de 2026. As taxas oficiais de Frequência (F) e Gravidade (G) só são apuradas mediante importação das planilhas de HHT correspondentes.
+              </p>
+            </div>
+          </div>
+          <button
+            onClick={() => fileInputRef.current?.click()}
+            style={{
+              background: "#D97706",
+              color: "white",
+              border: "none",
+              borderRadius: "8px",
+              padding: "0.5rem 1rem",
+              fontWeight: 800,
+              fontSize: "0.8rem",
+              cursor: "pointer",
+              display: "flex",
+              alignItems: "center",
+              gap: "0.4rem",
+              whiteSpace: "nowrap",
+              boxShadow: "0 2px 6px rgba(217, 119, 6, 0.25)"
+            }}
+          >
+            <Upload size={14} /> Importar HHT {selectedYear}
+          </button>
+        </div>
+      )}
+
       {/* KPI Cards Grid */}
       <div style={{ display: "grid", gridTemplateColumns: "repeat(4, 1fr)", gap: "1.5rem" }}>
         
@@ -676,12 +744,12 @@ export const FrequencySeverityTab: React.FC<FrequencySeverityTabProps> = ({
           </div>
           
           <div style={{ fontSize: "2.8rem", fontWeight: 900, lineHeight: 1, color: "var(--text)" }}>
-            {fmtNumber(overview.overallFrequencyRate)}
+            {overview.totalHHT > 0 ? fmtNumber(overview.overallFrequencyRate) : "—"}
           </div>
           
           <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginTop: "1rem", paddingTop: "0.75rem", borderTop: "1px solid var(--border)", fontSize: "0.75rem", color: "var(--text-muted)", whiteSpace: "nowrap" }}>
             <span>N: <strong>{overview.totalAccidents} acidentados</strong></span>
-            <span>Meta OIT: <strong>F ≤ 20,00</strong></span>
+            <span>{overview.totalHHT > 0 ? "Meta OIT: F ≤ 20,00" : "HHT não cadastrado"}</span>
           </div>
         </div>
 
@@ -711,12 +779,12 @@ export const FrequencySeverityTab: React.FC<FrequencySeverityTabProps> = ({
           </div>
           
           <div style={{ fontSize: "2.8rem", fontWeight: 900, lineHeight: 1, color: "var(--text)" }}>
-            {fmtNumber(overview.overallSeverityRate)}
+            {overview.totalHHT > 0 ? fmtNumber(overview.overallSeverityRate) : "—"}
           </div>
           
           <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginTop: "1rem", paddingTop: "0.75rem", borderTop: "1px solid var(--border)", fontSize: "0.75rem", color: "var(--text-muted)", whiteSpace: "nowrap" }}>
             <span>T: <strong>{overview.totalLostDays} dias computados</strong></span>
-            <span>Meta OIT: <strong>G ≤ 500,00</strong></span>
+            <span>{overview.totalHHT > 0 ? "Meta OIT: G ≤ 500,00" : "HHT não cadastrado"}</span>
           </div>
         </div>
 
@@ -732,11 +800,11 @@ export const FrequencySeverityTab: React.FC<FrequencySeverityTabProps> = ({
           </div>
           
           <div style={{ fontSize: "2.2rem", fontWeight: 900, lineHeight: 1.1 }}>
-            {fmtNumber(overview.totalHHT)} h
+            {overview.totalHHT > 0 ? `${fmtNumber(overview.totalHHT)} h` : "0,00 h"}
           </div>
           
           <div style={{ marginTop: "1rem", paddingTop: "0.75rem", borderTop: "1px solid rgba(255,255,255,0.1)", fontSize: "0.75rem", opacity: 0.85, display: "flex", justifyContent: "space-between", whiteSpace: "nowrap" }}>
-            <span>Horas Trabalhadas (HH)</span>
+            <span>{overview.totalHHT > 0 ? "Horas Trabalhadas (HH)" : "Nenhum registro de HHT"}</span>
             <span>Exercício {selectedYear}</span>
           </div>
         </div>
@@ -849,7 +917,23 @@ export const FrequencySeverityTab: React.FC<FrequencySeverityTabProps> = ({
               Exercício {selectedYear}
             </span>
 
-            {overview.overallFrequencyRate <= 20 && overview.overallSeverityRate <= 500 ? (
+            {overview.totalHHT <= 0 ? (
+              <span style={{ 
+                background: "rgba(100, 116, 139, 0.12)", 
+                color: "#64748B", 
+                border: "1px solid rgba(100, 116, 139, 0.25)", 
+                padding: "0.35rem 0.85rem", 
+                borderRadius: "9999px", 
+                fontSize: "0.75rem", 
+                fontWeight: 800,
+                display: "inline-flex",
+                alignItems: "center",
+                gap: "5px"
+              }}>
+                <AlertCircle size={14} />
+                Base de HHT Não Cadastrada
+              </span>
+            ) : overview.overallFrequencyRate <= 20 && overview.overallSeverityRate <= 500 ? (
               <span style={{ 
                 background: "rgba(16, 185, 129, 0.12)", 
                 color: "#059669", 
@@ -972,10 +1056,10 @@ export const FrequencySeverityTab: React.FC<FrequencySeverityTabProps> = ({
                 </span>
               </div>
               <div style={{ fontSize: "1.5rem", fontWeight: 900, color: "#0F172A", lineHeight: 1 }}>
-                {fmtNumber(overview.overallFrequencyRate)}
+                {overview.totalHHT > 0 ? fmtNumber(overview.overallFrequencyRate) : "—"}
               </div>
               <div style={{ fontSize: "0.68rem", color: "#94A3B8", marginTop: "0.35rem", fontWeight: 600 }}>
-                Meta OIT: F ≤ 20,00
+                {overview.totalHHT > 0 ? "Meta OIT: F ≤ 20,00" : "HHT não cadastrado"}
               </div>
             </div>
 
@@ -994,7 +1078,7 @@ export const FrequencySeverityTab: React.FC<FrequencySeverityTabProps> = ({
                   fontSize: "0.68rem", 
                   fontWeight: 900, 
                   padding: "1px 6px", 
-                  borderRadius: "4px",
+                  borderRadius: "4px", 
                   color: getStatusColor(overview.overallSeverityStatus),
                   background: getStatusBg(overview.overallSeverityStatus)
                 }}>
@@ -1002,10 +1086,10 @@ export const FrequencySeverityTab: React.FC<FrequencySeverityTabProps> = ({
                 </span>
               </div>
               <div style={{ fontSize: "1.5rem", fontWeight: 900, color: "#0F172A", lineHeight: 1 }}>
-                {fmtNumber(overview.overallSeverityRate)}
+                {overview.totalHHT > 0 ? fmtNumber(overview.overallSeverityRate) : "—"}
               </div>
               <div style={{ fontSize: "0.68rem", color: "#94A3B8", marginTop: "0.35rem", fontWeight: 600 }}>
-                Meta OIT: G ≤ 500,00
+                {overview.totalHHT > 0 ? "Meta OIT: G ≤ 500,00" : "HHT não cadastrado"}
               </div>
             </div>
 
@@ -1098,7 +1182,15 @@ export const FrequencySeverityTab: React.FC<FrequencySeverityTabProps> = ({
 
           {/* Área do Gráfico: Altura Rigorosamente Fixa (285px) em Ambos os Modos */}
           <div style={{ height: "285px", display: "flex", flexDirection: "column", justifyContent: "space-between" }}>
-            {fViewMode === "monthly" ? (
+            {overview.totalHHT === 0 ? (
+              <div style={{ height: 260, display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", background: "#F8FAFC", borderRadius: "10px", border: "1px dashed #CBD5E1", padding: "1.5rem", textAlign: "center" }}>
+                <AlertCircle size={32} color="#94A3B8" style={{ marginBottom: "0.5rem" }} />
+                <span style={{ fontWeight: 800, color: "#475569", fontSize: "0.9rem" }}>Sem Horas Trabalhadas (HHT) em {selectedYear}</span>
+                <span style={{ fontSize: "0.75rem", color: "#64748B", maxWidth: "340px", marginTop: "4px" }}>
+                  A NBR 14280 exige o registro de HHT para calcular a Taxa de Frequência. Cadastre a base de HHT de {selectedYear} para visualizar este gráfico.
+                </span>
+              </div>
+            ) : fViewMode === "monthly" ? (
               <div style={{ height: 260, width: "100%" }}>
                 <ResponsiveContainer width="100%" height="100%">
                   <BarChart data={overview.monthlyRecords} margin={{ top: 15, right: 15, left: -20, bottom: 5 }}>
@@ -1313,7 +1405,15 @@ export const FrequencySeverityTab: React.FC<FrequencySeverityTabProps> = ({
 
           {/* Área do Gráfico: Altura Rigorosamente Fixa (285px) em Ambos os Modos */}
           <div style={{ height: "285px", display: "flex", flexDirection: "column", justifyContent: "space-between" }}>
-            {gViewMode === "monthly" ? (
+            {overview.totalHHT === 0 ? (
+              <div style={{ height: 260, display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", background: "#F8FAFC", borderRadius: "10px", border: "1px dashed #CBD5E1", padding: "1.5rem", textAlign: "center" }}>
+                <AlertCircle size={32} color="#94A3B8" style={{ marginBottom: "0.5rem" }} />
+                <span style={{ fontWeight: 800, color: "#475569", fontSize: "0.9rem" }}>Sem Horas Trabalhadas (HHT) em {selectedYear}</span>
+                <span style={{ fontSize: "0.75rem", color: "#64748B", maxWidth: "340px", marginTop: "4px" }}>
+                  A NBR 14280 exige o registro de HHT para calcular a Taxa de Gravidade. Cadastre a base de HHT de {selectedYear} para visualizar este gráfico.
+                </span>
+              </div>
+            ) : gViewMode === "monthly" ? (
               <div style={{ height: 260, width: "100%" }}>
                 <ResponsiveContainer width="100%" height="100%">
                   <BarChart data={overview.monthlyRecords} margin={{ top: 15, right: 15, left: -10, bottom: 5 }}>
@@ -1488,9 +1588,13 @@ export const FrequencySeverityTab: React.FC<FrequencySeverityTabProps> = ({
                 >
                   <td style={{ padding: "0.75rem 1rem", fontWeight: 700, color: "var(--text)" }}>{row.monthName}</td>
                   <td style={{ padding: "0.75rem 1rem", textAlign: "center", fontWeight: 700 }}>{row.accidents}</td>
-                  <td style={{ padding: "0.75rem 1rem", textAlign: "right", fontFamily: "monospace", fontWeight: 800, color: "#0284C7" }}>{fmtNumber(row.hht)}</td>
+                  <td style={{ padding: "0.75rem 1rem", textAlign: "right", fontFamily: "monospace", fontWeight: 800, color: row.hht > 0 ? "#0284C7" : "var(--text-muted)" }}>
+                    {row.hht > 0 ? fmtNumber(row.hht) : "—"}
+                  </td>
                   <td style={{ padding: "0.75rem 1rem", textAlign: "center", fontWeight: 700 }}>{row.lostDays}</td>
-                  <td style={{ padding: "0.75rem 1rem", textAlign: "right", fontWeight: 800, color: getStatusColor(row.frequencyStatus) }}>{fmtNumber(row.frequencyRate)}</td>
+                  <td style={{ padding: "0.75rem 1rem", textAlign: "right", fontWeight: 800, color: row.hht > 0 ? getStatusColor(row.frequencyStatus) : "var(--text-muted)" }}>
+                    {row.hht > 0 ? fmtNumber(row.frequencyRate) : "—"}
+                  </td>
                   <td style={{ padding: "0.75rem 1rem", textAlign: "center" }}>
                     <span style={{ 
                       padding: "0.2rem 0.5rem", 
@@ -1503,7 +1607,9 @@ export const FrequencySeverityTab: React.FC<FrequencySeverityTabProps> = ({
                       {row.frequencyStatus}
                     </span>
                   </td>
-                  <td style={{ padding: "0.75rem 1rem", textAlign: "right", fontWeight: 800, color: getStatusColor(row.severityStatus) }}>{fmtNumber(row.severityRate)}</td>
+                  <td style={{ padding: "0.75rem 1rem", textAlign: "right", fontWeight: 800, color: row.hht > 0 ? getStatusColor(row.severityStatus) : "var(--text-muted)" }}>
+                    {row.hht > 0 ? fmtNumber(row.severityRate) : "—"}
+                  </td>
                   <td style={{ padding: "0.75rem 1rem", textAlign: "center" }}>
                     <span style={{ 
                       padding: "0.2rem 0.5rem", 
@@ -1523,9 +1629,13 @@ export const FrequencySeverityTab: React.FC<FrequencySeverityTabProps> = ({
               <tr style={{ background: "#0F172A", color: "white", fontWeight: 900, borderTop: "2px solid #334155" }}>
                 <td style={{ padding: "0.85rem 1rem", letterSpacing: "0.5px" }}>TOTAL ACUMULADO (NBR 14280)</td>
                 <td style={{ padding: "0.85rem 1rem", textAlign: "center" }}>{overview.totalAccidents}</td>
-                <td style={{ padding: "0.85rem 1rem", textAlign: "right", fontFamily: "monospace", color: "#38BDF8" }}>{fmtNumber(overview.totalHHT)}</td>
+                <td style={{ padding: "0.85rem 1rem", textAlign: "right", fontFamily: "monospace", color: overview.totalHHT > 0 ? "#38BDF8" : "#94A3B8" }}>
+                  {overview.totalHHT > 0 ? fmtNumber(overview.totalHHT) : "—"}
+                </td>
                 <td style={{ padding: "0.85rem 1rem", textAlign: "center" }}>{overview.totalLostDays}</td>
-                <td style={{ padding: "0.85rem 1rem", textAlign: "right", color: "#38BDF8" }}>{fmtNumber(overview.overallFrequencyRate)}</td>
+                <td style={{ padding: "0.85rem 1rem", textAlign: "right", color: overview.totalHHT > 0 ? "#38BDF8" : "#94A3B8" }}>
+                  {overview.totalHHT > 0 ? fmtNumber(overview.overallFrequencyRate) : "—"}
+                </td>
                 <td style={{ padding: "0.85rem 1rem", textAlign: "center" }}>
                   <span style={{ 
                     padding: "0.2rem 0.6rem", 
@@ -1538,7 +1648,9 @@ export const FrequencySeverityTab: React.FC<FrequencySeverityTabProps> = ({
                     {overview.overallFrequencyStatus}
                   </span>
                 </td>
-                <td style={{ padding: "0.85rem 1rem", textAlign: "right", color: "#38BDF8" }}>{fmtNumber(overview.overallSeverityRate)}</td>
+                <td style={{ padding: "0.85rem 1rem", textAlign: "right", color: overview.totalHHT > 0 ? "#38BDF8" : "#94A3B8" }}>
+                  {overview.totalHHT > 0 ? fmtNumber(overview.overallSeverityRate) : "—"}
+                </td>
                 <td style={{ padding: "0.85rem 1rem", textAlign: "center" }}>
                   <span style={{ 
                     padding: "0.2rem 0.6rem", 
@@ -1566,8 +1678,8 @@ export const FrequencySeverityTab: React.FC<FrequencySeverityTabProps> = ({
               Acompanhamento detalhado por Unidade ({activeUnitsList.length} unidades ativas{groupingConfig.groupMatrizCarbono ? ", com AÇOTUBO - Carbono e Matriz agrupadas" : ", com Matriz e Carbono independentes"})
             </p>
           </div>
-          <div style={{ fontSize: "0.8rem", color: "#0284C7", fontWeight: 800, background: "#F0F9FF", border: "1px solid #BAE6FD", padding: "0.3rem 0.75rem", borderRadius: "6px" }}>
-            Horas Trabalhadas (HH): {fmtNumber(overview.totalHHT)} h
+          <div style={{ fontSize: "0.8rem", color: overview.totalHHT > 0 ? "#0284C7" : "#64748B", fontWeight: 800, background: overview.totalHHT > 0 ? "#F0F9FF" : "#F8FAFC", border: `1px solid ${overview.totalHHT > 0 ? "#BAE6FD" : "#E2E8F0"}`, padding: "0.3rem 0.75rem", borderRadius: "6px" }}>
+            Horas Trabalhadas (HH): {overview.totalHHT > 0 ? `${fmtNumber(overview.totalHHT)} h` : "Sem HHT cadastrado"}
           </div>
         </div>
 
@@ -1603,9 +1715,13 @@ export const FrequencySeverityTab: React.FC<FrequencySeverityTabProps> = ({
                 >
                   <td style={{ padding: "0.75rem 1rem", fontWeight: 700, color: "var(--text)" }}>{unit.unitName}</td>
                   <td style={{ padding: "0.75rem 1rem", textAlign: "center", fontWeight: 700 }}>{unit.accidents}</td>
-                  <td style={{ padding: "0.75rem 1rem", textAlign: "right", fontFamily: "monospace", fontWeight: 800, color: "#0284C7" }}>{fmtNumber(unit.hht)}</td>
+                  <td style={{ padding: "0.75rem 1rem", textAlign: "right", fontFamily: "monospace", fontWeight: 800, color: unit.hht > 0 ? "#0284C7" : "var(--text-muted)" }}>
+                    {unit.hht > 0 ? fmtNumber(unit.hht) : "—"}
+                  </td>
                   <td style={{ padding: "0.75rem 1rem", textAlign: "center", fontWeight: 700 }}>{unit.lostDays}</td>
-                  <td style={{ padding: "0.75rem 1rem", textAlign: "right", fontWeight: 800, color: getStatusColor(unit.frequencyStatus) }}>{fmtNumber(unit.frequencyRate)}</td>
+                  <td style={{ padding: "0.75rem 1rem", textAlign: "right", fontWeight: 800, color: unit.hht > 0 ? getStatusColor(unit.frequencyStatus) : "var(--text-muted)" }}>
+                    {unit.hht > 0 ? fmtNumber(unit.frequencyRate) : "—"}
+                  </td>
                   <td style={{ padding: "0.75rem 1rem", textAlign: "center" }}>
                     <span style={{ 
                       padding: "0.2rem 0.5rem", 
@@ -1618,7 +1734,9 @@ export const FrequencySeverityTab: React.FC<FrequencySeverityTabProps> = ({
                       {unit.frequencyStatus}
                     </span>
                   </td>
-                  <td style={{ padding: "0.75rem 1rem", textAlign: "right", fontWeight: 800, color: getStatusColor(unit.severityStatus) }}>{fmtNumber(unit.severityRate)}</td>
+                  <td style={{ padding: "0.75rem 1rem", textAlign: "right", fontWeight: 800, color: unit.hht > 0 ? getStatusColor(unit.severityStatus) : "var(--text-muted)" }}>
+                    {unit.hht > 0 ? fmtNumber(unit.severityRate) : "—"}
+                  </td>
                   <td style={{ padding: "0.75rem 1rem", textAlign: "center" }}>
                     <span style={{ 
                       padding: "0.2rem 0.5rem", 

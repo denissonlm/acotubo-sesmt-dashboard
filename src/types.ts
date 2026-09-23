@@ -50,7 +50,7 @@ export interface Insight {
   type: 'danger' | 'warning' | 'info' | 'success';
 }
 
-export type OITClassification = 'MUITO BOA' | 'BOA' | 'REGULAR' | 'RUIM' | 'PÉSSIMA';
+export type OITClassification = 'MUITO BOA' | 'BOA' | 'REGULAR' | 'RUIM' | 'PÉSSIMA' | 'SEM DADOS';
 
 export interface MonthlyRateRecord {
   month: number;

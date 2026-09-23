@@ -37,6 +37,8 @@ const getOITStatusColor = (status: string): string => {
     case 'PÉSSIMA':
     case 'PÉSSIMO':
       return '#EF4444'; // Péssima = Vermelho
+    case 'SEM DADOS':
+      return '#94A3B8';
     default:
       return '#64748B';
   }
@@ -55,6 +57,8 @@ const getOITStatusBg = (status: string): string => {
     case 'PÉSSIMA':
     case 'PÉSSIMO':
       return '#FEF2F2';
+    case 'SEM DADOS':
+      return '#F1F5F9';
     default:
       return '#F1F5F9';
   }
@@ -426,11 +430,11 @@ const ReportPage: React.FC<{ accidents: Accident[], years: number[], unit: strin
                 </span>
               </div>
               <div style={{ fontSize: '1.75rem', fontWeight: 900, color: '#0F172A', lineHeight: 1 }}>
-                {freqOverview.overallFrequencyRate.toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+                {freqOverview.totalHHT > 0 ? freqOverview.overallFrequencyRate.toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 }) : '—'}
               </div>
               <div style={{ fontSize: '0.62rem', color: '#64748B', marginTop: '0.5rem', paddingTop: '0.4rem', borderTop: '1px solid #E2E8F0', display: 'flex', justifyContent: 'space-between' }}>
                 <span>N: <strong>{freqOverview.totalAccidents} acd</strong></span>
-                <span>Meta: ≤ 20</span>
+                <span>{freqOverview.totalHHT > 0 ? 'Meta: ≤ 20' : 'Sem HHT'}</span>
               </div>
             </div>
 
@@ -443,11 +447,11 @@ const ReportPage: React.FC<{ accidents: Accident[], years: number[], unit: strin
                 </span>
               </div>
               <div style={{ fontSize: '1.75rem', fontWeight: 900, color: '#0F172A', lineHeight: 1 }}>
-                {freqOverview.overallSeverityRate.toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+                {freqOverview.totalHHT > 0 ? freqOverview.overallSeverityRate.toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 }) : '—'}
               </div>
               <div style={{ fontSize: '0.62rem', color: '#64748B', marginTop: '0.5rem', paddingTop: '0.4rem', borderTop: '1px solid #E2E8F0', display: 'flex', justifyContent: 'space-between' }}>
                 <span>T: <strong>{freqOverview.totalLostDays} dias</strong></span>
-                <span>Meta: ≤ 500</span>
+                <span>{freqOverview.totalHHT > 0 ? 'Meta: ≤ 500' : 'Sem HHT'}</span>
               </div>
             </div>
 
@@ -455,10 +459,10 @@ const ReportPage: React.FC<{ accidents: Accident[], years: number[], unit: strin
             <div style={{ background: '#0F172A', padding: '0.85rem', borderRadius: '12px', color: 'white' }}>
               <div style={{ fontSize: '0.65rem', fontWeight: 800, opacity: 0.7, textTransform: 'uppercase', marginBottom: '0.35rem', whiteSpace: 'nowrap' }}>Horas Trabalhadas</div>
               <div style={{ fontSize: '1.3rem', fontWeight: 900, lineHeight: 1.1 }}>
-                {freqOverview.totalHHT.toLocaleString('pt-BR', { maximumFractionDigits: 0 })} h
+                {freqOverview.totalHHT > 0 ? `${freqOverview.totalHHT.toLocaleString('pt-BR', { maximumFractionDigits: 0 })} h` : '0 h (Sem dados)'}
               </div>
               <div style={{ fontSize: '0.62rem', opacity: 0.75, marginTop: '0.65rem', paddingTop: '0.4rem', borderTop: '1px solid rgba(255,255,255,0.1)' }}>
-                Exposição efetiva (HH)
+                {freqOverview.totalHHT > 0 ? 'Exposição efetiva (HH)' : 'HHT não cadastrado'}
               </div>
             </div>
 
@@ -517,11 +521,11 @@ const ReportPage: React.FC<{ accidents: Accident[], years: number[], unit: strin
                     <td style={{ padding: '4px 6px', textAlign: 'center', fontWeight: m.lostDays > 0 ? 800 : 500, color: m.lostDays > 0 ? '#B91C1C' : '#64748B' }}>
                       {m.lostDays}
                     </td>
-                    <td style={{ padding: '4px 6px', textAlign: 'right', fontWeight: 800, color: getOITStatusColor(m.frequencyStatus) }}>
-                      {m.frequencyRate.toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+                    <td style={{ padding: '4px 6px', textAlign: 'right', fontWeight: 800, color: m.hht > 0 ? getOITStatusColor(m.frequencyStatus) : '#94A3B8' }}>
+                      {m.hht > 0 ? m.frequencyRate.toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 }) : '—'}
                     </td>
-                    <td style={{ padding: '4px 6px', textAlign: 'right', fontWeight: 800, color: getOITStatusColor(m.severityStatus) }}>
-                      {m.severityRate.toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+                    <td style={{ padding: '4px 6px', textAlign: 'right', fontWeight: 800, color: m.hht > 0 ? getOITStatusColor(m.severityStatus) : '#94A3B8' }}>
+                      {m.hht > 0 ? m.severityRate.toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 }) : '—'}
                     </td>
                   </tr>
                 ))}
@@ -529,11 +533,11 @@ const ReportPage: React.FC<{ accidents: Accident[], years: number[], unit: strin
               <tfoot>
                 <tr style={{ background: '#F8FAFC', borderTop: '2px solid #E2E8F0', fontWeight: 900 }}>
                   <td style={{ padding: '5px 6px' }}>TOTAL</td>
-                  <td style={{ padding: '5px 6px', textAlign: 'right' }}>{freqOverview.totalHHT.toLocaleString('pt-BR', { maximumFractionDigits: 0 })}</td>
+                  <td style={{ padding: '5px 6px', textAlign: 'right' }}>{freqOverview.totalHHT > 0 ? freqOverview.totalHHT.toLocaleString('pt-BR', { maximumFractionDigits: 0 }) : '—'}</td>
                   <td style={{ padding: '5px 6px', textAlign: 'center', color: '#B91C1C' }}>{freqOverview.totalAccidents}</td>
                   <td style={{ padding: '5px 6px', textAlign: 'center', color: '#B91C1C' }}>{freqOverview.totalLostDays}</td>
-                  <td style={{ padding: '5px 6px', textAlign: 'right', color: getOITStatusColor(freqOverview.overallFrequencyStatus) }}>{freqOverview.overallFrequencyRate.toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</td>
-                  <td style={{ padding: '5px 6px', textAlign: 'right', color: getOITStatusColor(freqOverview.overallSeverityStatus) }}>{freqOverview.overallSeverityRate.toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</td>
+                  <td style={{ padding: '5px 6px', textAlign: 'right', color: freqOverview.totalHHT > 0 ? getOITStatusColor(freqOverview.overallFrequencyStatus) : '#94A3B8' }}>{freqOverview.totalHHT > 0 ? freqOverview.overallFrequencyRate.toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 }) : '—'}</td>
+                  <td style={{ padding: '5px 6px', textAlign: 'right', color: freqOverview.totalHHT > 0 ? getOITStatusColor(freqOverview.overallSeverityStatus) : '#94A3B8' }}>{freqOverview.totalHHT > 0 ? freqOverview.overallSeverityRate.toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 }) : '—'}</td>
                 </tr>
               </tfoot>
             </table>
