@@ -701,7 +701,7 @@ export const Dashboard: React.FC<DashboardProps> = ({
             }}
           >
             <FileSpreadsheet size={15} />
-            Breakdown
+            Estatísticas
           </button>
           <button
             onClick={() => setActiveTab('frequency_severity')}
